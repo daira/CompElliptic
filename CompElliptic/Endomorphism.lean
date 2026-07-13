@@ -39,7 +39,9 @@ closed facts and live in the concrete-curve modules.
 
 namespace CompElliptic.Endomorphism
 
-open CompElliptic.CurveForms.ShortWeierstrass
+-- Open only `CurveForms`, never the `ShortWeierstrass` leaf: every borrowed name then reads
+-- `ShortWeierstrass.…` at its use site, so its origin is visible without a full path.
+open CompElliptic.CurveForms
 
 /-! ## Layer 1: an endomorphism of a prime-order group is multiplication by a scalar
 
@@ -99,14 +101,14 @@ theorem phi_eq_origin_iff (hz : z ^ 3 = 1) (p : F × F) : phi z p = (0, 0) ↔ p
   simp [phi, Prod.ext_iff, zeta_ne_zero hz]
 
 /-- `φ` maps the curve `y² = x³ + b` to itself: `(z x)³ = x³` when `z³ = 1`. (`A = 0` is essential.) -/
-theorem onCurve_phi {b : F} (hz : z ^ 3 = 1) {p : F × F} (h : OnCurve 0 b p) :
-    OnCurve 0 b (phi z p) := by
-  simp only [OnCurve, phi] at h ⊢
+theorem onCurve_phi {b : F} (hz : z ^ 3 = 1) {p : F × F}
+    (h : ShortWeierstrass.OnCurve 0 b p) : ShortWeierstrass.OnCurve 0 b (phi z p) := by
+  simp only [ShortWeierstrass.OnCurve, phi] at h ⊢
   linear_combination h - p.1 ^ 3 * hz
 
 /-- `φ` preserves representability (`on the curve, or 𝒪`). -/
-theorem valid_phi {b : F} (hz : z ^ 3 = 1) {p : F × F} (h : Valid 0 b p) :
-    Valid 0 b (phi z p) := by
+theorem valid_phi {b : F} (hz : z ^ 3 = 1) {p : F × F} (h : ShortWeierstrass.Valid 0 b p) :
+    ShortWeierstrass.Valid 0 b (phi z p) := by
   rcases h with h | h
   · exact Or.inl (onCurve_phi hz h)
   · exact Or.inr (by rw [h, phi_origin])
@@ -143,19 +145,19 @@ slope by exactly `z²`, after which `phi_addX` / `phi_addY` finish. The degenera
 The branch walk is explicit (`by_cases` + `rw [if_pos/if_neg]`) rather than
 `split_ifs <;> simp_all`, which blows the recursion limit on the nested `ite`s (cf. `add_neg`). -/
 theorem phi_add (hz : z ^ 3 = 1) (p q : F × F) :
-    phi z (add 0 p q) = add 0 (phi z p) (phi z q) := by
+    phi z (ShortWeierstrass.add 0 p q) = ShortWeierstrass.add 0 (phi z p) (phi z q) := by
   have hz0 : z ≠ 0 := zeta_ne_zero hz
   by_cases hp0 : p = (0, 0)
-  · rw [hp0, CurveForms.ShortWeierstrass.zero_add, phi_origin, CurveForms.ShortWeierstrass.zero_add]
+  · rw [hp0, ShortWeierstrass.zero_add, phi_origin, ShortWeierstrass.zero_add]
   by_cases hq0 : q = (0, 0)
-  · rw [hq0, CurveForms.ShortWeierstrass.add_zero, phi_origin, CurveForms.ShortWeierstrass.add_zero]
+  · rw [hq0, ShortWeierstrass.add_zero, phi_origin, ShortWeierstrass.add_zero]
   have hp0' : phi z p ≠ (0, 0) := fun h => hp0 ((phi_eq_origin_iff hz p).mp h)
   have hq0' : phi z q ≠ (0, 0) := fun h => hq0 ((phi_eq_origin_iff hz q).mp h)
   -- `φ` preserves the two remaining guards: same `x` (as `z ≠ 0`), and `y₁ + y₂ = 0` (`y` is fixed).
   have hxg : (phi z p).1 = (phi z q).1 ↔ p.1 = q.1 := by
     simp [phi, mul_right_inj' hz0]
   have hyg : (phi z p).2 + (phi z q).2 = 0 ↔ p.2 + q.2 = 0 := by simp [phi]
-  unfold add
+  unfold ShortWeierstrass.add
   rw [if_neg hp0, if_neg hq0, if_neg hp0', if_neg hq0']
   by_cases hx : p.1 = q.1
   · rw [if_pos hx, if_pos (hxg.mpr hx)]
@@ -187,38 +189,41 @@ theorem phi_add (hz : z ^ 3 = 1) (p q : F × F) :
 
 /-- `φ` on `SWPoint E`, for a curve with `A = 0` and a cube root of unity `z`. The two proofs are
 `Prop`s, hence erased: `phiPt` computes, and is `native_decide`-friendly. -/
-def phiPt {E : SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1) (P : SWPoint E) : SWPoint E :=
+def phiPt {E : ShortWeierstrass.SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1)
+    (P : ShortWeierstrass.SWPoint E) : ShortWeierstrass.SWPoint E :=
   ⟨z * P.x, P.y, by
-    have h : Valid 0 E.B (P.x, P.y) := hA ▸ P.onCurve
-    have h' : Valid 0 E.B (phi z (P.x, P.y)) := valid_phi hz h
+    have h : ShortWeierstrass.Valid 0 E.B (P.x, P.y) := hA ▸ P.onCurve
+    have h' : ShortWeierstrass.Valid 0 E.B (phi z (P.x, P.y)) := valid_phi hz h
     rw [hA]
     exact h'⟩
 
 omit [DecidableEq F] in
 /-- The coordinates of `φ P` are the raw `phi` of `P`'s coordinates — the bridge that lets the raw
 lemmas above discharge the `SWPoint` ones. -/
-@[simp] theorem phiPt_coords {E : SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1)
-    (P : SWPoint E) :
+@[simp] theorem phiPt_coords {E : ShortWeierstrass.SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1)
+    (P : ShortWeierstrass.SWPoint E) :
     ((phiPt hA hz P).x, (phiPt hA hz P).y) = phi z (P.x, P.y) := rfl
 
 omit [DecidableEq F] in
 /-- `φ³ = id` on `SWPoint E`. -/
-theorem phiPt_phiPt_phiPt {E : SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1)
-    (P : SWPoint E) :
+theorem phiPt_phiPt_phiPt {E : ShortWeierstrass.SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1)
+    (P : ShortWeierstrass.SWPoint E) :
     phiPt hA hz (phiPt hA hz (phiPt hA hz P)) = P :=
-  SWPoint.ext_pair (phi_phi_phi hz (P.x, P.y))
+  ShortWeierstrass.SWPoint.ext_pair (phi_phi_phi hz (P.x, P.y))
 
 /-- `φ` is additive on `SWPoint E` — the group-law commutation of `phi_add`, lifted. -/
-theorem phiPt_add {E : SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1) (P Q : SWPoint E) :
+theorem phiPt_add {E : ShortWeierstrass.SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1)
+    (P Q : ShortWeierstrass.SWPoint E) :
     phiPt hA hz (P + Q) = phiPt hA hz P + phiPt hA hz Q := by
-  refine SWPoint.ext_pair ?_
-  show phi z (add E.A (P.x, P.y) (Q.x, Q.y))
-      = add E.A (phi z (P.x, P.y)) (phi z (Q.x, Q.y))
+  refine ShortWeierstrass.SWPoint.ext_pair ?_
+  show phi z (ShortWeierstrass.add E.A (P.x, P.y) (Q.x, Q.y))
+      = ShortWeierstrass.add E.A (phi z (P.x, P.y)) (phi z (Q.x, Q.y))
   rw [hA]
   exact phi_add hz _ _
 
 /-- `φ` as an `AddMonoidHom` on `SWPoint E` — the input to `endo_eq_nsmul_of_prime_card`. -/
-def phiHom {E : SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1) : SWPoint E →+ SWPoint E :=
+def phiHom {E : ShortWeierstrass.SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1) :
+    ShortWeierstrass.SWPoint E →+ ShortWeierstrass.SWPoint E :=
   AddMonoidHom.mk' (phiPt hA hz) (phiPt_add hA hz)
 
 /-- **`φ = [lam]` on the whole group**, from the group order and a single spot-check.
@@ -226,10 +231,10 @@ def phiHom {E : SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1) : SWPoint E →+ SWPo
 Layers 1 and 2 combined: `φ` is an endomorphism (`phiHom`, proved outright), the group has prime
 order `r` (a curve fact), and `φ G = [lam] G` for one non-identity `G` (a closed, `native_decide`-
 checkable fact). Hence `φ P = [lam] P` for every `P`. -/
-theorem phiPt_eq_nsmul {E : SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1)
-    {r : ℕ} [Fact r.Prime] (hcard : Nat.card (SWPoint E) = r)
-    {G : SWPoint E} (hG : G ≠ 0) {lam : ℕ} (hspot : phiPt hA hz G = lam • G)
-    (P : SWPoint E) : phiPt hA hz P = lam • P :=
+theorem phiPt_eq_nsmul {E : ShortWeierstrass.SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1)
+    {r : ℕ} [Fact r.Prime] (hcard : Nat.card (ShortWeierstrass.SWPoint E) = r)
+    {G : ShortWeierstrass.SWPoint E} (hG : G ≠ 0) {lam : ℕ} (hspot : phiPt hA hz G = lam • G)
+    (P : ShortWeierstrass.SWPoint E) : phiPt hA hz P = lam • P :=
   endo_eq_nsmul_of_prime_card hcard (phiHom hA hz) hG hspot P
 
 end CompElliptic.Endomorphism

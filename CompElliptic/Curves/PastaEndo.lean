@@ -38,13 +38,16 @@ Vesta's `ζ` lives in `𝔽_q` and its `λ` in `𝔽ₚ` — so the two curves' 
 
 namespace CompElliptic.Curves.Pasta
 
-open CompElliptic.CurveForms.ShortWeierstrass CompElliptic.CurveOrder
-  CompElliptic.Endomorphism CompElliptic.Fields.Pasta
+-- No blanket `open`s: each borrowed name is written with its source namespace at the use site
+-- (`ShortWeierstrass.…`, `CurveOrder.…`, `Endomorphism.…`, `Fields.Pasta.…`), so where every
+-- definition comes from is visible without chasing imports. Only `CurveForms` is opened, so the
+-- short-Weierstrass leaf still reads `ShortWeierstrass.X` rather than a full path.
+open CompElliptic.CurveForms
 
 namespace Pallas
 
 /-- A primitive cube root of unity in the Pallas *base* field `𝔽ₚ`; `φ` scales `x` by it. -/
-def ZETA : PallasBaseField :=
+def ZETA : Fields.Pasta.PallasBaseField :=
   0x2d33357cb532458ed3552a23a8554e5005270d29d19fc7d27b7fd22f0201b547
 
 /-- The matching primitive cube root of unity in the Pallas *scalar* field `𝔽_q`, as a `ℕ` (so that
@@ -66,17 +69,18 @@ theorem ZETA_ne_one : ZETA ≠ 1 := by decide
 theorem ZETA_quad : ZETA ^ 2 + ZETA + 1 = 0 := by decide
 
 /-- `λ` is a canonical (reduced) representative of its scalar-field class. -/
-theorem LAMBDA_lt : LAMBDA < PALLAS_SCALAR_CARD := by decide
+theorem LAMBDA_lt : LAMBDA < Fields.Pasta.PALLAS_SCALAR_CARD := by decide
 
 /-- `λ` is a cube root of unity in the scalar field — the scalar-side counterpart of
 `ZETA_cube`, and the reason `φ³ = id` is consistent with `φ = [λ]`. -/
-theorem LAMBDA_cube : (LAMBDA : PallasScalarField) ^ 3 = 1 := by decide
+theorem LAMBDA_cube : (LAMBDA : Fields.Pasta.PallasScalarField) ^ 3 = 1 := by decide
 
 /-- `λ² + λ + 1 = 0`: the relation `φ² + φ + 1 = 0` that GLV decomposition rests on. -/
-theorem LAMBDA_quad : (LAMBDA : PallasScalarField) ^ 2 + LAMBDA + 1 = 0 := by decide
+theorem LAMBDA_quad : (LAMBDA : Fields.Pasta.PallasScalarField) ^ 2 + LAMBDA + 1 = 0 := by decide
 
 /-- **The GLV endomorphism on Pallas**: `φ (x, y) = (ζ x, y)`. -/
-def phi (P : SWPoint curve) : SWPoint curve := phiPt A_zero ZETA_cube P
+def phi (P : ShortWeierstrass.SWPoint curve) : ShortWeierstrass.SWPoint curve :=
+  Endomorphism.phiPt A_zero ZETA_cube P
 
 /-- The spot-check that pins the `(ζ, λ)` pairing: `φ G = [λ] G` on the test point `G = (-1, 2)`.
 
@@ -89,9 +93,9 @@ theorem phi_Gpt : phi Gpt = LAMBDA • Gpt := by native_decide
 `φ` is an endomorphism (proved outright, `phiHom`); the group has prime order
 `PALLAS_SCALAR_CARD` (`Pallas.card_eq`, the one place Hasse is assumed); and `φ G = [λ] G` for the
 non-identity `G` (`phi_Gpt`). By `endo_eq_nsmul_of_prime_card`, `φ` is `[λ]` everywhere. -/
-theorem phi_eq_lambda_nsmul (hHasse : HasseBound curve) (P : SWPoint curve) :
-    phi P = LAMBDA • P :=
-  phiPt_eq_nsmul A_zero ZETA_cube (card_eq hHasse) Gpt_ne_zero phi_Gpt P
+theorem phi_eq_lambda_nsmul (hHasse : CurveOrder.HasseBound curve)
+    (P : ShortWeierstrass.SWPoint curve) : phi P = LAMBDA • P :=
+  Endomorphism.phiPt_eq_nsmul A_zero ZETA_cube (card_eq hHasse) Gpt_ne_zero phi_Gpt P
 
 -- `φ` fixes `𝒪`.
 example : phi 0 = 0 := by native_decide
@@ -108,7 +112,7 @@ example : phi (Gpt + (2 : ℕ) • Gpt) = phi Gpt + phi ((2 : ℕ) • Gpt) := b
 -- **The `(ζ, λ)` pairing has teeth.** `λ²` is the *other* primitive cube root of unity in `𝔽_q`,
 -- and `φ` is emphatically not `[λ²]`. Pairing `ζ` with it would give a well-typed, perfectly valid
 -- endomorphism that is simply the wrong one — which is what `phi_Gpt` exists to rule out.
-example : phi Gpt ≠ (LAMBDA ^ 2 % PALLAS_SCALAR_CARD) • Gpt := by native_decide
+example : phi Gpt ≠ (LAMBDA ^ 2 % Fields.Pasta.PALLAS_SCALAR_CARD) • Gpt := by native_decide
 
 end Pallas
 
@@ -116,7 +120,7 @@ namespace Vesta
 
 /-- A primitive cube root of unity in the Vesta *base* field `𝔽_q` (`= PallasScalarField`; the Pasta
 cycle crosses the two curves' constants). -/
-def ZETA : VestaBaseField :=
+def ZETA : Fields.Pasta.VestaBaseField :=
   0x06819a58283e528e511db4d81cf70f5a0fed467d47c033af2aa9d2e050aa0e4f
 
 /-- The matching primitive cube root of unity in the Vesta *scalar* field `𝔽ₚ`, as a `ℕ`. -/
@@ -136,24 +140,25 @@ theorem ZETA_ne_one : ZETA ≠ 1 := by decide
 theorem ZETA_quad : ZETA ^ 2 + ZETA + 1 = 0 := by decide
 
 /-- `λ` is a canonical (reduced) representative of its scalar-field class. -/
-theorem LAMBDA_lt : LAMBDA < PALLAS_BASE_CARD := by decide
+theorem LAMBDA_lt : LAMBDA < Fields.Pasta.PALLAS_BASE_CARD := by decide
 
 /-- `λ` is a cube root of unity in the scalar field. -/
-theorem LAMBDA_cube : (LAMBDA : VestaScalarField) ^ 3 = 1 := by decide
+theorem LAMBDA_cube : (LAMBDA : Fields.Pasta.VestaScalarField) ^ 3 = 1 := by decide
 
 /-- `λ² + λ + 1 = 0`. -/
-theorem LAMBDA_quad : (LAMBDA : VestaScalarField) ^ 2 + LAMBDA + 1 = 0 := by decide
+theorem LAMBDA_quad : (LAMBDA : Fields.Pasta.VestaScalarField) ^ 2 + LAMBDA + 1 = 0 := by decide
 
 /-- **The GLV endomorphism on Vesta**: `φ (x, y) = (ζ x, y)`. -/
-def phi (P : SWPoint curve) : SWPoint curve := phiPt A_zero ZETA_cube P
+def phi (P : ShortWeierstrass.SWPoint curve) : ShortWeierstrass.SWPoint curve :=
+  Endomorphism.phiPt A_zero ZETA_cube P
 
 /-- The spot-check pinning the `(ζ, λ)` pairing on Vesta: `φ G = [λ] G`. -/
 theorem phi_Gpt : phi Gpt = LAMBDA • Gpt := by native_decide
 
 /-- **`φ = [λ]` on the whole Vesta group** (assuming Hasse's bound). -/
-theorem phi_eq_lambda_nsmul (hHasse : HasseBound curve) (P : SWPoint curve) :
-    phi P = LAMBDA • P :=
-  phiPt_eq_nsmul A_zero ZETA_cube (card_eq hHasse) Gpt_ne_zero phi_Gpt P
+theorem phi_eq_lambda_nsmul (hHasse : CurveOrder.HasseBound curve)
+    (P : ShortWeierstrass.SWPoint curve) : phi P = LAMBDA • P :=
+  Endomorphism.phiPt_eq_nsmul A_zero ZETA_cube (card_eq hHasse) Gpt_ne_zero phi_Gpt P
 
 -- As for Pallas: `φ` fixes `𝒪`, is nontrivial, cubes to the identity, is additive, and is *not*
 -- `[λ²]` (the other primitive cube root of unity in the scalar field).
@@ -161,7 +166,7 @@ example : phi 0 = 0 := by native_decide
 example : phi Gpt ≠ Gpt := by native_decide
 example : phi (phi (phi Gpt)) = Gpt := by native_decide
 example : phi (Gpt + (2 : ℕ) • Gpt) = phi Gpt + phi ((2 : ℕ) • Gpt) := by native_decide
-example : phi Gpt ≠ (LAMBDA ^ 2 % PALLAS_BASE_CARD) • Gpt := by native_decide
+example : phi Gpt ≠ (LAMBDA ^ 2 % Fields.Pasta.PALLAS_BASE_CARD) • Gpt := by native_decide
 
 end Vesta
 
