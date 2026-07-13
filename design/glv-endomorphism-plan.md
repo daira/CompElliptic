@@ -313,10 +313,11 @@ plus `Vesta.card_eq hHasse : Nat.card (SWPoint curve) = PALLAS_BASE_CARD` and th
 existing `Fact (Nat.Prime PALLAS_BASE_CARD)`.
 
 Each `zeta` pairs with exactly ONE of the two `lambda`s, so the wrong pairing is
-a live hazard. That is precisely why `phi_Gpt` is a checked fact rather than a
-comment. (The constants above were computed and cross-checked numerically
-against the group law before being written down; the Pallas pair matches the
-`pasta_curves` `ENDO_BASE` / `ENDO_SCALAR` convention.)
+a live hazard: the wrong pairing still gives a perfectly good endomorphism, just
+`[lambda^2]` rather than `[lambda]`. That is precisely why `phi_Gpt` is a checked
+fact rather than a comment. The constants were computed and cross-checked
+numerically against the group law before being written down, and the check was
+confirmed to have teeth (the other cube root of unity provably fails `phi_Gpt`).
 
 Optional corollaries, cheap (from `phi_eq_lambda_nsmul` + `LAMBDA_quad` +
 `card_nsmul_eq_zero'`), and worth having because they are what GLV decomposition
