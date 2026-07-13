@@ -109,6 +109,13 @@ theorem valid_phi {b : F} (hz : z ^ 3 = 1) {p : F × F} (h : Valid 0 b p) :
   · exact Or.inl (onCurve_phi hz h)
   · exact Or.inr (by rw [h, phi_origin])
 
+/-- `φ³ = id`: `φ` is an automorphism of order dividing 3. Purely computational (`z³ = 1` on the
+`x`-coordinate), so it needs neither the group order nor the `φ = [lam]` identification. -/
+theorem phi_phi_phi (hz : z ^ 3 = 1) (p : F × F) : phi z (phi z (phi z p)) = p := by
+  obtain ⟨x, y⟩ := p
+  simp only [phi, Prod.mk.injEq]
+  exact ⟨by linear_combination x * hz, trivial⟩
+
 /-- The shared chord/tangent core of `phi_add`, `x`-coordinate half: with the slope scaled to
 `z² · lam`, the new `x` scales by `z`. -/
 theorem phi_addX (hz : z ^ 3 = 1) (lam x₁ x₂ : F) :
@@ -189,6 +196,13 @@ omit [DecidableEq F] in
 @[simp] theorem SWPoint.phiPt_coords {E : SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1)
     (P : SWPoint E) :
     ((SWPoint.phiPt hA hz P).x, (SWPoint.phiPt hA hz P).y) = phi z (P.x, P.y) := rfl
+
+omit [DecidableEq F] in
+/-- `φ³ = id` on `SWPoint E`. -/
+theorem SWPoint.phiPt_phiPt_phiPt {E : SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1)
+    (P : SWPoint E) :
+    SWPoint.phiPt hA hz (SWPoint.phiPt hA hz (SWPoint.phiPt hA hz P)) = P :=
+  SWPoint.ext_pair (phi_phi_phi hz (P.x, P.y))
 
 /-- `φ` is additive on `SWPoint E` — the group-law commutation of `phi_add`, lifted. -/
 theorem SWPoint.phiPt_add {E : SWCurve F} (hA : E.A = 0) (hz : z ^ 3 = 1) (P Q : SWPoint E) :
