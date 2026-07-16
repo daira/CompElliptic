@@ -14,6 +14,8 @@ import CompElliptic.Fields.Pasta
 import CompElliptic.Fields.Residue
 import CompElliptic.Fields.Sqrt
 import CompElliptic.CurveForms.ShortWeierstrass
+import CompElliptic.Endomorphism
 import CompElliptic.CurveOrder
 import CompElliptic.Curves.Pasta
 import CompElliptic.Curves.PastaOrder
+import CompElliptic.Curves.PastaEndo

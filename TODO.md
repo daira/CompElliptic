@@ -143,6 +143,47 @@ types + transport) has been consolidated into these and removed.
 - [ ] Small-cofactor variant (`#G = h·r` for known `h`): a straightforward Layer-1 generalization,
   deferred. Needed for Jubjub (cofactor 8), which also needs the Edwards form first.
 
+## CompElliptic — GLV endomorphism (`CurveForms/Endomorphism.lean`, `Curves/PastaEndo.lean`)
+
+Design notes and the wider plan: [`design/glv-endomorphism-plan.md`](design/glv-endomorphism-plan.md).
+
+- [x] The endomorphism, form-level (`CurveForms/Endomorphism.lean`), in three layers mirroring
+  `CurveOrder.lean`. (1) Pure finite-group theory: `endo_eq_nsmul_of_prime_card` — an endomorphism
+  of a group of prime order `r` sending one non-identity `g` to `[lam] g` is `[lam]` everywhere,
+  via Mathlib's `mem_multiples_of_prime_card` (which derives `Finite` from `Nat.card G = r` plus
+  primality, so no `IsCyclic` / `zpowers` machinery is needed). This is what reduces `φ = [λ]` on
+  the whole group to one closed spot-checkable fact. (2) Raw kernel: `phi z (x, y) = (z x, y)`,
+  with `phi_add` (commutes with `add`), `onCurve_phi`, `valid_phi`, `phi_phi_phi` (`φ³ = id`).
+  `phi_add` needs **no** hypotheses beyond `ζ³ = 1` — not `Valid`, not `IsElliptic`, not `B ≠ 0`:
+  the slope scales by `ζ²` in *both* branches, the branch guards are preserved (`ζ ≠ 0`), and the
+  degenerate divisions agree (`0/0 = 0` on both sides). (3) `SWPoint.phiPt` / `phiHom` (`φ` as an
+  `AddMonoidHom`) and the capstone `SWPoint.phiPt_eq_nsmul`. No `sorry`, no `decide` /
+  `native_decide`; standard axioms only. **`A = 0` is essential** (for `A ≠ 0`,
+  `y² = (ζx)³ + A(ζx) + B` fails) — fine for Pasta and every curve GLV is used on.
+- [x] Pallas/Vesta constants and `φ = [λ]` (`Curves/PastaEndo.lean`): `ZETA` (base field) and
+  `LAMBDA` (scalar field, as `ℕ` so `LAMBDA • _` is the fast `binNsmul`), with the field-level
+  facts (`ζ³ = 1`, `ζ ≠ 1`, `ζ² + ζ + 1 = 0`, and the `λ` analogues) kernel-`decide`d — so the
+  *definition* of `φ` carries no `native_decide` — and the single point fact `φ G = [λ] G`
+  (`phi_Gpt`) by `native_decide`. Capstone `phi_eq_lambda_nsmul` (assuming `HasseBound`, via
+  `card_eq`). The `(ζ, λ)` pairing is *not* free: each field has two primitive cube roots and a
+  given `ζ` acts as `[λ]` for exactly one of them, the wrong pairing yielding `[λ²]` — a silent
+  wrong-by-a-cube-root bug that `phi_Gpt` is precisely there to rule out (verified to have teeth:
+  the other cube root provably fails it). Pasta's cycle crosses the two curves' constants.
+- [ ] Property-based tests (Plausible; already a transitive dep via Mathlib, so no new dependency).
+  Needs a uniform `Arbitrary (ZMod n)` built on `Gen.choose` — the stock generators cap at ~100,
+  useless at 254 bits — and random group elements come free as `k.val • Gpt`. Put them in a
+  separate `lean_lib CompEllipticTests` that is **not** a default target, plus its own CI job: an
+  interpreted 254-bit scalar mult costs ≈ 50 ms, so a group-level property at the default 100
+  instances is ≈ 10 s and would slow every build. NB the `plausible` *tactic* closes goals with
+  `sorry` when it finds no counterexample, so only `#test` / `#eval Testable.check` are usable.
+- [ ] GLV scalar decomposition: `k ≡ k₁ + k₂·λ (mod r)` with `|k₁|, |k₂| ≈ √r`, via the short
+  lattice basis of `{(a, b) : a + bλ ≡ 0 mod r}`. The balanced-basis constants are
+  `native_decide`-checkable closed facts, and the correctness statement
+  `k • P = k₁ • P + k₂ • (φ P)` follows immediately from `phi_eq_lambda_nsmul`. The bound on
+  `|k₁|, |k₂|` is the only genuinely new work.
+- [ ] The `φ² + φ + 1 = 0` relation on points (from `phi_eq_lambda_nsmul` + `LAMBDA_quad` +
+  `card_nsmul_eq_zero'`), if the decomposition proofs want it in that form.
+
 ## CompElliptic — other forms & the group abstraction (later)
 
 - [x] Coordinate-system abstraction (`CoordinateSystem.lean`): carrier + `Valid` + `Rel` + ops →
