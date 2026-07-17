@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026 CompElliptic Contributors. All rights reserved.
+# Copyright (c) 2026 CompElliptic Contributors.
 # Released under the Apache License, Version 2.0, or the MIT license, at your option,
 # as described in the files LICENSE-APACHE and LICENSE-MIT.
 # Authors: Daira-Emma Hopwood
@@ -22,7 +22,7 @@ Q = 0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001  # Pallas
 
 HEADER = """\
 /-
-Copyright (c) 2026 CompElliptic Contributors. All rights reserved.
+Copyright (c) 2026 CompElliptic Contributors.
 Released under the Apache License, Version 2.0, or the MIT license, at your option,
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood

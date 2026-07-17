@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026 CompElliptic Contributors. All rights reserved.
+# Copyright (c) 2026 CompElliptic Contributors.
 # Released under the Apache License, Version 2.0, or the MIT license, at your option,
 # as described in the files LICENSE-APACHE and LICENSE-MIT.
 # Authors: Daira-Emma Hopwood
@@ -26,7 +26,7 @@ L = 0x0e7db4ea6533afa906673b0101343b00a6682093ccc81082d0970e5ed6f72cb7
 
 HEADER = """\
 /-
-Copyright (c) 2026 CompElliptic Contributors. All rights reserved.
+Copyright (c) 2026 CompElliptic Contributors.
 Released under the Apache License, Version 2.0, or the MIT license, at your option,
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
