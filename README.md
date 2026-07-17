@@ -64,15 +64,15 @@ The available API should precisely reflect only what is intended to be modelled.
 
 The *independently re-checkable trust* principle rests on a few specifics. The trust extensions
 that arise in practice in Lean are `native_decide` —which discharges a goal by running compiled
-native code and adds the `Lean.ofReduceBool` axiom— and, unavoidably for numbers of this size, the
-kernel's own GMP-backed bignum arithmetic, on which even ordinary `decide` depends.
+native code, adding a per-declaration compiler-trust axiom— and, unavoidably for numbers of this
+size, the kernel's own GMP-backed bignum arithmetic, on which even ordinary `decide` depends.
 
 In CompElliptic, we allow these extensions to be used only for concrete, closed facts with no
 free variables: a Pratt primality certificate, a field's cardinality, the multiplicative order
 of a fixed root of unity, a (non-)residuosity check. These facts are easily reproducible: another
 computer-algebra system, proof assistant, bignum library, or hand computation would compute the
-same result, so a miscompiled or buggy oracle is caught by disagreement rather than silently
-believed.
+same result, so a miscompiled or buggy oracle could in principle be caught by disagreement rather
+than silently believed — the catch requires someone actually performing the independent check.
 
 A general, quantified theorem ranging over many objects (for example, the correctness of a
 square-root algorithm for all finite fields it supports) has no analogous independent spot-check,
@@ -84,7 +84,11 @@ implementation:
   not GMP) from the trusted base;
 * state each computational fact in a form an independent tool could re-verify.
 
-The *Status* section below records how this split appears in the actual axiom dependencies.
+This split is not just documented but checked at build time: `CompElliptic/TrustBoundary.lean` is a
+census of representative declarations, each pinned with `assert_axioms` (a sibling of
+`assert_no_sorry`) to the tier it is allowed to sit in. A general theorem that reaches for
+`native_decide`, or a concrete fact that acquires an unexpected axiom, fails that file. The *Status*
+section below summarizes how the split appears in the actual axiom dependencies.
 
 ## Status
 
@@ -110,11 +114,11 @@ Early work in progress. Present so far:
 
 Uses of `sorry` are kept minimal and limited to work-in-progress. The library's general theorems
 depend only on the standard `propext` / `Classical.choice` / `Quot.sound` axioms. Facts specific to
-concrete fields and curves also depend on `Lean.ofReduceBool`, the axiom behind `native_decide`,
-now confined (per the *Independently re-checkable trust* principle) to checks the kernel cannot
-feasibly run, chiefly the order of the Tonelli–Shanks roots of unity. Further coordinate systems
-(projective and Jacobian), curve forms, the represented-group bridge, and the circuit model are
-tracked in [TODO.md](TODO.md).
+concrete fields and curves additionally depend on `native_decide`'s per-declaration compiler-trust
+axiom, confined (per the *Independently re-checkable trust* principle) to checks the kernel cannot
+feasibly run, chiefly the order of the Tonelli–Shanks roots of unity. The tier of each is pinned in
+`CompElliptic/TrustBoundary.lean`. Further coordinate systems (projective and Jacobian), curve
+forms, the represented-group bridge, and the circuit model are tracked in [TODO.md](TODO.md).
 
 ## License
 

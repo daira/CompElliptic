@@ -1,5 +1,5 @@
 /-
-Copyright (c) 2026 CompElliptic Contributors. All rights reserved.
+Copyright (c) 2026 CompElliptic Contributors.
 Released under the Apache License, Version 2.0, or the MIT license, at your option,
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Gregor Mitscha-Baude
