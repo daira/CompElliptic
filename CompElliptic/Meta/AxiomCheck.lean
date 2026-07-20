@@ -29,7 +29,7 @@ namespace CompElliptic.Meta
 def standardAxioms : Array Name := #[``propext, ``Classical.choice, ``Quot.sound]
 
 /-- An axiom introduced by `native_decide`: its name carries a `native_decide` component
-(e.g. `…_native.native_decide.ax_1_1`). Matching on the component rather than the full name keeps
+(e.g. `..._native.native_decide.ax_1_1`). Matching on the component rather than the full name keeps
 the check stable across the toolchain-dependent axiom naming. -/
 def isNativeDecideAxiom (n : Name) : Bool :=
   n.components.any (· == `native_decide)
