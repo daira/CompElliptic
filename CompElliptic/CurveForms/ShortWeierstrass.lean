@@ -440,6 +440,13 @@ coordinate pair, via `SWPoint.equivSubtype`); needed for `native_decide` on `n �
 instance instDecidableEqSWPoint {E : SWCurve F} : DecidableEq (SWPoint E) :=
   (SWPoint.equivSubtype E).decidableEq
 
+/-- `SWPoint E` is computably finite whenever the base field is: it is a subtype of `F × F`
+(`SWPoint.equivSubtype`) with a decidable membership predicate, so the point enumeration is a
+plain filter of `F × F` — no choice. Downstream reductions that need a `Fintype` for the curve
+group can therefore stay computable rather than materializing one with `Fintype.ofFinite`. -/
+instance instFintypeSWPoint [Fintype F] {E : SWCurve F} : Fintype (SWPoint E) :=
+  Fintype.ofEquiv _ (SWPoint.equivSubtype E).symm
+
 /-- The abelian group of representable points on `E`: identity laws and inverses are immediate;
 commutativity and associativity transport from the raw `add` lemmas, whose hypotheses are discharged
 by `E`'s bundled fields (`IsElliptic` and `B_nonzero`). -/

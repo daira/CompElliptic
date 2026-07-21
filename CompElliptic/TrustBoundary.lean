@@ -50,6 +50,16 @@ assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_isSome_of_isSquare
 assert_axioms CompElliptic.Fields.Pasta.PALLAS_BASE_is_prime
 assert_axioms CompElliptic.Fields.Pasta.PALLAS_SCALAR_is_prime
 
+/-! ## Computable point enumeration — the curve group's `Fintype`, as plain data
+
+`Classical.choice` enters only through erased `Prop` fields of the Mathlib `Finset` lemmas;
+the plain-`def` check certifies the enumeration itself is compiled code, not conjured by
+choice. -/
+
+assert_computable CompElliptic.CurveForms.ShortWeierstrass.instFintypeSWPoint +choice
+assert_computable CompElliptic.Curves.Pasta.Pallas.fintypePoints +choice
+assert_computable CompElliptic.Curves.Pasta.Vesta.fintypePoints +choice
+
 /-! ## Concrete closed facts trusting the compiler (`native_decide`) -/
 
 assert_axioms CompElliptic.Fields.Pasta.pallasBase +native
