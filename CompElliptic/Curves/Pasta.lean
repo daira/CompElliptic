@@ -87,6 +87,11 @@ example (P : SWPoint curve) : (2 : ℕ) • P = P + P := two_nsmul P
 example (P : SWPoint curve) : (1 : ℤ) • P = P := one_zsmul P
 example (P : SWPoint curve) : (-1 : ℤ) • P = -P := neg_one_zsmul P
 
+/-- The Pallas point enumeration, as a computable instantiation of `instFintypeSWPoint`:
+the filter of `F × F` by the decidable `Valid` predicate. Named so the trust census can pin
+its computability. -/
+abbrev fintypePoints : Fintype (SWPoint curve) := inferInstance
+
 end Pallas
 
 namespace Vesta
@@ -166,6 +171,11 @@ example : add a G (0, 0) = G := by native_decide
 -- Doubling and tripling stay on the curve (exercises the slope/inverse).
 example : OnCurve a b (smul a 2 G) := by native_decide
 example : OnCurve a b (smul a 3 G) := by native_decide
+
+/-- The Vesta point enumeration, as a computable instantiation of `instFintypeSWPoint`:
+the filter of `F × F` by the decidable `Valid` predicate. Named so the trust census can pin
+its computability. -/
+abbrev fintypePoints : Fintype (SWPoint curve) := inferInstance
 
 end Vesta
 

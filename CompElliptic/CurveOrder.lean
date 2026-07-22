@@ -97,12 +97,6 @@ theorem card_eq_of_prime_witness_of_lt_three_mul {G : Type*} [AddGroup G] [Finit
     exact hQ0 (hOdd Q (hQ ▸ addOrderOf_nsmul_eq_zero Q))
   rw [hk, show k = 1 by omega, Nat.mul_one]
 
-/-- `SWPoint E` is finite whenever the base field is: it is a subtype of `F × F`
-(`SWPoint.equivSubtype`). -/
-instance instFiniteSWPoint {F : Type*} [Field F] [DecidableEq F] [Fintype F] (E : SWCurve F) :
-    Finite (SWPoint E) :=
-  Finite.of_equiv _ (SWPoint.equivSubtype E).symm
-
 /-! ## Layer 2: the fibre bound `#E(F) ≤ 2 · #F + 1` -/
 
 variable {F : Type*} [Field F] [DecidableEq F]
