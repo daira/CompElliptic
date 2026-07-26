@@ -9,16 +9,11 @@ import CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs
 /-!
 # Vesta projective point arithmetic over Montgomery limbs: runtime definitions (core-only)
 
-The Renes–Costello–Batina complete addition formulas of
-`CompElliptic.Curves.Pasta.Fast.Projective`, transcribed operation-for-operation onto the
-eight-limb Montgomery representation of the Vesta base field.  The expression trees mirror the
-`𝔽_q` source exactly, so the equivalence proof in
-`CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv` is a per-coordinate push of the ring
-isomorphism.
-
-Like `CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs`, this module is core-only: it is
-part of the `FastFieldNative` precompiled lane (see the lakefile).  All proofs live in the
-sibling module.
+The projective Vesta arithmetic of `CompElliptic.Curves.Pasta.Fast.Projective` and the Pippenger
+schedules of `CompElliptic.Curves.Pasta.Fast.MsmProj`, transcribed operation for operation onto
+eight-limb Montgomery residues so that they can be native-compiled (the `FastFieldNative` lane in
+the lakefile — hence no imports beyond Lean core, and no proofs here). Every operation is proven
+to compute its `𝔽_q`-valued counterpart in `CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv`.
 -/
 
 namespace CompElliptic.Curves.Pasta.Fast.ProjectiveMont
@@ -76,11 +71,8 @@ def pid : PM := ⟨zero, one, zero⟩
 
 /-! ## Group kernels
 
-The Pippenger schedule is spelled to mirror `CompElliptic.Curves.Pasta.Fast.MsmProj`'s projective
-one **operation for operation**, so that the correctness proofs of
-`CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv` are structural inductions along the
-coordinate map: only the interpretation of a coordinate changes (a Montgomery residue instead of
-an `𝔽_q` element), never the schedule. -/
+Mirroring `MsmProj`'s schedules step for step: only the interpretation of a coordinate changes,
+never the schedule, so the correctness proofs stay structural inductions. -/
 
 /-- Fixed 256-step LSB-first double-and-add ladder. -/
 def pnsmul (n : Nat) (p : PM) : PM :=

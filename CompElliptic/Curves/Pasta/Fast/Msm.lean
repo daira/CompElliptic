@@ -10,48 +10,20 @@ import CompElliptic.Fields.Pasta
 /-!
 # Windowed Pippenger multi-scalar multiplication, proven equal to the naive MSM
 
-A Pedersen-style vector commitment (`commit_lagrange` in the halo2 lineage) collapses a column of
-scalars against a fixed basis, and its mathematical core is the naive multi-scalar multiplication
-(MSM)
+The naive MSM `(terms.map fun (n, x) => n • x).sum` is the mathematical core of a Pedersen-style
+vector commitment, and with 255-bit scalars it dominates a verifying-key derivation.  This module
+gives the windowed Pippenger accelerator `pippenger c terms` — per-window bucket sums, the
+suffix-sum trick, a Horner pass across windows — and proves it equal to the naive MSM
+(`pippenger_eq_msm`).  Measured at `n = 2048`: `242 s` naive against `22.5 s` at the optimal
+window `c = 8` (`defaultWindow`); `pippengerFast` replaces the proof-layer per-bucket `filterMap`
+by a single-pass `bucketScatter`.
 
-  `msm terms = (terms.map fun (n, x) => n • x).sum`   `(terms : List (ℕ × M))`
+Everything is generic over `[AddCommMonoid M]`: scalars are `ℕ`, so nothing below needs negation.
 
-with scalars `n < p ≈ 2 ^ 255`.  Done as `44` MSMs of `2048` terms with binary double-and-add
-(`~380` group ops per term) this dominates a verifying-key derivation.  This module gives a
-*windowed Pippenger* accelerator `pippenger c terms` — bucket sums per window + the suffix-sum
-trick + a Horner pass across windows — and a **proof it equals the naive MSM**
-(`pippenger_eq_msm`).
-
-Everything is generic over `[AddCommMonoid M]`: the scalars are `ℕ` (nonnegative), so buckets, the
-suffix accumulation and the Horner fold use only addition and `ℕ`-smul; no subtraction or negation
-is needed, so no `AddCommGroup` is required for the core.
-
-## Cost model and measurements
-
-With window size `c` (base `2 ^ c`), `W = ⌈bits / c⌉` windows and `n` terms, the group-op count is
-
-  `adds ≈ W · (n + 2 · 2 ^ c)`   (`n` bucket insertions + `2 · (2 ^ c − 1)` suffix adds per window,
-  plus `c` Horner doublings per window),
-
-minimized near `2 ^ (c+1) ≈ n`, i.e. `c = 10` for `n = 2048`; the flat optimum region is
-`c = 8 … 11`.  Measured (interpreted `#eval`, Vesta points, `n = 2048`, `255`-bit scalars):
-naive `242 s`; `pippengerFast` at `c = 4/8/12/16`: `38.5 / 22.5 / 41.0 / 312 s` — `c = 8` wins at
-`10.7×` (`defaultWindow`), and `c = 16` is worse than naive (`2 · 2 ^ 16` suffix adds per window),
-as the model predicts.  The list-level `pippenger` is proof-layer only: its per-bucket `filterMap`
-costs `(2 ^ c − 1) · n` list steps per window (`43 s` at `c = 8`, `239 s` at `c = 12`), which the
-single-pass `bucketScatter` of `pippengerFast` eliminates.
-
-## Structure of the equality proof
-
-* `n • x = ∑ i, digit i n • (base ^ i • x)`  — base-`2 ^ c` digit decomposition of the scalar
-  (`sum_digit`, `smul_eq_sum_digits`).
-* Exchange the (list) sum over terms with the (finite) sum over windows (`list_sum_finset_sum`),
-  factoring `base ^ i` out of window `i` (`smul_list_sum`, `smul_comm`): the naive MSM equals
-  `∑ i, base ^ i • windowContribution i`.
-* Each window's contribution equals the weighted bucket sum
-  `∑ b, b • bucketSum b` (`naiveWindow_eq_buckets`), and the suffix-sum accumulation computes exactly
-  that weighted sum (`foldr_accStep`, `weightedSum_range_map`).
-* The Horner fold reconstructs `∑ i, base ^ i • windowContribution i` (`hornerList_eq`).
+The equality goes through the base-`2 ^ c` digit decomposition `n • x = ∑ i, digit i n •
+(base ^ i • x)` (`smul_eq_sum_digits`), an exchange of the sum over terms with the sum over
+windows (`list_sum_finset_sum`), the identification of each window's contribution with its
+weighted bucket sum (`naiveWindow_eq_buckets`, `foldr_accStep`), and `hornerList_eq`.
 -/
 
 namespace CompElliptic.Curves.Pasta.Fast.Msm

@@ -111,16 +111,11 @@ Early work in progress. Present so far:
 - a computable Tonelli–Shanks square root for prime fields, soundness and completeness proved, with
   `pallasBase` / `vestaBase` instances (`CompElliptic/Fields/Sqrt.lean`);
 - the compressed Pasta point encoding (`toBytes`) for Pallas and Vesta (`CompElliptic/Encodings/`);
-- **fast Vesta group arithmetic** (`CompElliptic/Curves/Pasta/Fast/`), for when Vesta points have to
-  actually be *computed* with rather than only reasoned about: complete Renes–Costello–Batina
-  projective addition, a windowed Pippenger multi-scalar multiplication, and a scalar ladder — each
-  carrying a proof that it computes the affine group operation it replaces. Two tiers: the
-  `𝔽_q`-valued projective algorithm, where that meaning is proved once and for all, and a
-  zero-import eight-limb Montgomery kernel that can be natively compiled (the `FastFieldNative`
-  library, this repository's only `precompileModules` target), proven against the first
-  coordinatewise through the Montgomery field's ring isomorphism to `𝔽_q`. Opt-in:
-  `import CompElliptic` does not pull it in. The eight-limb Montgomery field it rests on is vendored
-  from CompPoly pending a pin bump, in `CompElliptic/Vendor/` (see the README there).
+- fast Vesta group arithmetic for computing with points rather than only reasoning about them —
+  complete Renes–Costello–Batina projective addition, a windowed Pippenger multi-scalar
+  multiplication and a scalar ladder, each proven to compute the affine group operation it replaces,
+  together with a natively compilable Montgomery-limb kernel proven against them
+  (`CompElliptic/Curves/Pasta/Fast/`, not imported by `CompElliptic.lean`).
 
 Uses of `sorry` are kept minimal and limited to work-in-progress. The library's general theorems
 depend only on the standard `propext` / `Classical.choice` / `Quot.sound` axioms. Facts specific to

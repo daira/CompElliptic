@@ -1,13 +1,7 @@
 #!/usr/bin/env bash
-# Check the core-only invariant of the `FastFieldNative` precompiled lane.
-#
-# `precompileModules` runs native codegen over the lane's entire import closure. As long as every
-# module in the lane imports nothing outside Lean core, that closure is a handful of files. The
-# moment one of them imports something mathlib-side, codegen tries to natively compile a mathlib
-# closure -- which does not fail loudly, it just makes the build enormous (and can OOM the
-# machine). This script turns that silent failure into a loud one.
-#
-# Run from the repository root. Exits non-zero on violation.
+# Check the core-only invariant of the `FastFieldNative` precompiled lane: codegen runs over the
+# lane's entire import closure, so a single mathlib-side import makes the build enormous without
+# failing loudly. Run from the repository root; exits non-zero on violation.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

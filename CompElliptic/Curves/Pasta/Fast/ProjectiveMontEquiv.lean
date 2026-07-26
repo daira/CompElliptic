@@ -11,43 +11,25 @@ import CompElliptic.Curves.Pasta.Fast.MsmProj
 /-!
 # The Montgomery kernel is the proven projective arithmetic
 
-`CompElliptic.Curves.Pasta.Fast.ProjectiveMontDefs` is a zero-import transplant of the projective
-Vesta arithmetic onto the eight-limb Montgomery representation of `𝔽_q`, so that it can sit in
-the `FastFieldNative` `precompileModules` leaf (see the lakefile).  This module — which is
-mathlib-side and therefore *not* in that lane — proves that the transplant computes the
-statement-surface functions of `CompElliptic.Curves.Pasta.Fast.Projective`.
+`CompElliptic.Curves.Pasta.Fast.ProjectiveMontDefs` transcribes the projective Vesta arithmetic
+onto eight-limb Montgomery residues; this module proves that the transcription computes the
+statement-surface functions of `Projective.lean` / `MsmProj.lean`.  There are two tiers, not
+three: the bridge is the coordinatewise `montVal`, which is the vendored field's ring isomorphism
+`FastField.toField` read off raw limbs, correct on well-formed residues (`WF`).
 
-There are exactly **two tiers**: the `𝔽_q`-valued statement surface (`Projective`, `Msm`,
-`MsmProj`, where the algorithm's meaning is proved once and for all) and this Montgomery lane.
-The bridge between them is a ring isomorphism, applied coordinatewise: `montVal : Limbs8 → 𝔽_q`,
-`x ↦ x.toNat / 2 ^ 256`, is `Montgomery.Native64x8.FastField.toField` read off a raw limb vector.
-It is correct on **well-formed** residues (`WF x := x.Bounded ∧ x.toNat < q`), the carrier
-property of the proven `FastField PALLAS_SCALAR_CARD`.  Every field operation of the kernel is the
-corresponding `FastField` operation on the nose, so the per-operation cast lemmas
-(`montVal_add`, `montVal_sub`, `montVal_neg`, `montVal_mul`) are the vendored field's
-`toField_*` homomorphism lemmas, and `WF` preservation is the carrier proof that ships with each
-operation.
+`toPVesM_padd` is the one commuting square of substance — the ~40 field operations of the
+Renes–Costello–Batina formulas pushed through the ring homomorphism.  Above it everything is
+structural: the schedules mirror `MsmProj`'s, so they transport along
+`RM p P := WFP p ∧ toPVesM p = P` (and, where the group law is needed, along `toGM`).
 
 ## Main results
 
-* `toPVesM_padd` — the kernel's RCB addition is `PVes.padd`
-* `toPVesM_pid`, `toPVesM_pneg` — identity and negation
-* `pnsmulM_spec` — the kernel's 256-step ladder is `n • ·` in the affine group, for `n < 2 ^ 256`
-* `msmM_spec` — the kernel's windowed Pippenger MSM is `Fast.Msm.pippenger`
+* `toPVesM_padd`, `toPVesM_pid`, `toPVesM_pneg` — addition, identity and negation
+* `pnsmulM_spec` — the 256-step ladder is `n • ·` in the affine group, for `n < 2 ^ 256`
+* `msmM_spec` — the windowed Pippenger MSM is `Fast.Msm.pippenger`
 
-`toPVesM_padd` is the one commuting square of substance: the two RCB coordinate expressions are
-the same tree of ring operations, so pushing `montVal` through with the per-operation cast lemmas
-leaves a polynomial identity for `ring`.  Everything above it is structural.  The schedules of
-`ProjectiveMontDefs` — ladder, single-pass bucket scatter, suffix-sum downsweep, Horner
-recombination — were spelled to mirror `MsmProj`'s projective schedules operation for operation,
-so their correctness is a structural induction along `RM p P := WFP p ∧ toPVesM p = P` (plus, for
-the ladder and the Horner fold, the affine invariant those two carry), landing on
-`MsmProj.pwindowValueFast_spec` and `Msm.pippenger_eq_msm` for the algorithm's actual meaning.
-
-The transport API itself (`RM`, `RM2`, `RA` and their closure lemmas, plus the fold combinators
-`foldl_rel₂`/`foldr_rel₂`) is public rather than private, because the same induction is what a
-downstream consumer needs to lift a *further* shared schedule — the kernel's radix-2 DIT FFT in
-particular, whose reference group DFT CompElliptic does not have — to the Montgomery tier.
+`RM`, `RM2`, `RA` and the fold combinators are public rather than private: lifting a *further*
+shared schedule to the Montgomery tier needs the same inductions.
 -/
 
 namespace CompElliptic.Curves.Pasta.Fast.ProjectiveMont
@@ -63,10 +45,8 @@ local notation "Fq" => CompElliptic.Curves.Pasta.Fast.Projective.Fq
 
 /-! ## The field level
 
-`WF` is the carrier property of `FastField PALLAS_SCALAR_CARD` and every `VestaFq` entry point is
-the corresponding `FastField` operation on the nose (both sides reduce to the same
-`Native64x8` call at the Vesta constants), so the whole field tier is `rfl`-transport into the
-vendored proofs. -/
+Every `VestaFq` entry point is the corresponding `FastField` operation on the nose, so the whole
+field tier is `rfl`-transport into the vendored proofs. -/
 
 /-- A well-formed Montgomery residue: bounded limbs holding a value below `q`.  This is exactly
 the carrier property of `Montgomery.Native64x8.FastField PALLAS_SCALAR_CARD`. -/
@@ -236,9 +216,8 @@ theorem toPVesM_pneg {p : PM} (h : WFP p) :
 
 /-! ### The affine reading
 
-`WV` bundles the two invariants every group schedule carries: the limbs are well formed, and the
-projective point they denote is representable.  Under it the kernel's `padd` is *the affine group
-addition* — which is all the ladder and the Horner recombination below need. -/
+`WV` bundles the two invariants every group schedule carries; under it the kernel's `padd` is the
+affine group addition, which is all the ladder and the Horner recombination need. -/
 
 /-- A well-formed Montgomery triple denoting a representable projective point. -/
 def WV (p : PM) : Prop := WFP p ∧ Valid (toPVesM p)
@@ -258,9 +237,8 @@ theorem toGM_padd {p r : PM} (hp : WV p) (hr : WV r) :
 
 /-! ## The correspondence with the projective statement surface
 
-`ProjectiveMontDefs` mirrors the projective schedules of `CompElliptic.Curves.Pasta.Fast.MsmProj`
-operation for operation, so those are transported wholesale: `RM p P` says a Montgomery triple is
-well formed and denotes the projective point `P`, and every shared schedule preserves it. -/
+`RM p P` says a Montgomery triple is well formed and denotes the projective point `P`; every
+shared schedule preserves it. -/
 
 /-- The kernel correspondence: a well-formed Montgomery triple denoting a given projective
 point. -/
@@ -319,9 +297,8 @@ theorem foldr_rel₂ {σ σ' β : Type} (R : σ → σ' → Prop) (P : β → Pr
 
 /-! ## The scalar ladder
 
-`PM.pnsmul` is a fixed 256-step LSB-first double-and-add, a different schedule from the
-statement-surface `pnsmulFast` (`binNsmul`, MSB-first recursion), so the ladder is proved where
-the group law lives: through `toGM`, carrying the standard accumulator invariant. -/
+`PM.pnsmul` is LSB-first, unlike the statement-surface `pnsmulFast`, so it is proved where the
+group law lives: through `toGM`, carrying the standard accumulator invariant. -/
 
 /-- The ladder state after `i` steps: the accumulator holds `(n mod 2 ^ i) • A` and the base holds
 `2 ^ i • A`, both well formed and representable. -/
@@ -483,15 +460,11 @@ theorem RA_self {a : Array PM} (h : ∀ p ∈ a, WFP p) : RA a (a.map toPVesM) :
 
 /-! ## The windowed Pippenger MSM
 
-The kernel's `msm` mirrors `MsmProj.pwindowValueFast` fold for fold — the single-pass Array
-bucket scatter and the suffix-sum downsweep — so each window value is transported by `RM` and
-handed to `MsmProj.pwindowValueFast_spec` for its affine meaning.  The Horner recombination
-across windows is the one place where the kernel does not mirror `MsmProj` (it doubles `c` times
-with `padd` rather than calling `pnsmulFast (2 ^ c)`), so it is proved directly through `toGM`.
-
-The kernel also fixes the window count at `⌈256 / c⌉` rather than `Msm.numWindows` (which depends
-on the term list); `hornerList_windows_eq_msm` is `Msm.pippenger_eq_msm` with the window count
-freed, which reconciles the two. -/
+Window values transport by `RM` onto `MsmProj.pwindowValueFast` and get their affine meaning from
+its spec.  The Horner recombination is the one part that does not mirror `MsmProj` (`c` doublings
+instead of `pnsmulFast (2 ^ c)`), so it goes through `toGM` directly, and
+`hornerList_windows_eq_msm` reconciles the kernel's fixed `⌈256 / c⌉` windows with
+`Msm.numWindows`. -/
 
 private theorem RA_scatterStep {a : Array PM} {b : Array PVes} (h : RA a b) {t : ℕ × PM}
     (ht : WFP t.2) :

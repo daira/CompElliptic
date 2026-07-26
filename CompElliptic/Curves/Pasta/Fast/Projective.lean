@@ -7,26 +7,16 @@ Authors: Gregor Mitscha-Baude
 import CompElliptic.Curves.Pasta
 
 /-!
-# Projective (Renes–Costello–Batina) point arithmetic for Vesta, with a proven
-  equivalence to the affine group `SWPoint Vesta.curve`.
+# Projective (Renes–Costello–Batina) point arithmetic for Vesta
 
-The affine group law `CompElliptic.CurveForms.ShortWeierstrass.add` computes every point
-addition with a field inversion (the slope `/`), i.e. ~255 field multiplications (Fermat
-inverse) per add. This module replaces it, for the hot `n • point` loop, by the
-**complete projective addition formulas** of Renes, Costello and Batina
-(*Complete addition formulas for prime order elliptic curves*, EUROCRYPT 2016), specialized
-to `a = 0` — the EFD `add-2015-rcb` sequence. These are single, branchless formulas in
-`(X : Y : Z)` valid for **all** input pairs (identity `(0 : 1 : 0)`, doubling, inverses) on a
-short-Weierstrass curve of odd order. Inversion is paid once, in `toAffine`, i.e. once per
-scalar multiplication instead of once per addition.
+The affine group law pays a field inversion per addition.  This module replaces it, for the hot
+`n • point` loop, by the complete projective addition formulas of Renes, Costello and Batina
+(EUROCRYPT 2016; the EFD `add-2015-rcb` sequence at `a = 0`): single branchless formulas in
+`(X : Y : Z)` valid for *all* input pairs, with the inversion paid once in `toAffine`.  Their
+completeness needs the curve to have no 2-torsion, which Vesta's odd prime order gives
+(`Vesta.no_onCurve_y_zero`); that is what discharges `Z₃ ≠ 0` outside the genuine identity cases.
 
-Vesta (`y² = x³ + 5`) has odd (prime) order, so it has no 2-torsion (`Vesta.no_onCurve_y_zero`);
-this is exactly the hypothesis that makes the RCB formulas complete (no exceptional inputs). The
-completeness content of the equivalence proof — that the projective `Z`-coordinate never vanishes
-outside the genuine-identity cases — is discharged using `no_onCurve_y_zero`.
-
-The closed forms below (specialized `a = 0`, `b = 5`, `b3 = 3b = 15`, homogeneous of bidegree
-`(2,2)` in the two inputs) are the RCB `add-2015-rcb` register program evaluated symbolically:
+Specialized to `a = 0`, `b = 5`, `b3 = 15`, the closed forms are
 
 * `X₃ = X₁Y₁Y₂² − 15X₁Y₁Z₂² − 30X₁Z₁Y₂Z₂ + Y₁²X₂Y₂ − 15Z₁²X₂Y₂ − 30Y₁Z₁X₂Z₂`
 * `Y₃ = Y₁²Y₂² + 45X₁²X₂Z₂ + 45X₁Z₁X₂² − 225Z₁²Z₂²`
@@ -554,14 +544,10 @@ theorem smulFast_eq (n : ℕ) (p : G) : smulFast n p = n • p := by
 
 /-! ## Fast compiled spelling of `padd` (compiled-tier only)
 
-Compiled generically, every field operation in `padd` is a boxed closure call through the
-Mathlib `CommRing (ZMod q)` dictionary projections (and each squaring a boxed `Monoid.npow`).
-`paddFast` is the same Renes–Costello–Batina closed forms over the raw `ℕ` representatives
-(`ZMod.val`), each multiplication one fused `(· * ·) % q` (a single pair of GMP calls), with the
-shared subproducts computed once. `padd_eq_paddFast` is the proven equality — the
-proven-equality counterpart of `implemented_by`, as for `Msm.evalNatFast` — so every compiled
-call site (the projective Pippenger interiors, the FFT's `smulFast` butterflies) runs the fast
-spelling while `padd` remains the statement surface and the kernel-level meaning. -/
+Compiled generically, every field operation in `padd` goes through boxed `CommRing (ZMod q)`
+dictionary projections.  `paddFast` is the same closed forms over raw `ℕ` representatives with
+fused mul-mod, and `padd_eq_paddFast` is the proven equality — the proven counterpart of
+`implemented_by` — so `padd` stays the statement surface while compiled call sites run fast. -/
 
 /-- The Vesta base-field order, the modulus of the raw-`ℕ` fast path (reducible so `ZMod qv`
 unifies with `Fq`). -/

@@ -10,37 +10,15 @@ import CompElliptic.Curves.Pasta.Fast.Projective
 /-!
 # The windowed Pippenger MSM run entirely in projective coordinates
 
-`Msm.lean` proves a windowed Pippenger accelerator (`pippenger`, `pippengerFast`) equal to the
-naive multi-scalar multiplication over any `AddCommMonoid`.  Instantiated at the Vesta affine group
-`G = SWPoint Vesta.curve`, every one of its group additions — bucket insertions, the suffix-sum
-accumulation, and the Horner doublings — is an *affine* point add, each paying a field inversion.
+Instantiated at the Vesta affine group, every group addition of `Msm.lean` pays a field inversion.
+This module runs the whole Pippenger interior over `Projective.PVes` with `padd`/`pnsmulFast` —
+one inversion per MSM instead of one per add — and proves the result equal to the affine
+accelerator (`pippengerProj_eq`, `pippengerProjScatter_eq`, and `..._eq_msm` to the naive MSM).
 
-`Projective.lean` provides the complete Renes–Costello–Batina projective addition `padd` on
-`PVes`, with the homomorphism `toAffine_padd : Valid P → Valid Q → toAffine (padd P Q) = toAffine P +
-toAffine Q`, closure `valid_padd`, and the leaf bridges `ofAffine`/`toAffine` (`valid_ofAffine`,
-`toAffine_ofAffine`, `valid_pid`, `toAffine_pid`), plus the fast scalar multiplication
-`pnsmulFast`/`pnsmulFast_spec`.
-
-This module runs the **entire Pippenger interior in projective coordinates** — one `toAffine` (one
-inversion) per whole MSM instead of one per add — with a proven equality back to the affine
-accelerator.  `PVes` is not a lawful monoid on the nose (associativity only holds after `toAffine`),
-so we do not re-run the Pippenger equality proof; instead we mirror each fold of `Msm.lean`
-(`bucketOf`, `accStep`, `hornerList`, `windowValue`, `pippenger`) with a `padd`/`pid`/`pnsmulFast`
-version and prove — by carrying `Valid` through every intermediate — that it commutes with
-`toAffine`.  Composing with `Fast.Msm.pippenger_eq_msm` lands
-`pippengerProj_eq : pippengerProj c terms = pippenger c terms`.
-
-Concretely everything is specialized to the Vesta group `G` (the projective bridge is
-Vesta-specific).
-
-## Transport skeleton
-
-* `psum_spec`          — a `foldr padd pid` sum transports to `(·.map toAffine).sum` (`bucketOf`).
-* `pbucketOf_spec`     — the per-bucket projective sum matches `Fast.Msm.bucketOf` after `toAffine`.
-* `foldr_paccStep_spec`— the projective suffix-sum accumulator matches `Fast.Msm.accStep`.
-* `pwindowValue_spec`  — one window value transports to `Fast.Msm.windowValue`.
-* `phornerList_spec`   — the projective Horner fold (doublings via `pnsmulFast`) transports to
-  `Fast.Msm.hornerList`, using `pnsmulFast_spec` for each `2^c`-fold doubling.
+`PVes` is not a lawful monoid on the nose (associativity only holds after `toAffine`), so the
+Pippenger equality is not re-run here: each fold of `Msm.lean` is mirrored by a `padd`/`pid`
+version and shown to commute with `toAffine`, carrying `Valid` through every intermediate
+(`psum_spec`, `pbucketOf_spec`, `foldr_paccStep_spec`, `pwindowValue_spec`, `phornerList_spec`).
 -/
 
 open CompElliptic.Curves.Pasta.Fast
@@ -249,19 +227,10 @@ theorem pippengerProj_eq_msm (c : ℕ) (hc : 0 < c) (terms : List (ℕ × Projec
 
 /-! ## Single-pass Array bucketing for the projective interior
 
-`pwindowValue` computes each projective bucket by its own `filterMap` pass — `(base − 1) · n`
-list steps per window, which dominates the group work at `base = 2 ^ 8` (measured: the
-filterMap-bucketed `pippengerProj` is ~5× slower than the scatter-bucketed form below, and even
-slower than the *affine* `pippengerFast`). `pbucketScatter` builds all buckets in ONE pass, the
-projective mirror of `Msm.bucketScatter`.
-
-The correctness proof cannot reuse `Msm.bucketScatter_toList`: that fold invariant uses
-`add_assoc`, and `padd` is not associative on the nose. Instead the invariant is transported
-through `toAffine` (the house pattern of this module): each slot stays `Valid` and reads back —
-in `G` — as the affine `Msm.bucketOf` of the processed prefix (`foldl_pscatterStep_spec`).
-Association works out on the nose: the scatter inserts each point on the right of its slot,
-which after `toAffine` matches `Msm.bucketOf_cons`'s left-prepend by `add_assoc` alone —
-`add_comm` is never needed, and everything commutative happens in `G`, never on `PVes`. -/
+`pwindowValue`'s per-bucket `filterMap` dominates the group work at `base = 2 ^ 8` (~5× slower
+than the scatter below).  `pbucketScatter` builds all buckets in one pass; its invariant cannot
+reuse `Msm.bucketScatter_toList` (that one uses `add_assoc`, and `padd` is not associative on the
+nose), so it too is transported through `toAffine` (`foldl_pscatterStep_spec`). -/
 
 /-- One projective scatter step: drop digit-`0` terms, otherwise `padd` the point into bucket
 slot `d − 1` (slot `k` holds bucket `k + 1`). -/
