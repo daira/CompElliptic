@@ -1,0 +1,162 @@
+/-
+Copyright (c) 2026 CompElliptic Contributors. All rights reserved.
+Released under the Apache License, Version 2.0, or the MIT license, at your option,
+as described in the files LICENSE-APACHE and LICENSE-MIT.
+Authors: Gregor Mitscha-Baude
+-/
+import CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs
+
+/-!
+# Vesta projective point arithmetic over Montgomery limbs: runtime definitions (core-only)
+
+The Renes–Costello–Batina complete addition formulas of
+`CompElliptic.Curves.Pasta.Fast.Projective`, transcribed operation-for-operation onto the
+eight-limb Montgomery representation of the Vesta base field.  The expression trees mirror the
+`𝔽_q` source exactly, so the equivalence proof in
+`CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv` is a per-coordinate push of the ring
+isomorphism.
+
+Like `CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs`, this module is core-only: it is
+part of the `FastFieldNative` precompiled lane (see the lakefile).  All proofs live in the
+sibling module.
+-/
+
+namespace CompElliptic.Curves.Pasta.Fast.ProjectiveMont
+
+open Montgomery.Native64x8 (Limbs8)
+open Montgomery.Native64x8.VestaFq
+
+/-- A projective point in `(X : Y : Z)` coordinates, each coordinate an eight-limb Montgomery
+residue of the Vesta base field. -/
+structure PM where
+  /-- The `X` coordinate. -/
+  X : Limbs8
+  /-- The `Y` coordinate. -/
+  Y : Limbs8
+  /-- The `Z` coordinate. -/
+  Z : Limbs8
+deriving DecidableEq
+
+namespace PM
+
+/-- `Array.get!`/`set!` need a default; the projective identity is the right one. -/
+instance : Inhabited PM := ⟨⟨zero, one, zero⟩⟩
+
+/-- The Montgomery residue of `3`. -/
+def c3 : Limbs8 := ofNat 3
+/-- The Montgomery residue of `15` (`b3 = 3b` for Vesta). -/
+def c15 : Limbs8 := ofNat 15
+/-- The Montgomery residue of `30`. -/
+def c30 : Limbs8 := ofNat 30
+/-- The Montgomery residue of `45`. -/
+def c45 : Limbs8 := ofNat 45
+/-- The Montgomery residue of `225`. -/
+def c225 : Limbs8 := ofNat 225
+
+/-- Renes–Costello–Batina complete addition (`add-2015-rcb`, `a = 0`, `b3 = 15`), on
+Montgomery limbs. -/
+@[inline] def padd (P Q : PM) : PM where
+  X :=
+    sub (sub (add (sub (sub (mul (mul (P.X) (P.Y)) (square (Q.Y))) (mul (mul (mul (c15) (P.X))
+      (P.Y)) (square (Q.Z)))) (mul (mul (mul (mul (c30) (P.X)) (P.Z)) (Q.Y)) (Q.Z))) (mul (mul
+      (square (P.Y)) (Q.X)) (Q.Y))) (mul (mul (mul (c15) (square (P.Z))) (Q.X)) (Q.Y))) (mul
+      (mul (mul (mul (c30) (P.Y)) (P.Z)) (Q.X)) (Q.Z))
+  Y :=
+    sub (add (add (mul (square (P.Y)) (square (Q.Y))) (mul (mul (mul (c45) (square (P.X)))
+      (Q.X)) (Q.Z))) (mul (mul (mul (c45) (P.X)) (P.Z)) (square (Q.X)))) (mul (mul (c225)
+      (square (P.Z))) (square (Q.Z)))
+  Z :=
+    add (add (add (add (add (mul (mul (square (P.Y)) (Q.Y)) (Q.Z)) (mul (mul (P.Y) (P.Z))
+      (square (Q.Y)))) (mul (mul (mul (c3) (square (P.X))) (Q.X)) (Q.Y))) (mul (mul (mul (c3)
+      (P.X)) (P.Y)) (square (Q.X)))) (mul (mul (mul (c15) (P.Y)) (P.Z)) (square (Q.Z)))) (mul
+      (mul (mul (c15) (square (P.Z))) (Q.Y)) (Q.Z))
+
+/-- The projective identity `𝒪 = (0 : 1 : 0)`. -/
+def pid : PM := ⟨zero, one, zero⟩
+
+/-! ## Group kernels
+
+Spelled to mirror `CompElliptic.Curves.Pasta.Fast.NatKernel`'s ladder, Pippenger and FFT
+**operation for operation**, so that the simulation proofs of
+`CompElliptic.Curves.Pasta.Fast.NatKernelEquiv` transfer to this tier structurally: only the
+interpretation of a coordinate changes (a Montgomery residue instead of a canonical `Nat`),
+never the schedule. -/
+
+/-- Fixed 256-step LSB-first double-and-add ladder (mirrors `NatKernel.pnsmul`). -/
+def pnsmul (n : Nat) (p : PM) : PM :=
+  (List.range 256).foldl
+    (fun (st : PM × PM) i =>
+      let acc := if (n >>> i) &&& 1 = 1 then padd st.1 st.2 else st.1
+      (acc, padd st.2 st.2))
+    (pid, p) |>.1
+
+/-- One Array-scatter step (mirrors `NatKernel.scatterStep`). -/
+def scatterStep (a : Array PM) (p : Nat × PM) : Array PM :=
+  if p.1 = 0 then a else a.modify (p.1 - 1) (fun v => padd v p.2)
+
+/-- Scatter a digit-tagged point list into its `base − 1` buckets in ONE pass. -/
+def bucketScatter (base : Nat) (dp : List (Nat × PM)) : Array PM :=
+  dp.foldl scatterStep (Array.replicate (base - 1) pid)
+
+/-- One step of the bucket downsweep (mirrors `NatKernel.accStep`). -/
+def accStep (a : PM) (p : PM × PM) : PM × PM := (padd p.1 a, padd p.2 (padd p.1 a))
+
+/-- The window-`i` value in base `base` (mirrors `NatKernel.windowValue`). -/
+def windowValue (base i : Nat) (terms : List (Nat × PM)) : PM :=
+  let scale := base ^ i
+  (List.foldr accStep (pid, pid)
+    (bucketScatter base (terms.map fun t => (t.1 / scale % base, t.2))).toList).2
+
+/-- `c`-fold doubling — the `base •` Horner step between adjacent windows. -/
+def pdoublings (c : Nat) (p : PM) : PM := (List.range c).foldl (fun a _ => padd a a) p
+
+/-- Windowed Pippenger MSM, window `c` (mirrors `NatKernel.msm`). -/
+def msm (c : Nat) (terms : List (Nat × PM)) : PM :=
+  let numWindows := (256 + c - 1) / c
+  let base := 2 ^ c
+  ((List.range numWindows).map fun i => windowValue base i terms).foldr
+    (fun v acc => padd (pdoublings c acc) v) pid
+
+/-- Projective negation: `-(X : Y : Z) = (X : −Y : Z)` (mirrors `NatKernel.pneg`). -/
+@[inline] def pneg (p : PM) : PM := ⟨p.X, sub zero p.Y, p.Z⟩
+
+/-- Bit-reversal permutation index (mirrors `NatKernel.bitreverse`). -/
+def bitreverse (n l : Nat) : Nat := Id.run do
+  let mut r := 0
+  let mut m := n
+  for _ in [0:l] do
+    r := (r <<< 1) ||| (m &&& 1)
+    m := m >>> 1
+  return r
+
+/-- In-place radix-2 DIT FFT over `PM` (mirrors `NatKernel.fft`): bit-reversal permutation,
+then `logN` rounds of butterflies against the canonical `Nat` twiddle scalars `tw`. -/
+def fft (a0 : Array PM) (tw : Array Nat) (logN : Nat) : Array PM := Id.run do
+  let n := a0.size
+  let mut a := a0
+  for k in [0:n] do
+    let rk := bitreverse k logN
+    if k < rk then
+      let ak := a[k]!
+      let ark := a[rk]!
+      a := (a.set! k ark).set! rk ak
+  let mut half := 1
+  for _ in [0:logN] do
+    let chunk := 2 * half
+    let twiddleChunk := n / chunk
+    for c in [0:n / chunk] do
+      let s := c * chunk
+      for j in [0:half] do
+        let twdl := tw[j * twiddleChunk]!
+        let aIdx := s + j
+        let bIdx := s + half + j
+        let aOld := a[aIdx]!
+        let t := pnsmul twdl a[bIdx]!
+        a := a.set! aIdx (padd aOld t)
+        a := a.set! bIdx (padd aOld (pneg t))
+    half := chunk
+  return a
+
+end PM
+
+end CompElliptic.Curves.Pasta.Fast.ProjectiveMont

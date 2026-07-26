@@ -161,6 +161,17 @@ types + transport) has been consolidated into these and removed.
   (`Point`); explicit `toAffine` / `fromAffine` conversions. (Per the efficiency criterion.)
   pasta_curves uses **Jacobian** (EFD `dbl-2009-l` doubling for `a = 0`). Scheduled after `repr` /
   `abst`.
+  - **Not** closed by `CompElliptic/Curves/Pasta/Fast/`, which is a Vesta-specific *evaluation*
+    lane, not a `CoordinateSystem` instance: `PVes` is a bare `(X : Y : Z)` triple with `padd` /
+    `toAffine` proven to commute with the affine group law, deliberately without the quotient, the
+    `Rel`, or the `AddCommGroup`-on-the-quotient that the abstraction calls for. When the general
+    projective coordinate system lands, `Fast/Projective.lean`'s RCB completeness argument
+    (`Z_ne_zero_dist`, `Z_doubling`, and the no-2-torsion hypothesis they rest on) is the
+    non-trivial part it can reuse, and the two should be reconciled rather than left side by side.
+- [ ] Generalize `CompElliptic/Curves/Pasta/Fast/Msm.lean` out of the Pasta tree: its Pippenger
+  accelerator and the `pippenger_eq_msm` proof are already generic over `[AddCommMonoid M]`, and
+  only the `commit_lagrange` wrapper section mentions Pasta. It sits under `Curves/Pasta/Fast/`
+  purely to keep the fast tree in one place.
 - [x] Encoding abstraction (`Encoding.lean`): the `EncodingClass` interface plus `CanonicalEncoding`
   and `LenientEncoding` (canonicity bundled in the everyday type, no weak default; lenient is the
   explicit sibling). Encoded values are *depictions* — `Raw` / `Decodable` / `Canonical` — with the
