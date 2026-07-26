@@ -121,43 +121,6 @@ def msm (c : Nat) (terms : List (Nat × PM)) : PM :=
 /-- Projective negation: `-(X : Y : Z) = (X : −Y : Z)`. -/
 @[inline] def pneg (p : PM) : PM := ⟨p.X, sub zero p.Y, p.Z⟩
 
-/-- Bit-reversal permutation index, transplanted from `Zcash.Snark.Keygen.bitreverse`. -/
-def bitreverse (n l : Nat) : Nat := Id.run do
-  let mut r := 0
-  let mut m := n
-  for _ in [0:l] do
-    r := (r <<< 1) ||| (m &&& 1)
-    m := m >>> 1
-  return r
-
-/-- In-place radix-2 DIT FFT over `PM`: bit-reversal permutation, then `logN` rounds of
-butterflies against the canonical `Nat` twiddle scalars `tw`. -/
-def fft (a0 : Array PM) (tw : Array Nat) (logN : Nat) : Array PM := Id.run do
-  let n := a0.size
-  let mut a := a0
-  for k in [0:n] do
-    let rk := bitreverse k logN
-    if k < rk then
-      let ak := a[k]!
-      let ark := a[rk]!
-      a := (a.set! k ark).set! rk ak
-  let mut half := 1
-  for _ in [0:logN] do
-    let chunk := 2 * half
-    let twiddleChunk := n / chunk
-    for c in [0:n / chunk] do
-      let s := c * chunk
-      for j in [0:half] do
-        let twdl := tw[j * twiddleChunk]!
-        let aIdx := s + j
-        let bIdx := s + half + j
-        let aOld := a[aIdx]!
-        let t := pnsmul twdl a[bIdx]!
-        a := a.set! aIdx (padd aOld t)
-        a := a.set! bIdx (padd aOld (pneg t))
-    half := chunk
-  return a
-
 end PM
 
 end CompElliptic.Curves.Pasta.Fast.ProjectiveMont
