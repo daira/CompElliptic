@@ -6,7 +6,7 @@ Authors: Gregor Mitscha-Baude
 -/
 import CompElliptic.Curves.Pasta.Fast.ProjectiveMontDefs
 import CompElliptic.Vendor.CompPoly.Montgomery.Pasta
-import CompElliptic.Curves.Pasta.Fast.NatKernelEquiv
+import CompElliptic.Curves.Pasta.Fast.MsmProj
 
 /-!
 # The Montgomery kernel is the proven projective arithmetic
@@ -17,10 +17,12 @@ the `FastFieldNative` `precompileModules` leaf (see the lakefile).  This module 
 mathlib-side and therefore *not* in that lane — proves that the transplant computes the
 statement-surface functions of `CompElliptic.Curves.Pasta.Fast.Projective`.
 
-The bridge is the coordinatewise value map `montVal : Limbs8 → 𝔽_q`, `x ↦ x.toNat / 2 ^ 256`,
-which is exactly `Montgomery.Native64x8.FastField.toField` read off a raw limb vector; it is
-correct on **well-formed** residues (`WF x := x.Bounded ∧ x.toNat < q`), the carrier property of
-the proven `FastField PALLAS_SCALAR_CARD`.  Every field operation of the kernel is the
+There are exactly **two tiers**: the `𝔽_q`-valued statement surface (`Projective`, `Msm`,
+`MsmProj`, where the algorithm's meaning is proved once and for all) and this Montgomery lane.
+The bridge between them is a ring isomorphism, applied coordinatewise: `montVal : Limbs8 → 𝔽_q`,
+`x ↦ x.toNat / 2 ^ 256`, is `Montgomery.Native64x8.FastField.toField` read off a raw limb vector.
+It is correct on **well-formed** residues (`WF x := x.Bounded ∧ x.toNat < q`), the carrier
+property of the proven `FastField PALLAS_SCALAR_CARD`.  Every field operation of the kernel is the
 corresponding `FastField` operation on the nose, so the per-operation cast lemmas
 (`montVal_add`, `montVal_sub`, `montVal_neg`, `montVal_mul`) are the vendored field's
 `toField_*` homomorphism lemmas, and `WF` preservation is the carrier proof that ships with each
@@ -33,17 +35,18 @@ operation.
 * `pnsmulM_spec` — the kernel's 256-step ladder is `n • ·` in the affine group, for `n < 2 ^ 256`
 * `msmM_spec` — the kernel's windowed Pippenger MSM is `Fast.Msm.pippenger`
 
-Because `ProjectiveMontDefs` was transcribed from `CompElliptic.Curves.Pasta.Fast.NatKernel`
-**operation for operation**, the kernel-level results are obtained by *transporting along the
-`Nat` kernel* rather than by redoing its group theory: `RM p n` says a Montgomery triple is
-well-formed and denotes the same projective point as a `Nat` triple, `RM` is preserved by
-`padd`/`pid`/`pneg`, and therefore — by structural induction over the shared schedules — by the
-ladder and the scatter Pippenger.  The affine meaning then comes from `NatKernelEquiv`'s
-`pnsmul_spec`/`msm_spec` verbatim.
+`toPVesM_padd` is the one commuting square of substance: the two RCB coordinate expressions are
+the same tree of ring operations, so pushing `montVal` through with the per-operation cast lemmas
+leaves a polynomial identity for `ring`.  Everything above it is structural.  The schedules of
+`ProjectiveMontDefs` — ladder, single-pass bucket scatter, suffix-sum downsweep, Horner
+recombination — were spelled to mirror `MsmProj`'s projective schedules operation for operation,
+so their correctness is a structural induction along `RM p P := WFP p ∧ toPVesM p = P` (plus, for
+the ladder and the Horner fold, the affine invariant those two carry), landing on
+`MsmProj.pwindowValueFast_spec` and `Msm.pippenger_eq_msm` for the algorithm's actual meaning.
 
 The transport API itself (`RM`, `RM2`, `RA` and their closure lemmas, plus the fold combinators
 `foldl_rel₂`/`foldr_rel₂`) is public rather than private, because the same induction is what a
-downstream consumer needs to lift a *further* shared schedule — the kernels' radix-2 DIT FFT in
+downstream consumer needs to lift a *further* shared schedule — the kernel's radix-2 DIT FFT in
 particular, whose reference group DFT CompElliptic does not have — to the Montgomery tier.
 -/
 
@@ -54,7 +57,6 @@ open CompElliptic.Curves.Pasta.Fast
 open CompElliptic.Curves.Pasta.Fast.Projective
 open CompElliptic.Curves.Pasta.Fast.Projective.PVes
 open CompElliptic.Fields.Pasta (PALLAS_SCALAR_CARD)
-open CompElliptic.Curves.Pasta.Fast.NatKernel (P3)
 
 /-- The Vesta base field, the ambient field of the projective statement surface. -/
 local notation "Fq" => CompElliptic.Curves.Pasta.Fast.Projective.Fq
@@ -232,44 +234,60 @@ theorem toPVesM_pneg {p : PM} (h : WFP p) :
     rw [montVal_sub wf_zero h.2.1, montVal_zero, zero_sub]
   simp only [toPVesM, PM.pneg, hy]
 
-/-! ## Transport to the `Nat` kernel
+/-! ### The affine reading
 
-`ProjectiveMontDefs` mirrors `CompElliptic.Curves.Pasta.Fast.NatKernel` operation for operation,
-so the group kernels are transported wholesale: `RM p n` relates a well-formed Montgomery triple
-to the `Nat` triple denoting the same projective point, and the shared schedules preserve it. -/
+`WV` bundles the two invariants every group schedule carries: the limbs are well formed, and the
+projective point they denote is representable.  Under it the kernel's `padd` is *the affine group
+addition* — which is all the ladder and the Horner recombination below need. -/
 
-/-- The canonical `Nat`-kernel triple denoting the same projective point. -/
-def ofPM (p : PM) : P3 :=
-  ⟨(montVal p.X).val, (montVal p.Y).val, (montVal p.Z).val⟩
+/-- A well-formed Montgomery triple denoting a representable projective point. -/
+def WV (p : PM) : Prop := WFP p ∧ Valid (toPVesM p)
 
-theorem toPVes_ofPM (p : PM) : NatKernel.toPVes (ofPM p) = toPVesM p := by
-  simp only [NatKernel.toPVes, ofPM, toPVesM, PVes.mk.injEq]
-  exact ⟨ZMod.natCast_rightInverse _, ZMod.natCast_rightInverse _, ZMod.natCast_rightInverse _⟩
+theorem WV_pid : WV PM.pid := ⟨wfp_pid, by rw [toPVesM_pid]; exact valid_pid⟩
 
-/-- The kernel correspondence: a well-formed Montgomery triple denoting the same projective
-point as a `Nat` triple. -/
-def RM (p : PM) (n : P3) : Prop := WFP p ∧ toPVesM p = NatKernel.toPVes n
+theorem WV_padd {p r : PM} (hp : WV p) (hr : WV r) : WV (PM.padd p r) :=
+  ⟨wfp_padd hp.1 hr.1, by rw [toPVesM_padd hp.1 hr.1]; exact valid_padd hp.2 hr.2⟩
+
+@[simp] theorem toGM_pid : toGM PM.pid = 0 := by rw [toGM, toPVesM_pid, toAffine_pid]
+
+/-- **The kernel's addition is the affine group addition** on representable points. -/
+theorem toGM_padd {p r : PM} (hp : WV p) (hr : WV r) :
+    toGM (PM.padd p r) = toGM p + toGM r := by
+  simp only [toGM]
+  rw [toPVesM_padd hp.1 hr.1, toAffine_padd hp.2 hr.2]
+
+/-! ## The correspondence with the projective statement surface
+
+`ProjectiveMontDefs` mirrors the projective schedules of `CompElliptic.Curves.Pasta.Fast.MsmProj`
+operation for operation, so those are transported wholesale: `RM p P` says a Montgomery triple is
+well formed and denotes the projective point `P`, and every shared schedule preserves it. -/
+
+/-- The kernel correspondence: a well-formed Montgomery triple denoting a given projective
+point. -/
+def RM (p : PM) (P : PVes) : Prop := WFP p ∧ toPVesM p = P
 
 /-- The correspondence on ladder/downsweep state pairs. -/
-def RM2 (s : PM × PM) (s' : P3 × P3) : Prop := RM s.1 s'.1 ∧ RM s.2 s'.2
+def RM2 (s : PM × PM) (s' : PVes × PVes) : Prop := RM s.1 s'.1 ∧ RM s.2 s'.2
 
-theorem RM_self {p : PM} (h : WFP p) : RM p (ofPM p) := ⟨h, (toPVes_ofPM p).symm⟩
+theorem RM_self {p : PM} (h : WFP p) : RM p (toPVesM p) := ⟨h, rfl⟩
 
-theorem RM_toG {p : PM} {n : P3} (h : RM p n) : toGM p = NatKernel.toG n := by
-  rw [toGM, NatKernel.toG, h.2]
+theorem RM_toG {p : PM} {P : PVes} (h : RM p P) : toGM p = toAffine P := by rw [toGM, h.2]
 
-theorem RM_padd {p r : PM} {n m : P3} (hp : RM p n) (hr : RM r m) :
-    RM (PM.padd p r) (NatKernel.padd n m) := by
+/-- A corresponding pair inherits representability from the projective side. -/
+theorem RM_valid {p : PM} {P : PVes} (h : RM p P) (hv : Valid P) : WV p :=
+  ⟨h.1, by rw [h.2]; exact hv⟩
+
+theorem RM_padd {p r : PM} {P Q : PVes} (hp : RM p P) (hr : RM r Q) :
+    RM (PM.padd p r) (PVes.padd P Q) := by
   refine ⟨wfp_padd hp.1 hr.1, ?_⟩
-  rw [toPVesM_padd hp.1 hr.1, NatKernel.toPVes_padd, hp.2, hr.2]
+  rw [toPVesM_padd hp.1 hr.1, hp.2, hr.2]
 
-theorem RM_pid : RM PM.pid NatKernel.pid :=
-  ⟨wfp_pid, by rw [toPVesM_pid, NatKernel.toPVes_pid]⟩
+theorem RM_pid : RM PM.pid PVes.pid := ⟨wfp_pid, toPVesM_pid⟩
 
-theorem RM_pneg {p : PM} {n : P3} (h : RM p n) :
-    RM (PM.pneg p) (NatKernel.pneg n) := by
+theorem RM_pneg {p : PM} {P : PVes} (h : RM p P) :
+    RM (PM.pneg p) ⟨P.X, -P.Y, P.Z⟩ := by
   refine ⟨wfp_pneg h.1, ?_⟩
-  rw [toPVesM_pneg h.1, NatKernel.toPVes_pneg, h.2]
+  rw [toPVesM_pneg h.1, h.2]
 
 /-! ### Relation-preserving folds -/
 
@@ -299,40 +317,68 @@ theorem foldr_rel₂ {σ σ' β : Type} (R : σ → σ' → Prop) (P : β → Pr
     exact hstep x _ _ (hP x (by simp))
       (ih f g hstep (fun y hy => hP y (by simp [hy])) s s' h)
 
-/-! ### The scalar ladder -/
+/-! ## The scalar ladder
 
-theorem RM_pnsmul (k : ℕ) {p : PM} {n : P3} (h : RM p n) :
-    RM (PM.pnsmul k p) (NatKernel.pnsmul k n) := by
-  have key : RM2
-      ((List.range 256).foldl (fun (st : PM × PM) i =>
-        (if (k >>> i) &&& 1 = 1 then PM.padd st.1 st.2 else st.1, PM.padd st.2 st.2))
-        (PM.pid, p))
-      ((List.range 256).foldl (fun (st : P3 × P3) i =>
-        (if (k >>> i) &&& 1 = 1 then NatKernel.padd st.1 st.2 else st.1,
-          NatKernel.padd st.2 st.2))
-        (NatKernel.pid, n)) := by
-    refine foldl_rel₂ RM2 (fun _ : ℕ => True) (List.range 256) _ _ ?_ (fun _ _ => trivial) _ _
-      ⟨RM_pid, h⟩
-    intro s s' i _ hs
-    refine ⟨?_, RM_padd hs.2 hs.2⟩
-    by_cases hc : (k >>> i) &&& 1 = 1
-    · rw [if_pos hc, if_pos hc]; exact RM_padd hs.1 hs.2
-    · rw [if_neg hc, if_neg hc]; exact hs.1
-  exact key.1
+`PM.pnsmul` is a fixed 256-step LSB-first double-and-add, a different schedule from the
+statement-surface `pnsmulFast` (`binNsmul`, MSB-first recursion), so the ladder is proved where
+the group law lives: through `toGM`, carrying the standard accumulator invariant. -/
+
+/-- The ladder state after `i` steps: the accumulator holds `(n mod 2 ^ i) • A` and the base holds
+`2 ^ i • A`, both well formed and representable. -/
+private def LadderInvM (A : G) (n i : ℕ) (st : PM × PM) : Prop :=
+  WV st.1 ∧ WV st.2 ∧ toGM st.1 = (n % 2 ^ i) • A ∧ toGM st.2 = (2 ^ i : ℕ) • A
+
+private theorem ladderM_step {A : G} {n i : ℕ} {st : PM × PM} (h : LadderInvM A n i st) :
+    LadderInvM A n (i + 1)
+      ((if (n >>> i) &&& 1 = 1 then PM.padd st.1 st.2 else st.1), PM.padd st.2 st.2) := by
+  obtain ⟨hv1, hv2, ha1, ha2⟩ := h
+  have hbit : (n >>> i) &&& 1 = n / 2 ^ i % 2 := by
+    rw [Nat.shiftRight_eq_div_pow, Nat.and_one_is_mod]
+  have hmod : n % 2 ^ (i + 1) = n % 2 ^ i + 2 ^ i * (n / 2 ^ i % 2) := by
+    rw [pow_succ, Nat.mod_mul]
+  have hdouble : toGM (PM.padd st.2 st.2) = (2 ^ (i + 1) : ℕ) • A := by
+    rw [toGM_padd hv2 hv2, ha2, ← two_nsmul, smul_smul, pow_succ]
+    ring_nf
+  refine ⟨?_, WV_padd hv2 hv2, ?_, hdouble⟩
+  · split
+    · exact WV_padd hv1 hv2
+    · exact hv1
+  · split
+    · rename_i hodd
+      rw [hbit] at hodd
+      rw [toGM_padd hv1 hv2, ha1, ha2, ← add_nsmul, hmod, hodd, Nat.mul_one]
+    · rename_i heven
+      rw [hbit] at heven
+      have h0 : n / 2 ^ i % 2 = 0 := by omega
+      rw [ha1, hmod, h0, Nat.mul_zero, Nat.add_zero]
 
 /-- **The kernel ladder computes `n • ·`** in the affine group, for scalars below `2 ^ 256`
-(all Pasta scalars).  Statement shape mirrors `NatKernel.pnsmul_spec`. -/
+(all Pasta scalars).  Statement shape mirrors `PVes.pnsmulFast_spec`. -/
 theorem pnsmulM_spec {p : PM} (hwf : WFP p) (hp : Valid (toPVesM p)) (n : ℕ) (hn : n < 2 ^ 256) :
     WFP (PM.pnsmul n p) ∧ Valid (toPVesM (PM.pnsmul n p)) ∧
       toAffine (toPVesM (PM.pnsmul n p)) = n • toAffine (toPVesM p) := by
-  have hR := RM_pnsmul n (RM_self hwf)
-  have hv : Valid (NatKernel.toPVes (ofPM p)) := by rw [toPVes_ofPM]; exact hp
-  obtain ⟨hvalid, heq⟩ := NatKernel.pnsmul_spec hv n hn
-  refine ⟨hR.1, ?_, ?_⟩
-  · rw [hR.2]; exact hvalid
-  · rw [hR.2, heq, toPVes_ofPM]
+  have base : ∀ m : ℕ, m ≤ 256 →
+      LadderInvM (toGM p) n m ((List.range m).foldl
+        (fun (st : PM × PM) i =>
+          (if (n >>> i) &&& 1 = 1 then PM.padd st.1 st.2 else st.1, PM.padd st.2 st.2))
+        (PM.pid, p)) := by
+    intro m
+    induction m with
+    | zero =>
+        intro _
+        simp only [List.range_zero, List.foldl_nil]
+        refine ⟨WV_pid, ⟨hwf, hp⟩, ?_, ?_⟩
+        · rw [toGM_pid, pow_zero, Nat.mod_one, zero_nsmul]
+        · rw [pow_zero, one_nsmul]
+    | succ k ih =>
+        intro hk
+        rw [List.range_succ, List.foldl_append]
+        exact ladderM_step (ih (by omega))
+  obtain ⟨⟨hw, hv⟩, -, hval, -⟩ := base 256 le_rfl
+  rw [Nat.mod_eq_of_lt hn] at hval
+  exact ⟨hw, hv, hval⟩
 
-/-! ### Arrays of kernel points -/
+/-! ## Arrays of kernel points -/
 
 private theorem forall₂_getElem {α β : Type} {R : α → β → Prop} :
     ∀ {l₁ : List α} {l₂ : List β}, List.Forall₂ R l₁ l₂ →
@@ -392,14 +438,18 @@ private theorem forall₂_map_self {α β : Type} {R : α → β → Prop} {P : 
     List.Forall₂.cons (hf a (h a (by simp)))
       (forall₂_map_self hf l fun b hb => h b (by simp [hb]))
 
-/-- The array-level correspondence: cellwise `RM`. -/
-def RA (a : Array PM) (b : Array P3) : Prop := List.Forall₂ RM a.toList b.toList
+/-- `Array.get!`/`set!` need a default on the `PVes` side as well as on `PM`'s; the projective
+identity is the right one on both, so an out-of-range read stays a corresponding pair. -/
+instance : Inhabited PVes := ⟨PVes.pid⟩
 
-theorem RA.size {a : Array PM} {b : Array P3} (h : RA a b) : a.size = b.size := by
+/-- The array-level correspondence: cellwise `RM`. -/
+def RA (a : Array PM) (b : Array PVes) : Prop := List.Forall₂ RM a.toList b.toList
+
+theorem RA.size {a : Array PM} {b : Array PVes} (h : RA a b) : a.size = b.size := by
   have := List.Forall₂.length_eq h
   rwa [Array.length_toList, Array.length_toList] at this
 
-theorem RA.get {a : Array PM} {b : Array P3} (h : RA a b) (k : ℕ) : RM a[k]! b[k]! := by
+theorem RA.get {a : Array PM} {b : Array PVes} (h : RA a b) (k : ℕ) : RM a[k]! b[k]! := by
   by_cases hk : k < a.size
   · have hk' : k < b.size := h.size ▸ hk
     rw [getElem!_pos a k hk, getElem!_pos b k hk']
@@ -409,33 +459,44 @@ theorem RA.get {a : Array PM} {b : Array P3} (h : RA a b) (k : ℕ) : RM a[k]! b
     rw [getElem!_neg a k hk, getElem!_neg b k hk']
     exact RM_pid
 
-theorem RA.set {a : Array PM} {b : Array P3} (h : RA a b) (k : ℕ) {p : PM} {n : P3}
-    (hp : RM p n) : RA (a.set! k p) (b.set! k n) := by
+theorem RA.set {a : Array PM} {b : Array PVes} (h : RA a b) (k : ℕ) {p : PM} {P : PVes}
+    (hp : RM p P) : RA (a.set! k p) (b.set! k P) := by
   simp only [RA, Array.set!_eq_setIfInBounds, Array.toList_setIfInBounds]
   exact forall₂_set hp h k
 
-theorem RA.modify {a : Array PM} {b : Array P3} (h : RA a b) (k : ℕ)
-    {f : PM → PM} {g : P3 → P3} (hfg : ∀ p n, RM p n → RM (f p) (g n)) :
+theorem RA.modify {a : Array PM} {b : Array PVes} (h : RA a b) (k : ℕ)
+    {f : PM → PM} {g : PVes → PVes} (hfg : ∀ p P, RM p P → RM (f p) (g P)) :
     RA (a.modify k f) (b.modify k g) := by
   simp only [RA, Array.toList_modify]
   exact forall₂_modify hfg h k
 
-theorem RA.map_toG {a : Array PM} {b : Array P3} (h : RA a b) :
-    a.map toGM = b.map NatKernel.toG := by
-  have := forall₂_map_eq (f := toGM) (g := NatKernel.toG) (fun _ _ hr => RM_toG hr) h
+theorem RA.map_toG {a : Array PM} {b : Array PVes} (h : RA a b) :
+    a.map toGM = b.map toAffine := by
+  have := forall₂_map_eq (f := toGM) (g := toAffine) (fun _ _ hr => RM_toG hr) h
   rw [← Array.toList_map, ← Array.toList_map] at this
   exact Array.toList_inj.mp this
 
-theorem RA_self {a : Array PM} (h : ∀ p ∈ a, WFP p) : RA a (a.map ofPM) := by
+theorem RA_self {a : Array PM} (h : ∀ p ∈ a, WFP p) : RA a (a.map toPVesM) := by
   simp only [RA, Array.toList_map]
   exact forall₂_map_self (P := WFP) (fun p hp => RM_self hp) a.toList
     (fun p hp => h p (by simpa using hp))
 
-/-! ### The windowed Pippenger MSM -/
+/-! ## The windowed Pippenger MSM
 
-private theorem RA_scatterStep {a : Array PM} {b : Array P3} (h : RA a b) {t : ℕ × PM}
-    (ht : WFP t.2) : RA (PM.scatterStep a t) (NatKernel.scatterStep b (t.1, ofPM t.2)) := by
-  simp only [PM.scatterStep, NatKernel.scatterStep]
+The kernel's `msm` mirrors `MsmProj.pwindowValueFast` fold for fold — the single-pass Array
+bucket scatter and the suffix-sum downsweep — so each window value is transported by `RM` and
+handed to `MsmProj.pwindowValueFast_spec` for its affine meaning.  The Horner recombination
+across windows is the one place where the kernel does not mirror `MsmProj` (it doubles `c` times
+with `padd` rather than calling `pnsmulFast (2 ^ c)`), so it is proved directly through `toGM`.
+
+The kernel also fixes the window count at `⌈256 / c⌉` rather than `Msm.numWindows` (which depends
+on the term list); `hornerList_windows_eq_msm` is `Msm.pippenger_eq_msm` with the window count
+freed, which reconciles the two. -/
+
+private theorem RA_scatterStep {a : Array PM} {b : Array PVes} (h : RA a b) {t : ℕ × PM}
+    (ht : WFP t.2) :
+    RA (PM.scatterStep a t) (MsmProj.pscatterStep b (t.1, toPVesM t.2)) := by
+  simp only [PM.scatterStep, MsmProj.pscatterStep]
   by_cases h0 : t.1 = 0
   · rw [if_pos h0, if_pos h0]
     exact h
@@ -444,28 +505,28 @@ private theorem RA_scatterStep {a : Array PM} {b : Array P3} (h : RA a b) {t : �
 
 private theorem RA_bucketScatter (base : ℕ) (dp : List (ℕ × PM)) (h : ∀ t ∈ dp, WFP t.2) :
     RA (PM.bucketScatter base dp)
-      (NatKernel.bucketScatter base (dp.map fun t => (t.1, ofPM t.2))) := by
-  simp only [PM.bucketScatter, NatKernel.bucketScatter, List.foldl_map]
+      (MsmProj.pbucketScatter base (dp.map fun t => (t.1, toPVesM t.2))) := by
+  simp only [PM.bucketScatter, MsmProj.pbucketScatter, List.foldl_map]
   refine foldl_rel₂ RA (fun t : ℕ × PM => WFP t.2) dp _ _
     (fun s s' x hx hs => RA_scatterStep (t := x) hs hx) h _ _ ?_
   simp only [RA, Array.toList_replicate]
   exact forall₂_replicate RM_pid _
 
 private theorem RM2_foldr_accStep :
-    ∀ {L : List PM} {L' : List P3}, List.Forall₂ RM L L' →
+    ∀ {L : List PM} {L' : List PVes}, List.Forall₂ RM L L' →
       RM2 (L.foldr PM.accStep (PM.pid, PM.pid))
-        (L'.foldr NatKernel.accStep (NatKernel.pid, NatKernel.pid)) := by
+        (L'.foldr MsmProj.paccStep (PVes.pid, PVes.pid)) := by
   intro L L' h
   induction h with
   | nil => exact ⟨RM_pid, RM_pid⟩
   | cons hab _ ih =>
-    simp only [List.foldr_cons, PM.accStep, NatKernel.accStep]
+    simp only [List.foldr_cons, PM.accStep, MsmProj.paccStep]
     exact ⟨RM_padd ih.1 hab, RM_padd ih.2 (RM_padd ih.1 hab)⟩
 
 private theorem RM_windowValue (base i : ℕ) (terms : List (ℕ × PM))
     (h : ∀ t ∈ terms, WFP t.2) :
     RM (PM.windowValue base i terms)
-      (NatKernel.windowValue base i (terms.map fun t => (t.1, ofPM t.2))) := by
+      (MsmProj.pwindowValueFast base i (terms.map fun t => (t.1, toPVesM t.2))) := by
   have hdp : ∀ t ∈ terms.map (fun t : ℕ × PM => (t.1 / base ^ i % base, t.2)), WFP t.2 := by
     intro t ht
     rw [List.mem_map] at ht
@@ -473,47 +534,127 @@ private theorem RM_windowValue (base i : ℕ) (terms : List (ℕ × PM))
     exact h s hs
   have hb := RA_bucketScatter base (terms.map fun t : ℕ × PM => (t.1 / base ^ i % base, t.2)) hdp
   have halign : (terms.map fun t : ℕ × PM => (t.1 / base ^ i % base, t.2)).map
-        (fun t : ℕ × PM => (t.1, ofPM t.2))
-      = (terms.map fun t : ℕ × PM => (t.1, ofPM t.2)).map
-        (fun t : ℕ × P3 => (t.1 / base ^ i % base, t.2)) := by
-    simp only [List.map_map, Function.comp_def]
+        (fun t : ℕ × PM => (t.1, toPVesM t.2))
+      = MsmProj.pdpOf base i (terms.map fun t : ℕ × PM => (t.1, toPVesM t.2)) := by
+    simp only [MsmProj.pdpOf, Msm.digit, List.map_map, Function.comp_def]
   rw [halign] at hb
   exact (RM2_foldr_accStep hb).2
 
-private theorem RM_pdoublings (c : ℕ) {p : PM} {n : P3} (h : RM p n) :
-    RM (PM.pdoublings c p) (NatKernel.pdoublings c n) := by
-  simp only [PM.pdoublings, NatKernel.pdoublings]
-  exact foldl_rel₂ RM (fun _ : ℕ => True) (List.range c) _ _
-    (fun _ _ _ _ hs => RM_padd hs hs) (fun _ _ => trivial) _ _ h
+/-- The `c`-fold doubling is `2 ^ c • ·` in the affine group. -/
+private theorem pdoublingsM_spec {p : PM} (hp : WV p) (c : ℕ) :
+    WV (PM.pdoublings c p) ∧ toGM (PM.pdoublings c p) = (2 ^ c : ℕ) • toGM p := by
+  induction c with
+  | zero =>
+    rw [show PM.pdoublings 0 p = p from rfl]
+    exact ⟨hp, by rw [pow_zero, one_nsmul]⟩
+  | succ k ih =>
+    obtain ⟨hv, he⟩ := ih
+    have hstep : PM.pdoublings (k + 1) p = PM.padd (PM.pdoublings k p) (PM.pdoublings k p) := by
+      rw [PM.pdoublings, List.range_succ, List.foldl_append]; rfl
+    rw [hstep]
+    refine ⟨WV_padd hv hv, ?_⟩
+    rw [toGM_padd hv hv, he, ← two_nsmul, smul_smul, pow_succ]
+    ring_nf
 
-private theorem RM_msm (c : ℕ) (terms : List (ℕ × PM)) (h : ∀ t ∈ terms, WFP t.2) :
-    RM (PM.msm c terms) (NatKernel.msm c (terms.map fun t => (t.1, ofPM t.2))) := by
-  simp only [PM.msm, NatKernel.msm, List.foldr_map]
-  exact foldr_rel₂ RM (fun _ : ℕ => True) (List.range ((256 + c - 1) / c)) _ _
-    (fun i _ _ _ hs => RM_padd (RM_pdoublings c hs) (RM_windowValue (2 ^ c) i terms h))
-    (fun _ _ => trivial) _ _ RM_pid
+/-- The kernel's Horner recombination across windows is `Msm.hornerList` after `toGM`. -/
+private theorem hfoldM_spec (c : ℕ) (vals : List PM) (h : ∀ v ∈ vals, WV v) :
+    WV (vals.foldr (fun v acc => PM.padd (PM.pdoublings c acc) v) PM.pid) ∧
+      toGM (vals.foldr (fun v acc => PM.padd (PM.pdoublings c acc) v) PM.pid)
+        = Msm.hornerList (2 ^ c) (vals.map toGM) := by
+  induction vals with
+  | nil =>
+    refine ⟨by rw [List.foldr_nil]; exact WV_pid, ?_⟩
+    rw [List.foldr_nil, toGM_pid, List.map_nil, Msm.hornerList, List.foldr_nil]
+  | cons v xs ih =>
+    have hv : WV v := h v (by simp)
+    obtain ⟨hacc, heq⟩ := ih fun w hw => h w (by simp [hw])
+    obtain ⟨hdv, hde⟩ := pdoublingsM_spec hacc c
+    rw [List.foldr_cons]
+    refine ⟨WV_padd hdv hv, ?_⟩
+    rw [toGM_padd hdv hv, hde, heq, List.map_cons]
+    simp only [Msm.hornerList, List.foldr_cons]
+
+/-- **Horner recombination of `W` windows is the naive MSM**, whenever `W` base-`2 ^ c` digits
+cover every scalar.  This is `Msm.pippenger_eq_msm` with the window count freed from
+`Msm.numWindows` (the kernel fixes it at `⌈256 / c⌉`). -/
+private theorem hornerList_windows_eq_msm (c W : ℕ) (terms : List (ℕ × G))
+    (hW : ∀ t ∈ terms, t.1 < (2 ^ c) ^ W) :
+    Msm.hornerList (2 ^ c) ((List.range W).map fun i => Msm.windowValue (2 ^ c) i terms)
+      = (terms.map fun t => t.1 • t.2).sum := by
+  have hb0 : 0 < 2 ^ c := by positivity
+  have hpip : Msm.hornerList (2 ^ c)
+        ((List.range W).map fun i => Msm.windowValue (2 ^ c) i terms)
+      = ∑ i ∈ Finset.range W,
+          (2 ^ c) ^ i • (terms.map fun t => Msm.digit (2 ^ c) i t.1 • t.2).sum := by
+    rw [Msm.hornerList_eq, List.length_map, List.length_range]
+    refine Finset.sum_congr rfl fun k hk => ?_
+    rw [Finset.mem_range] at hk
+    rw [Msm.getD_map_range _ _ _ hk, Msm.windowValue_eq (2 ^ c) k hb0]
+  rw [hpip]
+  have e1 : (terms.map fun t => t.1 • t.2)
+      = terms.map fun t =>
+          ∑ i ∈ Finset.range W, Msm.digit (2 ^ c) i t.1 • ((2 ^ c) ^ i • t.2) :=
+    List.map_congr_left fun t ht => Msm.smul_eq_sum_digits (2 ^ c) hb0 W t.1 t.2 (hW t ht)
+  rw [e1, Msm.list_sum_finset_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Msm.smul_list_sum, List.map_map]
+  refine congrArg List.sum (List.map_congr_left fun t _ => ?_)
+  simp only [Function.comp_apply]
+  rw [smul_comm]
 
 /-- **The kernel's windowed Pippenger MSM is the proven affine Pippenger.**  Statement shape
-mirrors `NatKernel.msm_spec`. -/
+mirrors `MsmProj.pippengerProjScatter_eq`. -/
 theorem msmM_spec (c : ℕ) (hc : 0 < c) (terms : List (ℕ × PM))
     (hwf : ∀ t ∈ terms, WFP t.2) (hv : ∀ t ∈ terms, Valid (toPVesM t.2))
     (hn : ∀ t ∈ terms, t.1 < 2 ^ 256) :
     toAffine (toPVesM (PM.msm c terms))
       = Msm.pippenger c (terms.map fun t => (t.1, toAffine (toPVesM t.2))) := by
-  have hR := RM_msm c terms hwf
-  have hv' : ∀ t ∈ terms.map (fun t : ℕ × PM => (t.1, ofPM t.2)),
-      Valid (NatKernel.toPVes t.2) := by
+  set W := (256 + c - 1) / c with hWdef
+  set pterms := terms.map fun t => (t.1, toPVesM t.2) with hpterms
+  set aterms := terms.map fun t => (t.1, toAffine (toPVesM t.2)) with haterms
+  have hptv : ∀ p ∈ pterms, Valid p.2 := by
+    intro p hp
+    rw [hpterms, List.mem_map] at hp
+    obtain ⟨t, ht, rfl⟩ := hp
+    exact hv t ht
+  have hmapaff : pterms.map (fun t => (t.1, toAffine t.2)) = aterms := by
+    rw [hpterms, haterms, List.map_map]
+    rfl
+  -- each window value: well formed, representable, and affinely the `Msm` window value
+  have hwin : ∀ i, WV (PM.windowValue (2 ^ c) i terms) ∧
+      toGM (PM.windowValue (2 ^ c) i terms) = Msm.windowValue (2 ^ c) i aterms := by
+    intro i
+    have hR := RM_windowValue (2 ^ c) i terms hwf
+    rw [← hpterms] at hR
+    obtain ⟨hvw, hew⟩ := MsmProj.pwindowValueFast_spec (2 ^ c) i pterms hptv
+    exact ⟨RM_valid hR hvw, by rw [RM_toG hR, hew, hmapaff]⟩
+  have hvals : ∀ v ∈ (List.range W).map (fun i => PM.windowValue (2 ^ c) i terms), WV v := by
+    intro v hvm
+    rw [List.mem_map] at hvm
+    obtain ⟨i, -, rfl⟩ := hvm
+    exact (hwin i).1
+  have hmsm : PM.msm c terms
+      = ((List.range W).map fun i => PM.windowValue (2 ^ c) i terms).foldr
+        (fun v acc => PM.padd (PM.pdoublings c acc) v) PM.pid := rfl
+  have hmapwin : ((List.range W).map fun i => PM.windowValue (2 ^ c) i terms).map toGM
+      = (List.range W).map fun i => Msm.windowValue (2 ^ c) i aterms := by
+    simp only [List.map_map, Function.comp_def]
+    exact List.map_congr_left fun i _ => (hwin i).2
+  show toGM (PM.msm c terms) = _
+  rw [hmsm, (hfoldM_spec c _ hvals).2, hmapwin]
+  have hcW : 256 ≤ c * W := by
+    have h1 : c * W + (256 + c - 1) % c = 256 + c - 1 := by
+      rw [hWdef]; exact Nat.div_add_mod (256 + c - 1) c
+    have h2 : (256 + c - 1) % c < c := Nat.mod_lt _ hc
+    obtain ⟨x, hx⟩ : ∃ x, c * W = x := ⟨_, rfl⟩
+    rw [hx] at h1 ⊢
+    omega
+  have hbound : ∀ t ∈ aterms, t.1 < (2 ^ c) ^ W := by
     intro t ht
-    rw [List.mem_map] at ht
+    rw [haterms, List.mem_map] at ht
     obtain ⟨s, hs, rfl⟩ := ht
-    rw [toPVes_ofPM]
-    exact hv s hs
-  have hn' : ∀ t ∈ terms.map (fun t : ℕ × PM => (t.1, ofPM t.2)), t.1 < 2 ^ 256 := by
-    intro t ht
-    rw [List.mem_map] at ht
-    obtain ⟨s, hs, rfl⟩ := ht
-    exact hn s hs
-  rw [hR.2, NatKernel.msm_spec c hc _ hv' hn', List.map_map]
-  refine congrArg (Msm.pippenger c) (List.map_congr_left fun t _ => ?_)
-  simp only [Function.comp_apply, toPVes_ofPM]
+    calc s.1 < 2 ^ 256 := hn s hs
+      _ ≤ (2 ^ c) ^ W := by rw [← pow_mul]; exact Nat.pow_le_pow_right (by norm_num) hcW
+  rw [hornerList_windows_eq_msm c W aterms hbound, ← Msm.pippenger_eq_msm c hc]
+
 end CompElliptic.Curves.Pasta.Fast.ProjectiveMont

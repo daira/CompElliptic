@@ -5,7 +5,6 @@ as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Gregor Mitscha-Baude
 -/
 import CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs
-import CompElliptic.Curves.Pasta.Fast.NatKernel
 import CompElliptic.Curves.Pasta.Fast.ProjectiveMontDefs
 
 /-!
@@ -21,10 +20,9 @@ filename, so a library without a root module of the same name fails at load time
 `error loading plugin, initializer not found` in every module that imports the lane.
 
 Its import closure is **core-only by construction**: the eight-limb Montgomery field definitions
-(`CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs`), the `Nat`-carrier Vesta kernel
-(`CompElliptic.Curves.Pasta.Fast.NatKernel`) and the Montgomery Vesta kernel
+(`CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs`) and the Montgomery Vesta kernel
 (`CompElliptic.Curves.Pasta.Fast.ProjectiveMontDefs`) each import nothing beyond Lean core, so
-native compilation stays at four modules instead of a mathlib closure. Every theorem *about*
+native compilation stays at three modules instead of a mathlib closure. Every theorem *about*
 these definitions lives in sibling modules that are deliberately outside the lane.
 
 `scripts/check_native_lane.sh` re-checks the core-only invariant.

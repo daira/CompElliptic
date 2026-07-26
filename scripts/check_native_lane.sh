@@ -16,7 +16,6 @@ cd "$(dirname "$0")/.."
 LANE=(
   "FastFieldNative.lean"
   "CompElliptic/Vendor/CompPoly/Montgomery/Native64x8Defs.lean"
-  "CompElliptic/Curves/Pasta/Fast/NatKernel.lean"
   "CompElliptic/Curves/Pasta/Fast/ProjectiveMontDefs.lean"
 )
 

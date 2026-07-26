@@ -76,13 +76,13 @@ def pid : PM := ⟨zero, one, zero⟩
 
 /-! ## Group kernels
 
-Spelled to mirror `CompElliptic.Curves.Pasta.Fast.NatKernel`'s ladder, Pippenger and FFT
-**operation for operation**, so that the simulation proofs of
-`CompElliptic.Curves.Pasta.Fast.NatKernelEquiv` transfer to this tier structurally: only the
-interpretation of a coordinate changes (a Montgomery residue instead of a canonical `Nat`),
-never the schedule. -/
+The Pippenger schedule is spelled to mirror `CompElliptic.Curves.Pasta.Fast.MsmProj`'s projective
+one **operation for operation**, so that the correctness proofs of
+`CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv` are structural inductions along the
+coordinate map: only the interpretation of a coordinate changes (a Montgomery residue instead of
+an `𝔽_q` element), never the schedule. -/
 
-/-- Fixed 256-step LSB-first double-and-add ladder (mirrors `NatKernel.pnsmul`). -/
+/-- Fixed 256-step LSB-first double-and-add ladder. -/
 def pnsmul (n : Nat) (p : PM) : PM :=
   (List.range 256).foldl
     (fun (st : PM × PM) i =>
@@ -90,7 +90,7 @@ def pnsmul (n : Nat) (p : PM) : PM :=
       (acc, padd st.2 st.2))
     (pid, p) |>.1
 
-/-- One Array-scatter step (mirrors `NatKernel.scatterStep`). -/
+/-- One Array-scatter step (mirrors `MsmProj.pscatterStep`). -/
 def scatterStep (a : Array PM) (p : Nat × PM) : Array PM :=
   if p.1 = 0 then a else a.modify (p.1 - 1) (fun v => padd v p.2)
 
@@ -98,10 +98,10 @@ def scatterStep (a : Array PM) (p : Nat × PM) : Array PM :=
 def bucketScatter (base : Nat) (dp : List (Nat × PM)) : Array PM :=
   dp.foldl scatterStep (Array.replicate (base - 1) pid)
 
-/-- One step of the bucket downsweep (mirrors `NatKernel.accStep`). -/
+/-- One step of the bucket downsweep (mirrors `MsmProj.paccStep`). -/
 def accStep (a : PM) (p : PM × PM) : PM × PM := (padd p.1 a, padd p.2 (padd p.1 a))
 
-/-- The window-`i` value in base `base` (mirrors `NatKernel.windowValue`). -/
+/-- The window-`i` value in base `base` (mirrors `MsmProj.pwindowValueFast`). -/
 def windowValue (base i : Nat) (terms : List (Nat × PM)) : PM :=
   let scale := base ^ i
   (List.foldr accStep (pid, pid)
@@ -110,17 +110,18 @@ def windowValue (base i : Nat) (terms : List (Nat × PM)) : PM :=
 /-- `c`-fold doubling — the `base •` Horner step between adjacent windows. -/
 def pdoublings (c : Nat) (p : PM) : PM := (List.range c).foldl (fun a _ => padd a a) p
 
-/-- Windowed Pippenger MSM, window `c` (mirrors `NatKernel.msm`). -/
+/-- Windowed Pippenger MSM, window `c` (mirrors `MsmProj.pippengerProjScatter`, with the window
+count fixed at `⌈256 / c⌉` and the `base •` step spelled as `c` doublings). -/
 def msm (c : Nat) (terms : List (Nat × PM)) : PM :=
   let numWindows := (256 + c - 1) / c
   let base := 2 ^ c
   ((List.range numWindows).map fun i => windowValue base i terms).foldr
     (fun v acc => padd (pdoublings c acc) v) pid
 
-/-- Projective negation: `-(X : Y : Z) = (X : −Y : Z)` (mirrors `NatKernel.pneg`). -/
+/-- Projective negation: `-(X : Y : Z) = (X : −Y : Z)`. -/
 @[inline] def pneg (p : PM) : PM := ⟨p.X, sub zero p.Y, p.Z⟩
 
-/-- Bit-reversal permutation index (mirrors `NatKernel.bitreverse`). -/
+/-- Bit-reversal permutation index, transplanted from `Zcash.Snark.Keygen.bitreverse`. -/
 def bitreverse (n l : Nat) : Nat := Id.run do
   let mut r := 0
   let mut m := n
@@ -129,8 +130,8 @@ def bitreverse (n l : Nat) : Nat := Id.run do
     m := m >>> 1
   return r
 
-/-- In-place radix-2 DIT FFT over `PM` (mirrors `NatKernel.fft`): bit-reversal permutation,
-then `logN` rounds of butterflies against the canonical `Nat` twiddle scalars `tw`. -/
+/-- In-place radix-2 DIT FFT over `PM`: bit-reversal permutation, then `logN` rounds of
+butterflies against the canonical `Nat` twiddle scalars `tw`. -/
 def fft (a0 : Array PM) (tw : Array Nat) (logN : Nat) : Array PM := Id.run do
   let n := a0.size
   let mut a := a0

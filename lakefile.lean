@@ -28,9 +28,8 @@ lean_lib CompElliptic where
 -- THE CORE-ONLY INVARIANT: every module in this lane must import nothing beyond Lean core.
 -- `precompileModules` runs native codegen over the lane's whole import closure; pointing it at
 -- anything mathlib-side means natively compiling a mathlib closure, which OOMs a 16 GB machine.
--- That is why the three modules below are pure definition modules, split away from their proofs:
+-- That is why the two modules below are pure definition modules, split away from their proofs:
 --   * `...Vendor.CompPoly.Montgomery.Native64x8Defs` -- proofs in `Native64x8*.lean` (not in lane)
---   * `...Curves.Pasta.Fast.NatKernel`               -- proofs in `NatKernelEquiv.lean` (not in lane)
 --   * `...Curves.Pasta.Fast.ProjectiveMontDefs`      -- proofs in `ProjectiveMontEquiv.lean` (ditto)
 -- Adding a module here whose imports are not core-only will not fail loudly; it will just make the
 -- build enormous. `scripts/check_native_lane.sh` checks the invariant.
@@ -44,6 +43,5 @@ lean_lib FastFieldNative where
   globs := #[
     .one `FastFieldNative,
     .one `CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs,
-    .one `CompElliptic.Curves.Pasta.Fast.NatKernel,
     .one `CompElliptic.Curves.Pasta.Fast.ProjectiveMontDefs
   ]
