@@ -67,6 +67,9 @@ that arise in practice in Lean are `native_decide` —which discharges a goal by
 native code, adding a per-declaration compiler-trust axiom— and, unavoidably for numbers of this
 size, the kernel's own GMP-backed bignum arithmetic, on which even ordinary `decide` depends.
 
+See `design/lean-native-trust-research.md` for the underlying study of what `native_decide`, the
+interpreter, and precompiled native code actually trust.
+
 In CompElliptic, we allow these extensions to be used only for concrete, closed facts with no
 free variables: a Pratt primality certificate, a field's cardinality, the multiplicative order
 of a fixed root of unity, a (non-)residuosity check. These facts are easily reproducible: another
@@ -89,6 +92,16 @@ census of representative declarations, each pinned with `assert_axioms` (a sibli
 `assert_no_sorry`) to the tier it is allowed to sit in. A general theorem that reaches for
 `native_decide`, or a concrete fact that acquires an unexpected axiom, fails that file. The *Status*
 section below summarizes how the split appears in the actual axiom dependencies.
+
+Lean has a known gap in axiom-check enforcement introduced by the `@[csimp]` attribute. This
+attribute tells the Lean compiler to replace uses of one function by another justified by a proof.
+The gap is that the axioms relied on by that proof are not propagated to the replacement's axiom
+set ([lean4#7463](https://github.com/leanprover/lean4/issues/7463)). We do not currently have any
+uses of `@[csimp]` — but we anyway check that if such were added, each replacement lemma would get
+its own `assert_axioms` entry in `CompElliptic/TrustBoundary.lean`, preventing "axiom smuggling"
+via this route. This is enforced by `scripts/check_csimp_census.sh` in CI.
+
+For the `@[csimp]` check and in general, we do not attempt to guard against adversarial code.
 
 ## Status
 
@@ -119,13 +132,19 @@ Early work in progress. Present so far:
   provisional: they are not guaranteed to remain public, and may be folded into the existing API
   or otherwise changed incompatibly.
 
-Uses of `sorry` are kept minimal and limited to work-in-progress. The library's general theorems
-depend only on the standard `propext` / `Classical.choice` / `Quot.sound` axioms. Facts specific to
-concrete fields and curves additionally depend on `native_decide`'s per-declaration compiler-trust
-axiom, confined (per the *Independently re-checkable trust* principle) to checks the kernel cannot
-feasibly run, chiefly the order of the Tonelli–Shanks roots of unity. The tier of each is pinned in
-`CompElliptic/TrustBoundary.lean`. Further coordinate systems (projective and Jacobian), curve
-forms, the represented-group bridge, and the circuit model are tracked in [TODO.md](TODO.md).
+The library's general theorems depend only on the standard `propext` / `Classical.choice` /
+`Quot.sound` axioms. Facts specific to concrete fields and curves additionally depend on
+`native_decide`'s per-declaration compiler-trust axiom, confined —per the *Independently
+re-checkable trust* principle— to checks the kernel cannot feasibly run (chiefly the order of
+the Tonelli–Shanks roots of unity. The tier of each is pinned in `CompElliptic/TrustBoundary.lean`.
+
+Uses of `sorry` are kept minimal and limited to work-in-progress. As stated above under
+"Trust discipline", there are currently no uses of `@[csimp]` replacement.
+
+## Future work
+
+Further coordinate systems (projective and Jacobian), curve forms, the represented-group bridge,
+and the circuit model are tracked in [TODO.md](TODO.md).
 
 ## License
 
