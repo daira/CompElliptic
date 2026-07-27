@@ -41,3 +41,13 @@ jobs:
           python3 scripts/gen_jubjub.py > CompElliptic/Fields/Jubjub.lean
       - name: Fail if the regenerated files differ from the committed ones
         run: git diff --exit-code CompElliptic/Fields/Pasta.lean CompElliptic/Fields/Jubjub.lean
+
+  native-lane:
+    name: FastFieldNative lane is core-only
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - name: Check the precompiled lane's import closure
+        run: scripts/check_native_lane.sh
