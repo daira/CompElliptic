@@ -390,6 +390,35 @@ generator; at v4.30.0 the lowering is `ToIR.lean`, written in Lean.
 
 ---
 
+## Appendix C: Lake and the precompiled lane in practice (observed, this repository)
+
+Empirical findings on Lean/Lake v4.30.0, from experiments in this repository:
+
+- **The default build emits and loads the lane dylib.** Plain `lake build` (default
+  targets only) builds `FastFieldNative:shared`. The cause is not target membership
+  but imports: the lane's own proof modules (`ProjectiveMontEquiv`, the vendored
+  Montgomery theorem files, `TrustBoundary`) legitimately import the lane's
+  definition modules, and Lake builds and loads the owning library's shared facet
+  for their elaboration.
+- **Declaration order and glob overlap are not an opt-in boundary.** The hypothesis
+  that listing the `CompElliptic` library (whose `andSubmodules` glob covers the
+  lane modules) before `FastFieldNative` would make the default build interpret
+  them was tested and refuted: the shared facet is built regardless. Module-to-
+  library ownership under overlapping globs is not a mechanism one should rely on
+  for trust boundaries.
+- **Consequence: the enforceable opt-in boundary is at checks, not loading.**
+  Since dylib loading is inseparable from elaborating the lane's kernel-verified
+  proofs, the invariant this repository enforces (`scripts/check_native_optin.py`)
+  is: no module whose import closure reaches a lane module may contain an
+  evaluation-based check (`#eval`, `#guard`, `native_decide`) unless explicitly
+  opted in with a rationale. Loading is capability; executing a check through the
+  loaded code is the trust event.
+- **Related hazard: silent dylib-name collision.** Lean module names are global
+  across a build, and a downstream repository declaring its own precompiled
+  library with the same root module name as a dependency's collides silently —
+  the build stays green, one shared object is never emitted, and the affected
+  modules quietly run interpreted. Dotted library names avoid this.
+
 ## Sources
 
 Documentation:

@@ -101,7 +101,17 @@ uses of `@[csimp]` — but we anyway check that if such were added, each replace
 its own `assert_axioms` entry in `CompElliptic/TrustBoundary.lean`, preventing "axiom smuggling"
 via this route. This is enforced by `scripts/check_csimp_census.sh` in CI.
 
-For the `@[csimp]` check and in general, we do not attempt to guard against adversarial code.
+Executing a check through locally compiled native code (a `precompileModules` dylib) trusts
+the C emitter, the local C toolchain, and the loader, coarse-grained and with no axiom trace —
+a larger surface than `native_decide`'s per-computation axioms. Loading the lane's dylib is
+inseparable from elaborating its proof modules, so the enforced invariant sits at the level of
+checks: no module reaching a lane module by imports may contain an evaluation-based check
+(`#eval`, `#guard`, `native_decide`) unless explicitly opted in, enforced by
+`scripts/check_native_optin.py` in CI. See `design/lean-native-trust-research.md` (Appendix C)
+for the observed Lake behaviour behind this rule.
+
+For the `@[csimp]` check, the native opt-in check, and in general, we do not attempt to guard
+against adversarial code.
 
 ## Status
 

@@ -6,12 +6,12 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# The lane, mirroring the `FastFieldNative` globs in lakefile.lean.
-LANE=(
-  "FastFieldNative.lean"
-  "CompElliptic/Vendor/CompPoly/Montgomery/Native64x8Defs.lean"
-  "CompElliptic/Curves/Pasta/Fast/ProjectiveMontDefs.lean"
-)
+# The lane, parsed from lakefile.lean's precompileModules libraries (the single
+# source of truth) via check_native_optin.py; module names become file paths.
+LANE_MODULES=()
+mapfile -t LANE_MODULES < <(python3 scripts/check_native_optin.py --print-lane)
+LANE=()
+for mod in "${LANE_MODULES[@]}"; do LANE+=("${mod//.//}.lean"); done
 
 # `FastFieldNative.lean` is the root module; it may import the rest of the lane and nothing else.
 status=0

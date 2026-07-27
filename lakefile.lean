@@ -21,6 +21,12 @@ lean_lib CompElliptic where
 -- the whole import closure, so one mathlib-side import silently makes the build enormous -- hence
 -- the definitions/proofs split, and `scripts/check_native_lane.sh`. `FastFieldNative.lean` exists
 -- only because Lean derives a dynlib's `initialize_...` symbol from the library name.
+-- NOTE (observed on Lean/Lake v4.30.0): declaring the `CompElliptic` library first does NOT
+-- stop the default build from building and loading this lane's dylib — the lane's proof
+-- modules import the definition modules, so the shared facet is built for their elaboration.
+-- Ownership under overlapping globs and declaration order is not an opt-in boundary; the
+-- opt-in invariant for native-executing checks is enforced by `scripts/check_native_optin.py`
+-- (see `design/lean-native-trust-research.md`, Appendix C).
 lean_lib FastFieldNative where
   precompileModules := true
   globs := #[
