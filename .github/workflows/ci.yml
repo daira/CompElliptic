@@ -51,3 +51,13 @@ jobs:
           persist-credentials: false
       - name: Check the precompiled lane's import closure
         run: scripts/check_native_lane.sh
+
+  csimp-census:
+    name: csimp lemmas are axiom-censused
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - name: Check every @[csimp] declaration has an assert_axioms entry
+        run: scripts/check_csimp_census.sh
