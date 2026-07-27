@@ -619,7 +619,7 @@ add — many small interpreted steps lose to few boxed GMP calls; the same effec
 makes interpreted Montgomery a 40× regression). The equality is kept for the compiled
 tier: once the fast-field lib ships precompiled (`precompileModules` dylib), registering
 this `@[csimp]` (or the Montgomery successor) makes every compiled call site (including
-`native_decide` auxiliaries) runs the fused raw-`ℕ` form at every `padd` call site. -/
+`native_decide` auxiliaries) run the fused raw-`ℕ` form. -/
 theorem padd_eq_paddFast : @padd = @paddFast := by
   funext P Q
   simp only [padd, paddFast, PVes.mk.injEq]
