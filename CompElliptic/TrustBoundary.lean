@@ -5,6 +5,9 @@ as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
 import CompElliptic.Curves.PastaOrder
+import CompElliptic.Curves.Pasta.Fast.Projective
+import CompElliptic.Curves.Pasta.Fast.Msm
+import CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv
 import CompElliptic.Fields.Sqrt
 import CompElliptic.Meta.AxiomCheck
 
@@ -68,3 +71,19 @@ assert_axioms CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt +native
 assert_axioms CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt +native
 assert_axioms CompElliptic.Curves.Pasta.Pallas.card_eq +native
 assert_axioms CompElliptic.Curves.Pasta.Vesta.card_eq +native
+
+/-! ## Fast Vesta arithmetic — proven against the affine group law, standard axioms only
+
+The fast tier's headline correctness theorems: the RCB projective addition is the affine
+group law (`toAffine_padd`), the projective scalar ladder and the windowed Pippenger MSM
+compute the operations they replace, the raw-`ℕ` spelling is `padd`, and the Montgomery
+kernel computes the same schedules. Completeness routes through `no_onCurve_y_zero`
+(a kernel `decide`), so nothing here reaches `native_decide`. -/
+
+assert_axioms CompElliptic.Curves.Pasta.Fast.Projective.PVes.toAffine_padd
+assert_axioms CompElliptic.Curves.Pasta.Fast.Projective.PVes.smulFast_eq
+assert_axioms CompElliptic.Curves.Pasta.Fast.Projective.PVes.padd_eq_paddFast
+assert_axioms CompElliptic.Curves.Pasta.Fast.Msm.pippengerFastPar_eq_msm
+assert_axioms CompElliptic.Curves.Pasta.Fast.Msm.commitLagrangeFastWith_eq
+assert_axioms CompElliptic.Curves.Pasta.Fast.ProjectiveMont.pnsmulM_spec
+assert_axioms CompElliptic.Curves.Pasta.Fast.ProjectiveMont.msmM_spec
