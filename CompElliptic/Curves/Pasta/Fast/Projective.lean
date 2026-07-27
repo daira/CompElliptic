@@ -21,6 +21,9 @@ Specialized to `a = 0`, `b = 5`, `b3 = 15`, the closed forms are
 * `X₃ = X₁Y₁Y₂² − 15X₁Y₁Z₂² − 30X₁Z₁Y₂Z₂ + Y₁²X₂Y₂ − 15Z₁²X₂Y₂ − 30Y₁Z₁X₂Z₂`
 * `Y₃ = Y₁²Y₂² + 45X₁²X₂Z₂ + 45X₁Z₁X₂² − 225Z₁²Z₂²`
 * `Z₃ = Y₁²Y₂Z₂ + Y₁Z₁Y₂² + 3X₁²X₂Y₂ + 3X₁Y₁X₂² + 15Y₁Z₁Z₂² + 15Z₁²Y₂Z₂`
+
+The `Fast` interfaces are provisional: they are not guaranteed to remain public, and
+may be folded into the existing API or otherwise changed incompatibly.
 -/
 
 open CompElliptic

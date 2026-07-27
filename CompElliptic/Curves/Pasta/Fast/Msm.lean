@@ -24,6 +24,9 @@ The equality goes through the base-`2 ^ c` digit decomposition `n • x = ∑ i,
 (base ^ i • x)` (`smul_eq_sum_digits`), an exchange of the sum over terms with the sum over
 windows (`list_sum_finset_sum`), the identification of each window's contribution with its
 weighted bucket sum (`naiveWindow_eq_buckets`, `foldr_accStep`), and `hornerList_eq`.
+
+The `Fast` interfaces are provisional: they are not guaranteed to remain public, and
+may be folded into the existing API or otherwise changed incompatibly.
 -/
 
 namespace CompElliptic.Curves.Pasta.Fast.Msm

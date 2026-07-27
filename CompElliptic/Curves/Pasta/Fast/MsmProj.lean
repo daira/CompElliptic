@@ -19,6 +19,9 @@ accelerator (`pippengerProj_eq`, `pippengerProjScatter_eq`, and `..._eq_msm` to 
 Pippenger equality is not re-run here: each fold of `Msm.lean` is mirrored by a `padd`/`pid`
 version and shown to commute with `toAffine`, carrying `Valid` through every intermediate
 (`psum_spec`, `pbucketOf_spec`, `foldr_paccStep_spec`, `pwindowValue_spec`, `phornerList_spec`).
+
+The `Fast` interfaces are provisional: they are not guaranteed to remain public, and
+may be folded into the existing API or otherwise changed incompatibly.
 -/
 
 open CompElliptic.Curves.Pasta.Fast

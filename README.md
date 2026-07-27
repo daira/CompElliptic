@@ -115,7 +115,9 @@ Early work in progress. Present so far:
   complete Renes–Costello–Batina projective addition, a windowed Pippenger multi-scalar
   multiplication and a scalar ladder, each proven to compute the affine group operation it replaces,
   together with a natively compilable Montgomery-limb kernel proven against them
-  (`CompElliptic/Curves/Pasta/Fast/`, not imported by `CompElliptic.lean`).
+  (`CompElliptic/Curves/Pasta/Fast/`, not imported by `CompElliptic.lean`). These interfaces are
+  provisional: they are not guaranteed to remain public, and may be folded into the existing API
+  or otherwise changed incompatibly.
 
 Uses of `sorry` are kept minimal and limited to work-in-progress. The library's general theorems
 depend only on the standard `propext` / `Classical.choice` / `Quot.sound` axioms. Facts specific to

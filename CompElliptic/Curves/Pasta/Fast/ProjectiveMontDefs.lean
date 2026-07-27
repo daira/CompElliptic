@@ -14,6 +14,9 @@ schedules of `CompElliptic.Curves.Pasta.Fast.MsmProj`, transcribed operation for
 eight-limb Montgomery residues so that they can be native-compiled (the `FastFieldNative` lane in
 the lakefile — hence no imports beyond Lean core, and no proofs here). Every operation is proven
 to compute its `𝔽_q`-valued counterpart in `CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv`.
+
+The `Fast` interfaces are provisional: they are not guaranteed to remain public, and
+may be folded into the existing API or otherwise changed incompatibly.
 -/
 
 namespace CompElliptic.Curves.Pasta.Fast.ProjectiveMont

@@ -30,6 +30,9 @@ structural: the schedules mirror `MsmProj`'s, so they transport along
 
 `RM`, `RM2`, `RA` and the fold combinators are public rather than private: lifting a *further*
 shared schedule to the Montgomery tier needs the same inductions.
+
+The `Fast` interfaces are provisional: they are not guaranteed to remain public, and
+may be folded into the existing API or otherwise changed incompatibly.
 -/
 
 namespace CompElliptic.Curves.Pasta.Fast.ProjectiveMont
