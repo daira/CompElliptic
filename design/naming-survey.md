@@ -32,6 +32,7 @@ representation, byte sequence, bit sequence, circuit representation, and coordin
 | Non-injective coordinates | explicitly **equivalence classes** (projective `(X : Y : Z)` notation signals "a class") |
 | Conversion to the unique form | **normalize** / `norm`, **to-affine**, **make-affine** |
 | Byte / wire form | **encoding**, **serialize**, **compress(ed)** / **uncompressed** |
+| Deterministic field→curve function (hash-to-curve) | **mapping** / `map_to_curve` (RFC 9380); the underlying papers say "encoding" — see the third-sense caution below |
 | Affine x, y getters | **coordinates** (a narrow accessor concept, not a type) |
 | In-circuit value | **variable** / **Var**, **assigned (cell)**, **wire**, **witness** |
 
@@ -236,6 +237,23 @@ The runner-up is to flip the word entirely — "encoding = value" (following zkc
 9496) and rename the scheme `Codec` (an encode-plus-decode pair) or `EncodingScheme`. It reads
 naturally at value sites ("a valid encoding") but renames the central structure and diverges from
 `Encodable`.
+
+### A third sense from the hash-to-curve literature: prefer RFC 9380's "mapping"
+
+The papers underlying hash-to-curve —Boneh–Franklin's "admissible encoding", its generalization by
+Brier et al. (CRYPTO 2010), and Farashahi et al.'s "well-distributed encoding"— use **"encoding"**
+for the deterministic field-to-curve functions (simplified SWU, Icart, and relatives). RFC 9380
+renames exactly these objects **mappings** (`map_to_curve`, its section 2.2.1), reserving "encoding"
+for the byte-string-to-point composite (`encode_to_curve`). CompElliptic follows RFC 9380: the
+`Hashing/` modules say *mapping* for an `f : F → G` under character-sum analysis, and *encoding*
+keeps its reserved sense here — the scheme translating group elements into their depictions and
+back. The papers' word appears only when citing them (e.g. the References block of
+`Hashing/WellDistributed.lean`, where "well-distributed encoding" is Farashahi et al.'s defined
+term).
+
+This sense was absent from the original survey because the repo's hash-to-curve reference was
+RFC 9380 rather than the papers it relies on: the RFC had already renamed the clash away, and it
+resurfaced only when the character-sum development began citing the underlying literature directly.
 
 ## Implications for CompElliptic naming
 
