@@ -34,9 +34,10 @@ of `fun Q => mult f Q - 1`, the deviation of the value multiplicity from a perfe
 covering. The sign convention has disappeared. What remains is a statement about
 which group elements `f` covers, and with what multiplicity; `IsOdd.mult_neg` says
 that residual is negation-symmetric. Bounding it is out of scope here — it rests on
-the Weil bound (the Riemann hypothesis for curves) applied to the encoding's
-covering curve. This file isolates the elementary reduction that removes the sign
-convention from the problem.
+the Weil bound (the Riemann hypothesis for curves; Weil 1948) applied to the
+mapping's covering curve, stated as an explicit hypothesis with full references in
+`CompElliptic.Hashing.WellDistributed`. This file isolates the elementary reduction
+that removes the sign convention from the problem.
 -/
 
 namespace CompElliptic.Hashing

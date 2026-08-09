@@ -41,24 +41,47 @@ It does not, for four reasons that compound.
 
 3. **CompElliptic's order method is special to near-prime-order elliptic curves.**
    `CurveOrder` pins `#E` from a prime-order witness (`r • P = 0`) plus the fibre
-   bound `#E ≤ 2·#F + 1`. A genus-8 curve has no group law on its points to host
-   such a witness; the relevant group is its Jacobian, of order `≈ (#F)^8` and
-   composite, with no prime to pin. And the fibre bound is only good to a factor of
-   about two, whereas the character sum needs `√#F`-precision — a far finer target
-   than "pin to a prime". So the elementary method does not transfer.
+   bound `#E ≤ 2·#F + 1`. For a genus-8 curve the group to count is its Jacobian
+   (the curve's own points carry no group law; the Jacobian's degree-0 divisor
+   classes do, with the curve embedded in it), and that group has composite order
+   `≈ (#F)⁸` — no prime to pin, which is the decisive obstruction. And the fibre
+   bound is only good to a factor of about two, whereas the character sum needs
+   `√#F`-precision — a far finer target than "pin to a prime". So the elementary
+   method does not transfer.
 
-4. **Arithmetic on `C` is necessary but not sufficient.** Even with a group law and
-   arithmetic on `C` (which we do not have), there is no witness-plus-fibre shortcut
-   at genus 8, and direct point counting over a field of size `≈ 2²⁵⁴` is infeasible
-   (no verified higher-genus counting algorithm; the naive count is `≈ 2²⁵⁴`
-   points). Off-line tools (e.g. Sage) can in principle count Jacobian points, but
-   the result is one order, not the uniform family bound of (2), and using it in a
-   proof would still require the Riemann-hypothesis-for-curves machinery that
-   connects point counts to character sums — exactly the theorem being assumed.
+4. **Jacobian arithmetic is necessary but not sufficient.** Even implementing the
+   Jacobian's group operations (which we do not), there is no witness-plus-fibre
+   shortcut at genus 8, and direct point counting over a field of size `≈ 2^{254}`
+   is infeasible (no verified higher-genus counting algorithm; the naive count is
+   `≈ 2^{254}` points). Off-line tools (e.g. Sage) can in principle count Jacobian
+   points, but the result is one order, not the uniform family bound of (2), and
+   using it in a proof would still require the Riemann-hypothesis-for-curves
+   machinery that connects point counts to character sums — exactly the theorem
+   being assumed.
 
 So the Weil bound (the Riemann hypothesis for curves) enters exactly once, as the
 hypothesis below. Everything upstream of it —the removal of the sign convention—
 is the elementary, orthogonality-only content of `CharacterSum.lean`.
+
+## References
+
+- A. Weil, "Sur les courbes algébriques et les variétés qui s'en déduisent",
+  Actualités Scientifiques et Industrielles 1041, Hermann, Paris, 1948.
+  <http://denise.vella.chemla.free.fr/Weil-courbes-varietes.pdf> (The Riemann
+  hypothesis for curves over finite fields, from which both the point-count bound
+  `|#C(F) - (#F + 1)| ≤ 2·genus·√#F` and the character-sum form below follow.)
+- R. R. Farashahi, P.-A. Fouque, I. E. Shparlinski, M. Tibouchi, and J. F. Voloch,
+  "Indifferentiable deterministic hashing to elliptic and hyperelliptic curves", IACR
+  Cryptology ePrint Archive, Report 2010/539, <https://eprint.iacr.org/2010/539>
+  (later published in Mathematics of Computation 82 (2013), pp. 491–512). Lemma 1 is
+  the character-sum form intended to discharge `WeilBounded`: for a nontrivial Artin
+  character `χ` of conductor `𝔣` on a curve `X` of genus `g` over a field of size `q`,
+  `|∑_{P ∈ X(F)} χ(P)| ≤ (2g − 2 + deg 𝔣(χ))·√q`. Theorem 3 is its workhorse form for
+  encodings presented by a covering `C → E`. Theorem 6 instantiates it for the
+  simplified SWU encoding (genus-8 covering, `|S_f(χ)| ≤ 52·√q + 151`, stated there
+  for fields of size `≡ 3 (mod 4)`). Carrying the constant to the generalized
+  variant deployed for the Pasta curves is a routine but unwritten redo of the same
+  genus computation.
 -/
 
 namespace CompElliptic.Hashing
