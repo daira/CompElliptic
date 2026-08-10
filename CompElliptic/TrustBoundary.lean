@@ -55,6 +55,13 @@ assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_isSome_of_isSquare
 assert_axioms CompElliptic.Fields.Pasta.PALLAS_BASE_is_prime
 assert_axioms CompElliptic.Fields.Pasta.PALLAS_SCALAR_is_prime
 
+/-! ## The isogeny layer's headline general theorems — standard axioms only -/
+
+assert_axioms CompElliptic.Curves.Pasta.Pallas.iso_map_eq
+assert_axioms CompElliptic.Curves.Pasta.Vesta.iso_map_eq
+assert_axioms CompElliptic.Curves.Pasta.Pallas.onCurve_iso_map
+assert_axioms CompElliptic.Curves.Pasta.Vesta.onCurve_iso_map
+
 /-! ## Computable point enumeration — the curve group's `Fintype`, as plain data
 
 `Classical.choice` enters only through erased `Prop` fields of the Mathlib `Finset` lemmas;
@@ -79,6 +86,14 @@ assert_axioms CompElliptic.Curves.Pasta.Pallas.card_eq +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms CompElliptic.Curves.Pasta.Vesta.card_eq +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms CompElliptic.Curves.Pasta.Pallas.q_nsmul_isoGpt +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_isoGpt)
+assert_axioms CompElliptic.Curves.Pasta.Vesta.p_nsmul_isoGpt +native(
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_isoGpt)
+assert_axioms CompElliptic.Curves.Pasta.Pallas.iso_card_eq +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_isoGpt)
+assert_axioms CompElliptic.Curves.Pasta.Vesta.iso_card_eq +native(
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_isoGpt)
 
 /-! ## Fast Vesta arithmetic — proven against the affine group law, standard axioms only
 

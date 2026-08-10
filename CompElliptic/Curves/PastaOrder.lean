@@ -5,14 +5,18 @@ as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood, Gregor Mitscha-Baude
 -/
 import CompElliptic.Curves.Pasta
+import CompElliptic.Curves.IsoPasta
 import CompElliptic.CurveOrder
 
 /-!
-# Orders of the Pasta curve groups (Pallas and Vesta)
+# Orders of the Pasta and iso-Pasta curve groups
 
-Instantiates the `CompElliptic.CurveOrder` fibre bound at the two Pasta curves, with no assumption:
-the Pallas group has order `PALLAS_SCALAR_CARD` and the Vesta group has order `PALLAS_BASE_CARD`
-(the Pasta cycle: each curve's order is the other's base-field size).
+Instantiates the `CompElliptic.CurveOrder` fibre bound at the two Pasta curves and their
+3-isogenous auxiliaries, with no assumption: the Pallas and iso-Pallas groups have order
+`PALLAS_SCALAR_CARD`, and the Vesta and iso-Vesta groups have order `PALLAS_BASE_CARD`
+(the Pasta cycle: each curve's order is the other's base-field size; isogenous curves have
+equal orders, though here each order is pinned by its own witness rather than by the
+isogeny).
 
 The test point `G = (-1, 2)` is the prime-order witness, and the witness fact `[order] G = 𝒪`
 (a `≈ 2^254` scalar multiplication) is a one-line `native_decide` now that the `SWPoint` scalar
@@ -25,6 +29,12 @@ of the two field sizes, and the Pasta cycle puts the two curves on opposite side
 * **Vesta** — order `p = PALLAS_BASE_CARD` over the base field of size `q`, and `p < q`, so only
   `2q + 1 < 3p` is available. `#E = 2p` is ruled out separately: a 2-torsion point needs `y = 0`,
   i.e. `x³ = -5`, which `Pasta.Vesta.no_onCurve_y_zero` forbids.
+
+The iso-curves take the same two routes as their targets. The one new ingredient is
+iso-Vesta's 2-torsion exclusion: its curve cubic has a linear term, so the cube-residue
+argument does not apply, but none is needed — a `y = 0` point of iso-Vesta would map to a
+`y = 0` point of Vesta under the isogeny (`ThreeIsogeny.no_y_zero_of_codomain`), and Vesta
+has none.
 
 Per the *Independently re-checkable trust* principle every obligation here is a closed numeric fact
 (`2p + 1 < 2q`, `2q + 1 < 3p`), discharged by kernel `decide`; the only trust is the prime-order
@@ -56,6 +66,24 @@ theorem card_eq : Nat.card (SWPoint curve) = PALLAS_SCALAR_CARD := by
   rw [show Fintype.card PallasBaseField = PALLAS_BASE_CARD from ZMod.card _]
   decide
 
+/-- A prime-order witness on iso-Pallas, at the smallest square abscissa `x = 1`. -/
+def isoGpt : SWPoint isoCurve :=
+  ⟨1, 181637241052482785468502922954224147219384682169221362737776065992881747347,
+    Or.inl (by decide)⟩
+
+theorem isoGpt_ne_zero : isoGpt ≠ 0 := by decide
+
+/-- `[q] G = 𝒪` on iso-Pallas, where `q = PALLAS_SCALAR_CARD` is the iso-Pallas group order. -/
+theorem q_nsmul_isoGpt : PALLAS_SCALAR_CARD • isoGpt = 0 := by native_decide
+
+/-- **The iso-Pallas curve group has order `PALLAS_SCALAR_CARD`**, unconditionally — the same
+order as Pallas, by the same route. -/
+theorem iso_card_eq : Nat.card (SWPoint isoCurve) = PALLAS_SCALAR_CARD := by
+  refine card_eq_of_prime_witness_of_card_lt_two_mul isoCurve PALLAS_SCALAR_is_prime
+    isoGpt_ne_zero q_nsmul_isoGpt ?_
+  rw [show Fintype.card PallasBaseField = PALLAS_BASE_CARD from ZMod.card _]
+  decide
+
 end Pallas
 
 namespace Vesta
@@ -79,6 +107,32 @@ theorem card_eq : Nat.card (SWPoint curve) = PALLAS_BASE_CARD := by
   · rw [show Fintype.card VestaBaseField = PALLAS_SCALAR_CARD from ZMod.card _]
     decide
   · exact fun _ => eq_zero_of_two_nsmul_eq_zero (by decide) no_onCurve_y_zero
+
+/-- A prime-order witness on iso-Vesta, at the smallest square abscissa `x = 4`. -/
+def isoGpt : SWPoint isoCurve :=
+  ⟨4, 2165270085553270387583265107994083524758817942147891525126107618954199130179,
+    Or.inl (by decide)⟩
+
+theorem isoGpt_ne_zero : isoGpt ≠ 0 := by decide
+
+/-- `[p] G = 𝒪` on iso-Vesta, where `p = PALLAS_BASE_CARD` is the iso-Vesta group order. -/
+theorem p_nsmul_isoGpt : PALLAS_BASE_CARD • isoGpt = 0 := by native_decide
+
+/-- No point of iso-Vesta has `y = 0`: it would map to a `y = 0` point of Vesta under the
+isogeny, and Vesta has none. -/
+theorem iso_no_onCurve_y_zero (x : VestaBaseField) :
+    ¬ OnCurve isoCurve.A isoCurve.B (x, 0) :=
+  iso.no_y_zero_of_codomain no_onCurve_y_zero x
+
+/-- **The iso-Vesta curve group has order `PALLAS_BASE_CARD`**, unconditionally — the same
+order as Vesta, by the same route, with the 2-torsion exclusion transported through the
+isogeny. -/
+theorem iso_card_eq : Nat.card (SWPoint isoCurve) = PALLAS_BASE_CARD := by
+  refine card_eq_of_prime_witness_of_card_lt_three_mul isoCurve PALLAS_BASE_is_prime
+    isoGpt_ne_zero p_nsmul_isoGpt ?_ ?_
+  · rw [show Fintype.card VestaBaseField = PALLAS_SCALAR_CARD from ZMod.card _]
+    decide
+  · exact fun _ => eq_zero_of_two_nsmul_eq_zero (by decide) iso_no_onCurve_y_zero
 
 end Vesta
 
