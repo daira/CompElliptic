@@ -1,6 +1,6 @@
 name = "CompElliptic"
 version = "0.1.0"
-defaultTargets = ["CompElliptic"]
+defaultTargets = ["CompElliptic", "MetaCheck"]
 
 [leanOptions]
 pp.unicode.fun = true # pretty-prints `fun a ↦ b`
@@ -19,6 +19,15 @@ rev = "d458e5cebd364b15660ff8de20ec964dcd52c120"
 [[lean_lib]]
 name = "CompElliptic"
 globs = ["CompElliptic.*"]
+
+# Regression-test-only declarations for `CompElliptic.Meta.AxiomCheck`: forged axioms and
+# doctored compiled bodies exercising the census's rejection paths. A separate library outside
+# `CompElliptic/`, so they never enter the production import graph and the source-level sweeps
+# (`scripts/check_csimp_census.sh`, `scripts/check_native_optin.py`) do not scan them; a default
+# target, so a plain `lake build` still runs the regression checks.
+[[lean_lib]]
+name = "MetaCheck"
+globs = ["MetaCheck.+"]
 
 # Native-compiles the Montgomery arithmetic, which is meant to be run (`#eval`, `native_decide`),
 # not only proven about. Every module here must import nothing outside Lean core: codegen runs over
