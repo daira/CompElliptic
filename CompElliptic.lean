@@ -17,6 +17,7 @@ import CompElliptic.CurveForms.ShortWeierstrass
 import CompElliptic.CurveOrder
 import CompElliptic.Isogenies.ThreeIsogeny
 import CompElliptic.Curves.Pasta
+import CompElliptic.Curves.IsoPasta
 import CompElliptic.Curves.PastaOrder
 import CompElliptic.Hashing.CharacterSum
 import CompElliptic.Hashing.SignedLift
