@@ -62,10 +62,14 @@ injectivity to a bijection on rational points (`map_bijective`).
 - J. Vélu, "Isogénies entre courbes elliptiques", Comptes Rendus de l'Académie des
   Sciences de Paris, Série A, 273 (1971), A238–A241. (The formulae giving a separable
   isogeny with prescribed kernel, and its codomain.)
+- J. H. Silverman, "The Arithmetic of Elliptic Curves", 2nd edition, Graduate Texts
+  in Mathematics 106, Springer, 2009. (Theorem III.4.8: an isogeny is a group
+  homomorphism.)
 - S. D. Galbraith, "Mathematics of Public Key Cryptography", Cambridge University
   Press, 2012. Extended Chapter 25, "Isogenies of elliptic curves":
   <https://www.math.auckland.ac.nz/~sgal018/crypto-book/ch25.pdf>. Theorem 25.1.6
-  states Vélu's formulae in the Weierstrass form used here (section 25.1.1).
+  states Vélu's formulae in the Weierstrass form used here (section 25.1.1), and
+  section 25.1 notes that an isogeny is automatically a group homomorphism.
 -/
 
 open CompElliptic.CurveForms.ShortWeierstrass
@@ -282,6 +286,12 @@ def map (P : SWPoint I.domain) : SWPoint I.codomain :=
   if h : OnCurve I.domain.A I.domain.B (P.x, P.y) then
     ⟨(I.mapXY P.x P.y).1, (I.mapXY P.x P.y).2, Or.inl (I.onCurve_mapXY h)⟩
   else 0
+
+/-- The identity maps to the identity: its sentinel pair `(0, 0)` is not on the domain
+curve, so `map` takes its else branch. -/
+@[simp] theorem map_zero : I.map 0 = 0 := by
+  rw [map]
+  exact dif_neg (origin_not_on_curve I.domain)
 
 /-- The isogeny is injective on rational points: image abscissas agree only on equal
 abscissas (`abscissa_inj`). Over one abscissa the two ordinates are negatives, so equal
