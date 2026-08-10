@@ -18,6 +18,7 @@ import CompElliptic.CurveOrder
 import CompElliptic.Curves.Pasta
 import CompElliptic.Curves.PastaOrder
 import CompElliptic.Hashing.CharacterSum
+import CompElliptic.Hashing.SignedLift
 import CompElliptic.Hashing.TwoTermUniformity
 import CompElliptic.Hashing.WellDistributed
 import CompElliptic.TrustBoundary
