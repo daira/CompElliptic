@@ -49,6 +49,14 @@ the result lands on the codomain. The ordinate is `y` times a function of `x` al
 so negating the input negates the output (`mapXY_neg`): the isogeny commutes with
 negation, which the hash-to-curve analysis consumes as oddness.
 
+`map` packages the affine map as a function on curve points, sending the identity to
+the identity. It is injective on rational points (`map_injective`): an abscissa
+collision would exhibit the nonsquare `y₀²` as a square (`abscissa_inj`), and rational
+2-torsion —excluded on the codomain by hypothesis, and transported to the domain by
+`no_y_zero_of_codomain`— is the only degenerate case. No homomorphism property is
+consumed. When the domain and codomain have equal finite order, counting upgrades
+injectivity to a bijection on rational points (`map_bijective`).
+
 ## References
 
 - J. Vélu, "Isogénies entre courbes elliptiques", Comptes Rendus de l'Académie des
@@ -195,6 +203,154 @@ theorem no_y_zero_of_codomain
   have himg := I.onCurve_mapXY h
   have hy : (I.mapXY x 0).2 = 0 := by simp [mapXY]
   exact hc (I.mapXY x 0).1 (hy ▸ himg)
+
+
+/- The collision identity behind `abscissa_inj` was derived, and its cofactors computed,
+with this Sage script:
+
+  R.<u, w, y1, x0, a, b> = PolynomialRing(QQ)
+  g0   = x0^3 + a*x0 + b
+  psi3 = 3*x0^4 + 6*a*x0^2 + 12*b*x0 - a^2
+  v    = 2*(3*x0^2 + a)
+  uc   = 4*g0
+  xnum = lambda t: t*(t - x0)^2 + v*(t - x0) + uc
+  H  = xnum(u)*(w - x0)^2 - xnum(w)*(u - x0)^2
+  G  = H // (u - w)                      # exact: (u - w) divides H
+  A2 = R(G.coefficient({w: 2}))          # = (u - x0)^2
+  A1 = R(G.coefficient({w: 1}))
+  disc = A1^2 - 4*A2*R(G.coefficient({w: 0}))
+  E  = disc - 16*g0*y1^2
+  c1 = R(-16*g0)
+  c3 = (E - c1*(y1^2 - (u^3 + a*u + b))) // psi3   # exact division
+  assert (2*A2*w + A1)^2 - 16*g0*y1^2 - 4*A2*G - c1*(y1^2 - (u^3+a*u+b)) - c3*psi3 == 0
+
+`G = 0` is the condition for the two abscissas to collide. It is quadratic in `w`, with
+leading coefficient `A2 = (u - x₀)²`, and its roots are the abscissas of the translates
+`P ± T`. Its discriminant (the squared difference of its roots, scaled by `A2²`) is
+therefore forced to be `(x(P+T) - x(P-T))²·A2² = 16·y₀²·y₁²`, modulo the curve equation
+and `ψ₃`. Completing the square and multiplying through by `u - w` gives the identity
+`abscissa_inj` consumes, with `c3 = -4·(u - x₀)²`. -/
+
+/-- Distinct rational abscissas have distinct image abscissas. A collision would make
+the second abscissa a rational root of a quadratic whose discriminant is
+`(x(P+T) - x(P-T))²`, the squared difference of the abscissas of the two kernel
+translates. That discriminant is `16·y₀²·y₁²` up to the square `(x₁ - x₀)⁴`, so a
+rational root exhibits the nonsquare `y₀²` as a square, contradicting
+`kernel_irrational`. The degenerate case `y₁ = 0` is rational 2-torsion, which `hd`
+excludes. -/
+theorem abscissa_inj (h2 : (2 : F) ≠ 0)
+    (hd : ∀ X : F, ¬ OnCurve I.domain.A I.domain.B (X, 0))
+    {x₁ y₁ x₂ y₂ : F} (h₁ : OnCurve I.domain.A I.domain.B (x₁, y₁))
+    (h₂ : OnCurve I.domain.A I.domain.B (x₂, y₂))
+    (hX : (I.mapXY x₁ y₁).1 = (I.mapXY x₂ y₂).1) : x₁ = x₂ := by
+  by_contra hne
+  have hy1 : y₁ ≠ 0 := fun h0 => hd x₁ (h0 ▸ h₁)
+  have hcurve : y₁^2 = x₁^3 + I.domain.A * x₁ + I.domain.B := h₁
+  have hD₁ : x₁ - I.x₀ ≠ 0 := sub_ne_zero.mpr (I.ne_x₀ h₁)
+  have hD₂ : x₂ - I.x₀ ≠ 0 := sub_ne_zero.mpr (I.ne_x₀ h₂)
+  have hH : I.xnum x₁ * (x₂ - I.x₀)^2 = I.xnum x₂ * (x₁ - I.x₀)^2 := by
+    have hX' := hX
+    simp only [mapXY] at hX'
+    rw [div_eq_div_iff (pow_ne_zero 2 hD₁) (pow_ne_zero 2 hD₂)] at hX'
+    apply mul_left_cancel₀ (pow_ne_zero 2 I.s_nonzero)
+    linear_combination hX'
+  simp only [xnum, v, u] at hH
+  have key : (x₁ - x₂) *
+      ((2 * (x₁ - I.x₀)^2 * x₂ + (-2 * x₁^2 * I.x₀ - 2 * x₁ * I.x₀^2
+          - 2 * x₁ * I.domain.A - 2 * I.x₀ * I.domain.A - 4 * I.domain.B))^2
+        - 16 * (I.x₀^3 + I.domain.A * I.x₀ + I.domain.B) * y₁^2) = 0 := by
+    linear_combination (4 * (x₁ - I.x₀)^2) * hH
+      + ((x₁ - x₂) * (-16 * (I.x₀^3 + I.domain.A * I.x₀ + I.domain.B))) * hcurve
+      + ((x₁ - x₂) * (-4 * (x₁ - I.x₀)^2)) * I.psi3
+  rcases mul_eq_zero.mp key with h | h
+  · exact hne (sub_eq_zero.mp h)
+  · have h4 : (4 : F) ≠ 0 := by
+      have h : (4 : F) = 2 * 2 := by norm_num
+      rw [h]; exact mul_ne_zero h2 h2
+    refine I.kernel_irrational ⟨(2 * (x₁ - I.x₀)^2 * x₂ + (-2 * x₁^2 * I.x₀
+      - 2 * x₁ * I.x₀^2 - 2 * x₁ * I.domain.A - 2 * I.x₀ * I.domain.A
+      - 4 * I.domain.B)) / (4 * y₁), ?_⟩
+    rw [div_mul_div_comm, eq_div_iff (mul_ne_zero (mul_ne_zero h4 hy1) (mul_ne_zero h4 hy1))]
+    linear_combination -h
+
+variable [DecidableEq F]
+
+/-- The isogeny on curve points: an affine point maps through `mapXY` (its image is
+affine, because `(0, 0)` is not on the codomain), and the identity maps to the
+identity. -/
+def map (P : SWPoint I.domain) : SWPoint I.codomain :=
+  if h : OnCurve I.domain.A I.domain.B (P.x, P.y) then
+    ⟨(I.mapXY P.x P.y).1, (I.mapXY P.x P.y).2, Or.inl (I.onCurve_mapXY h)⟩
+  else 0
+
+/-- The isogeny is injective on rational points: image abscissas agree only on equal
+abscissas (`abscissa_inj`). Over one abscissa the two ordinates are negatives, so equal
+images with unequal ordinates would make the image 2-torsion, which `hc` excludes on
+the codomain. No homomorphism property is consumed. -/
+theorem map_injective (h2 : (2 : F) ≠ 0)
+    (hc : ∀ X : F, ¬ OnCurve I.codomain.A I.codomain.B (X, 0)) :
+    Function.Injective I.map := by
+  have hd := I.no_y_zero_of_codomain hc
+  intro P Q hPQ
+  by_cases hP : OnCurve I.domain.A I.domain.B (P.x, P.y) <;>
+    by_cases hQ : OnCurve I.domain.A I.domain.B (Q.x, Q.y)
+  · rw [map, dif_pos hP, map, dif_pos hQ] at hPQ
+    have hx : (I.mapXY P.x P.y).1 = (I.mapXY Q.x Q.y).1 := congrArg SWPoint.x hPQ
+    have hy : (I.mapXY P.x P.y).2 = (I.mapXY Q.x Q.y).2 := congrArg SWPoint.y hPQ
+    have hxx : P.x = Q.x := I.abscissa_inj h2 hd hP hQ hx
+    have hyy : P.y = Q.y ∨ P.y = -Q.y := by
+      have h1 : P.y^2 = Q.y^2 := by
+        have e1 : P.y^2 = P.x^3 + I.domain.A * P.x + I.domain.B := hP
+        have e2 : Q.y^2 = Q.x^3 + I.domain.A * Q.x + I.domain.B := hQ
+        rw [e1, e2, hxx]
+      have h0 : (P.y - Q.y) * (P.y + Q.y) = 0 := by linear_combination h1
+      rcases mul_eq_zero.mp h0 with h | h
+      · exact Or.inl (sub_eq_zero.mp h)
+      · exact Or.inr (by linear_combination h)
+    rcases hyy with h | h
+    · exact SWPoint.ext_pair (by rw [hxx, h])
+    · by_cases heq : P.y = Q.y
+      · exact SWPoint.ext_pair (by rw [hxx, heq])
+      · exfalso
+        have hzero : (I.mapXY Q.x Q.y).2 = 0 := by
+          have hflip : -(I.mapXY Q.x Q.y).2 = (I.mapXY Q.x Q.y).2 := by
+            calc -(I.mapXY Q.x Q.y).2 = (I.mapXY Q.x (-Q.y)).2 := by rw [I.mapXY_neg]
+              _ = (I.mapXY P.x P.y).2 := by rw [← hxx, ← h]
+              _ = (I.mapXY Q.x Q.y).2 := hy
+          have h2x : (2 : F) * (I.mapXY Q.x Q.y).2 = 0 := by linear_combination -hflip
+          exact (mul_eq_zero.mp h2x).resolve_left h2
+        have himg := I.onCurve_mapXY hQ
+        exact hc (I.mapXY Q.x Q.y).1 (hzero ▸ himg)
+  · exfalso
+    rw [map, dif_pos hP, map, dif_neg hQ] at hPQ
+    have hx0 : (I.mapXY P.x P.y).1 = (0 : F) := congrArg SWPoint.x hPQ
+    have hy0 : (I.mapXY P.x P.y).2 = (0 : F) := congrArg SWPoint.y hPQ
+    have himg := I.onCurve_mapXY hP
+    have hpair : I.mapXY P.x P.y = ((0 : F), (0 : F)) := Prod.ext_iff.mpr ⟨hx0, hy0⟩
+    rw [hpair] at himg
+    exact origin_not_on_curve I.codomain himg
+  · exfalso
+    rw [map, dif_neg hP, map, dif_pos hQ] at hPQ
+    have hx0 : (I.mapXY Q.x Q.y).1 = (0 : F) := (congrArg SWPoint.x hPQ).symm
+    have hy0 : (I.mapXY Q.x Q.y).2 = (0 : F) := (congrArg SWPoint.y hPQ).symm
+    have himg := I.onCurve_mapXY hQ
+    have hpair : I.mapXY Q.x Q.y = ((0 : F), (0 : F)) := Prod.ext_iff.mpr ⟨hx0, hy0⟩
+    rw [hpair] at himg
+    exact origin_not_on_curve I.codomain himg
+  · have hP0 : (P.x, P.y) = ((0 : F), (0 : F)) := P.onCurve.resolve_left hP
+    have hQ0 : (Q.x, Q.y) = ((0 : F), (0 : F)) := Q.onCurve.resolve_left hQ
+    exact SWPoint.ext_pair (hP0.trans hQ0.symm)
+
+/-- The isogeny is a bijection on rational points, by counting: it is injective, and
+the domain and codomain groups have equal (finite) order. -/
+theorem map_bijective [Fintype F] (h2 : (2 : F) ≠ 0)
+    (hc : ∀ X : F, ¬ OnCurve I.codomain.A I.codomain.B (X, 0))
+    (hcard : Nat.card (SWPoint I.domain) = Nat.card (SWPoint I.codomain)) :
+    Function.Bijective I.map := by
+  rw [Fintype.bijective_iff_injective_and_card]
+  refine ⟨I.map_injective h2 hc, ?_⟩
+  rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card]
+  exact hcard
 
 end ThreeIsogeny
 

@@ -94,6 +94,12 @@ assert_axioms CompElliptic.Curves.Pasta.Pallas.iso_card_eq +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_isoGpt)
 assert_axioms CompElliptic.Curves.Pasta.Vesta.iso_card_eq +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_isoGpt)
+assert_axioms CompElliptic.Curves.Pasta.Pallas.iso_map_bijective +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_isoGpt,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms CompElliptic.Curves.Pasta.Vesta.iso_map_bijective +native(
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_isoGpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
 /-! ## Fast Vesta arithmetic — proven against the affine group law, standard axioms only
 

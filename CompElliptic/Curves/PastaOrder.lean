@@ -30,6 +30,11 @@ of the two field sizes, and the Pasta cycle puts the two curves on opposite side
   `2q + 1 < 3p` is available. `#E = 2p` is ruled out separately: a 2-torsion point needs `y = 0`,
   i.e. `x³ = -5`, which `Pasta.Vesta.no_onCurve_y_zero` forbids.
 
+With the orders in hand, each isogeny's injectivity upgrades to bijectivity on rational
+points by counting (`iso_map_bijective`). Injectivity is `ThreeIsogeny.map_injective`: an
+abscissa collision would exhibit the nonsquare `y₀²` as a square, contradicting the
+kernel's irrationality. No homomorphism property is consumed.
+
 The iso-curves take the same two routes as their targets. The one new ingredient is
 iso-Vesta's 2-torsion exclusion: its curve cubic has a linear term, so the cube-residue
 argument does not apply, but none is needed — a `y = 0` point of iso-Vesta would map to a
@@ -84,6 +89,12 @@ theorem iso_card_eq : Nat.card (SWPoint isoCurve) = PALLAS_SCALAR_CARD := by
   rw [show Fintype.card PallasBaseField = PALLAS_BASE_CARD from ZMod.card _]
   decide
 
+/-- The isogeny iso-Pallas → Pallas is a bijection on rational points, by counting: it is
+injective with no homomorphism property consumed (`ThreeIsogeny.map_injective`), and the
+two groups have the same order. -/
+theorem iso_map_bijective : Function.Bijective iso.map :=
+  iso.map_bijective (by decide) no_onCurve_y_zero (iso_card_eq.trans card_eq.symm)
+
 end Pallas
 
 namespace Vesta
@@ -133,6 +144,12 @@ theorem iso_card_eq : Nat.card (SWPoint isoCurve) = PALLAS_BASE_CARD := by
   · rw [show Fintype.card VestaBaseField = PALLAS_SCALAR_CARD from ZMod.card _]
     decide
   · exact fun _ => eq_zero_of_two_nsmul_eq_zero (by decide) iso_no_onCurve_y_zero
+
+/-- The isogeny iso-Vesta → Vesta is a bijection on rational points, by counting: it is
+injective with no homomorphism property consumed (`ThreeIsogeny.map_injective`), and the
+two groups have the same order. -/
+theorem iso_map_bijective : Function.Bijective iso.map :=
+  iso.map_bijective (by decide) no_onCurve_y_zero (iso_card_eq.trans card_eq.symm)
 
 end Vesta
 
