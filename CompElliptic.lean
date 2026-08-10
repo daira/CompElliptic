@@ -15,6 +15,7 @@ import CompElliptic.Fields.Residue
 import CompElliptic.Fields.Sqrt
 import CompElliptic.CurveForms.ShortWeierstrass
 import CompElliptic.CurveOrder
+import CompElliptic.Isogenies.ThreeIsogeny
 import CompElliptic.Curves.Pasta
 import CompElliptic.Curves.PastaOrder
 import CompElliptic.Hashing.CharacterSum
