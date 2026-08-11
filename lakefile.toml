@@ -1,0 +1,35 @@
+name = "CompElliptic"
+version = "0.1.0"
+defaultTargets = ["CompElliptic"]
+
+[leanOptions]
+pp.unicode.fun = true # pretty-prints `fun a ↦ b`
+autoImplicit = false
+
+# Mathlib is pulled in transitively (and version-pinned) by CompPoly, so that the two
+# always agree on the toolchain and Mathlib revision.
+[[require]]
+name = "CompPoly"
+git = "https://github.com/Verified-zkEVM/CompPoly.git"
+rev = "d458e5cebd364b15660ff8de20ec964dcd52c120"
+
+# The glob ("CompElliptic.*" = the module and all submodules) covers modules the root
+# `CompElliptic.lean` deliberately does not import: the fast arithmetic and its vendored
+# field are opt-in, so that `import CompElliptic` stays free of the precompiled lane below.
+[[lean_lib]]
+name = "CompElliptic"
+globs = ["CompElliptic.*"]
+
+# Native-compiles the Montgomery arithmetic, which is meant to be run (`#eval`, `native_decide`),
+# not only proven about. Every module here must import nothing outside Lean core: codegen runs over
+# the whole import closure, so one mathlib-side import silently makes the build enormous -- hence
+# the definitions/proofs split, and `scripts/check_native_lane.sh`. `FastFieldNative.lean` exists
+# only because Lean derives a dynlib's `initialize_...` symbol from the library name.
+[[lean_lib]]
+name = "FastFieldNative"
+precompileModules = true
+globs = [
+  "FastFieldNative",
+  "CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs",
+  "CompElliptic.Curves.Pasta.Fast.ProjectiveMontDefs",
+]

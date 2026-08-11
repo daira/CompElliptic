@@ -6,7 +6,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# The lane, parsed from lakefile.lean's precompileModules libraries (the single
+# The lane, parsed from lakefile.toml's precompileModules libraries (the single
 # source of truth) via check_native_optin.py; module names become file paths.
 LANE_MODULES=()
 mapfile -t LANE_MODULES < <(python3 scripts/check_native_optin.py --print-lane)

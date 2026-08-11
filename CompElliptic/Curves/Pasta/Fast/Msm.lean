@@ -431,6 +431,8 @@ equality to the sequential accelerator is purely `parMap_eq_map` — the evaluat
 the only difference. Measured (interpreted, `n = 2048`, `c = 8`, 12 cores):
 `11.6 s → 4.3 s` per MSM. -/
 
+universe u v
+
 /-- Parallel `List.map`: spawn a task per element, then collect the results in order.
 
 This is a *pure* function — `Task` is logically the one-field structure `⟨get : α⟩`,

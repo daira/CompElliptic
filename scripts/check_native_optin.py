@@ -19,28 +19,35 @@ stated. Parse failures are violations, not skips.
 
 Scope: textual, non-adversarial (comments and strings are stripped heuristically;
 crafted code could evade this). Run from the repository root; exits non-zero on
-violation.
+violation. Requires Python 3.11+ (tomllib).
 """
-import re, sys
+import re, sys, tomllib
 from pathlib import Path
 
 def parse_lane():
-    text = Path("lakefile.lean").read_text()
+    config = tomllib.loads(Path("lakefile.toml").read_text())
     lane = []  # (kind, module-name) with kind in {"one", "andSubmodules"}
-    for block in re.split(r"(?m)^lean_lib\s+", text)[1:]:
-        name_m = re.match(r"([A-Za-z0-9_.]+)\s+where", block)
-        if not name_m or not re.search(r"precompileModules\s*:=\s*true", block):
+    for lib in config.get("lean_lib", []):
+        if not lib.get("precompileModules", False):
             continue
-        globs = re.search(r"globs\s*:=\s*#\[(.*?)\]", block, re.S)
-        entries = re.findall(r"\.(one|andSubmodules)\s+`([A-Za-z0-9_.]+)",
-                             globs.group(1)) if globs else []
+        entries = []
+        for glob in lib.get("globs", []):
+            if glob.endswith(".*"):
+                entries.append(("andSubmodules", glob[:-2]))
+            elif glob.endswith(".+"):
+                print(f"ERROR: submodules-only glob {glob!r} in library "
+                      f"{lib.get('name', '?')} is not supported here; extend "
+                      f"parse_lane", file=sys.stderr)
+                sys.exit(2)
+            else:
+                entries.append(("one", glob))
         if not entries:
             print(f"ERROR: cannot parse the globs of precompileModules library "
-                  f"{name_m.group(1)}; extend parse_lane", file=sys.stderr)
+                  f"{lib.get('name', '?')}; extend parse_lane", file=sys.stderr)
             sys.exit(2)
         lane.extend(entries)
     if not lane:
-        print("ERROR: no precompileModules library found in lakefile.lean; "
+        print("ERROR: no precompileModules library found in lakefile.toml; "
               "if the lane was removed, retire this script", file=sys.stderr)
         sys.exit(2)
     return lane
