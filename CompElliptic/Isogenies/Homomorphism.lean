@@ -537,4 +537,30 @@ theorem map_add (h2 : (2 : F) ≠ 0)
       have hQz : Q = 0 := I.map_injective h2 hc (by rw [hQ0, I.map_zero])
       rw [hQz, _root_.add_zero, I.map_zero, _root_.add_zero]
 
+/-! ## The deployed hash-to-curve construction -/
+
+/-- The deployed hash-to-curve construction after `hash_to_field`, which stays
+abstract here — RFC 9380's `hash_to_curve` includes it, hence the distinct
+name. The RFC intentionally does not provide this composition as a named
+operation: it is cryptographically hazardous unless composed with
+`hash_to_field`, and naming it could mislead people into thinking it can be
+modelled as a random oracle by itself. Maps two field elements, intended to
+be outputs of `hash_to_field`, to the isogeny's domain curve, adds there, and
+applies the isogeny once (spec §5.4.9.8). -/
+def mapHashOutputsToCurve (m : F → SWPoint I.domain) (u₀ u₁ : F) : SWPoint I.codomain :=
+  I.map (m u₀ + m u₁)
+
+/-- `mapHashOutputsToCurve` agrees with applying the isogeny to each point and
+adding on the codomain. RFC 9380 §6.6.3 notes exactly this optimization —add on
+the isogenous curve, so the isogeny map is evaluated once— "relying on iso_map
+being a group homomorphism"; `map_add` is that fact for the deployed maps. The
+spec and `hashtocurve.sage` use the one-evaluation order, while
+`zcash-test-vectors` and `pasta_curves` map each point and add on the codomain. -/
+theorem mapHashOutputsToCurve_eq (h2 : (2 : F) ≠ 0)
+    (hd : ∀ X : F, ¬ OnCurve I.domain.A I.domain.B (X, 0))
+    (hc : ∀ X : F, ¬ OnCurve I.codomain.A I.codomain.B (X, 0))
+    (m : F → SWPoint I.domain) (u₀ u₁ : F) :
+    I.mapHashOutputsToCurve m u₀ u₁ = I.map (m u₀) + I.map (m u₁) :=
+  I.map_add h2 hd hc (m u₀) (m u₁)
+
 end CompElliptic.Isogenies.ThreeIsogeny
