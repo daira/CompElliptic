@@ -310,6 +310,48 @@ theorem sqrt?_isSome_of_isSquare {F : Type*} [Field F] [Fintype F] [DecidableEq 
   · -- a ≠ 0 and the residue test failed: contradicted by Euler's criterion for a square.
     exact absurd (by rw [fpow_spec, ← hexp]; exact (FiniteField.isSquare_iff hchar h0).mp ha) h1
 
+/-- A valid `rootOfUnity` is a quadratic non-residue. It has full 2-power order, so its
+Euler power `rootOfUnity ^ ((card-1)/2) = (rootOfUnity ^ (2^(twoAdicity-1)))^oddPart`
+evaluates to `(-1)^oddPart = -1`, whereas Euler's criterion gives `1` for a nonzero
+square. This lets a deployment reuse `rootOfUnity` as an auxiliary nonsquare with no
+per-field computation. -/
+theorem rootOfUnity_not_isSquare {F : Type*} [Field F] [Fintype F]
+    (d : TonelliShanks F) : ¬ IsSquare d.rootOfUnity := by
+  intro hsq
+  have hodd : Fintype.card F % 2 = 1 := by
+    have h2 : 2 ∣ 2^d.twoAdicity * d.oddPart :=
+      (dvd_pow_self 2 d.valid.twoAdicity_pos.ne').mul_right d.oddPart
+    rw [d.valid.card_eq]; omega
+  have hchar : ringChar F ≠ 2 := fun h => by
+    have := FiniteField.even_card_of_char_two h; omega
+  have hpow : 2^d.twoAdicity = 2 * 2^(d.twoAdicity - 1) := by
+    rw [← pow_succ', Nat.sub_add_cancel d.valid.twoAdicity_pos]
+  have hexp : Fintype.card F / 2 = 2^(d.twoAdicity - 1) * d.oddPart := by
+    rw [d.valid.card_eq, hpow, mul_assoc]; omega
+  -- `rootOfUnity ≠ 0`, since it has a power equal to `1`.
+  have hone : d.rootOfUnity ^ 2^d.twoAdicity = 1 := by
+    rw [← d.valid.rootOfUnity_order]; exact pow_orderOf_eq_one _
+  have hne : d.rootOfUnity ≠ 0 := fun h0 => by
+    rw [h0, zero_pow (by positivity : (2:ℕ)^d.twoAdicity ≠ 0)] at hone
+    exact zero_ne_one hone
+  -- The half power squares to `1` but is not `1` (the order is too big), so it is `-1`.
+  have hhalf : d.rootOfUnity ^ 2^(d.twoAdicity - 1) = -1 := by
+    have hsq1 : d.rootOfUnity ^ 2^(d.twoAdicity - 1)
+        * d.rootOfUnity ^ 2^(d.twoAdicity - 1) = 1 := by
+      rw [← pow_add, ← two_mul, ← hpow]; exact hone
+    refine (mul_self_eq_one_iff.mp hsq1).resolve_left fun h1 => ?_
+    have hdvd : orderOf d.rootOfUnity ∣ 2^(d.twoAdicity - 1) :=
+      orderOf_dvd_iff_pow_eq_one.mpr h1
+    rw [d.valid.rootOfUnity_order] at hdvd
+    have hle := (Nat.pow_dvd_pow_iff_le_right (by norm_num : (1:ℕ) < 2)).mp hdvd
+    have := d.valid.twoAdicity_pos
+    omega
+  -- Euler's power of the square is `1`, but it evaluates to `(-1)^oddPart = -1`.
+  have heuler : d.rootOfUnity ^ (Fintype.card F / 2) = 1 :=
+    (FiniteField.isSquare_iff hchar hne).mp hsq
+  rw [hexp, pow_mul, hhalf, d.valid.oddPart_odd.neg_one_pow] at heuler
+  exact Ring.neg_one_ne_one_of_char_ne_two hchar heuler
+
 end TonelliShanks
 
 end CompElliptic.Fields
