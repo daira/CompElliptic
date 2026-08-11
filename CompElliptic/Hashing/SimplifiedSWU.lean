@@ -14,9 +14,9 @@ import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 This file defines the deployed hash-to-curve mapping of the Zcash protocol
 specification, mirrored from §5.4.9.8 ("Group Hash into Pallas and Vesta"). The
 spec's presentation takes precedence over RFC 9380 by its own declaration; the
-two agree on every step used here, and the intent is to check the construction
-against the `pasta_curves` Rust implementation, the `zcash-test-vectors` Python
-code, and the underlying papers as each piece lands.
+two agree on every step used here. The concrete Pasta instantiation and its
+reference fixtures live in `Hashing/PastaSSWU.lean`, whose module documentation
+records how the construction is checked against the reference implementations.
 
 ## `sqrt_ratio`
 
