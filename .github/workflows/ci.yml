@@ -24,6 +24,37 @@ jobs:
       # and runs `lake build` — which also runs the in-file `native_decide` sanity checks.
       - uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9 # v1.5.0
 
+  # Re-checks the library with nanoda, an independent reimplementation of the Lean
+  # kernel (see scripts/check_nanoda.sh). A separate job so `build` reports quickly and
+  # can gate PR acceptance on its own; this one starts only after a green build, and its
+  # `lake build` restores the build cache that job just saved, so it verifies rather
+  # than rebuilds.
+  nanoda:
+    name: an independent kernel accepts the build
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9 # v1.5.0
+      - name: Build lean4export at the pinned toolchain's tag
+        run: |
+          TOOLCHAIN=$(cat lean-toolchain)
+          git clone --depth 1 --branch "${TOOLCHAIN##*:}" \
+            https://github.com/leanprover/lean4export work/lean4export
+          cd work/lean4export && lake build
+      - name: Build nanoda at the pinned revision
+        run: |
+          git clone --depth 1 \
+            --revision=418320295890faed83a96fd97907b12a3b6728c2 \
+            https://github.com/ammkrn/nanoda_lib work/nanoda_lib
+          cargo build --release --manifest-path work/nanoda_lib/Cargo.toml
+      - name: Export the library and re-check it
+        run: |
+          scripts/check_nanoda.sh work/lean4export/.lake/build/bin/lean4export \
+            work/nanoda_lib/target/release/nanoda_bin
+
   generators:
     name: Field-file generators reproduce
     runs-on: ubuntu-latest

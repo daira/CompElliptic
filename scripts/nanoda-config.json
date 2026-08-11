@@ -1,0 +1,34 @@
+{
+    "export_file_path": "work/compelliptic-export.ndjson",
+    "use_stdin": false,
+    "permitted_axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "sorryAx",
+        "Lean.trustCompiler",
+        "Lean.ofReduceBool",
+        "Lean.ofReduceNat",
+        "CompElliptic.Fields.Pasta.pallasBase._native.native_decide.ax_1",
+        "CompElliptic.Fields.Pasta.pallasBase._native.native_decide.ax_2",
+        "CompElliptic.Fields.Pasta.vestaBase._native.native_decide.ax_1",
+        "CompElliptic.Fields.Pasta.vestaBase._native.native_decide.ax_2",
+        "CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt._native.native_decide.ax_1_1",
+        "CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt._native.native_decide.ax_1_1"
+    ],
+    "unpermitted_axiom_hard_error": true,
+    "num_threads": 4,
+    "nat_extension": true,
+    "string_extension": true,
+    "pp_declars": [
+        "CompElliptic.Fields.Pasta.pallasBase._native.native_decide.ax_1",
+        "CompElliptic.Fields.Pasta.pallasBase._native.native_decide.ax_2",
+        "CompElliptic.Fields.Pasta.vestaBase._native.native_decide.ax_1",
+        "CompElliptic.Fields.Pasta.vestaBase._native.native_decide.ax_2",
+        "CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt._native.native_decide.ax_1_1",
+        "CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt._native.native_decide.ax_1_1"
+    ],
+    "unknown_pp_declar_hard_error": true,
+    "pp_to_stdout": true,
+    "print_success_message": true
+}

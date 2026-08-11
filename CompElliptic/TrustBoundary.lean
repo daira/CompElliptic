@@ -25,17 +25,19 @@ passing silently. The declarations are grouped by trust tier:
 * **Concrete closed facts checked by the kernel** (Pratt primality certificates) add nothing beyond
   those same axioms: the kernel evaluates them directly, trusting only its GMP bignum arithmetic
   (which even ordinary `decide` relies on and which axiom collection does not surface).
-* **Concrete closed facts trusting the compiler** (`native_decide`, marked `+native`) each add a
-  per-declaration compiler-trust axiom. This is the whole compiler-trust surface, confined to
+* **Concrete closed facts trusting the compiler** (`native_decide`, marked `+native(...)`) each add
+  a per-declaration compiler-trust axiom. This is the whole compiler-trust surface, confined to
   falsifiable numeric facts about the Pasta fields and curves — chiefly the order of the
   Tonelli–Shanks roots of unity (`pallasBase`/`vestaBase`) and the two prime-order witnesses behind
   the group orders. Each such fact is reproducible by an independent tool, so a miscompiled oracle
   could in principle be caught by disagreement (the catch requires someone actually performing the
   independent check).
 
-`assert_axioms` matches on the axiom *tier*, not the exact `native_decide` axiom name (which is
-toolchain-dependent), so this census stays green across toolchain bumps while still catching any
-tier violation.
+`assert_axioms` matches a permitted `native_decide` axiom by its owning declaration — named inside
+`+native(...)` — rather than by the exact axiom name (whose tail is toolchain-dependent). The
+census therefore stays green across toolchain bumps while still catching any tier violation, and
+it states exactly which native certificates each entry trusts: a new certificate entering a cone,
+or a stale owner list, fails the build with the list to write.
 -/
 
 open CompElliptic.Meta
@@ -65,12 +67,18 @@ assert_computable CompElliptic.Curves.Pasta.Vesta.fintypePoints +choice
 
 /-! ## Concrete closed facts trusting the compiler (`native_decide`) -/
 
-assert_axioms CompElliptic.Fields.Pasta.pallasBase +native
-assert_axioms CompElliptic.Fields.Pasta.vestaBase +native
-assert_axioms CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt +native
-assert_axioms CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt +native
-assert_axioms CompElliptic.Curves.Pasta.Pallas.card_eq +native
-assert_axioms CompElliptic.Curves.Pasta.Vesta.card_eq +native
+assert_axioms CompElliptic.Fields.Pasta.pallasBase +native(
+  CompElliptic.Fields.Pasta.pallasBase)
+assert_axioms CompElliptic.Fields.Pasta.vestaBase +native(
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt +native(
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms CompElliptic.Curves.Pasta.Pallas.card_eq +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms CompElliptic.Curves.Pasta.Vesta.card_eq +native(
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 
 /-! ## Fast Vesta arithmetic — proven against the affine group law, standard axioms only
 
