@@ -61,6 +61,9 @@ assert_axioms CompElliptic.Curves.Pasta.Pallas.iso_map_eq
 assert_axioms CompElliptic.Curves.Pasta.Vesta.iso_map_eq
 assert_axioms CompElliptic.Curves.Pasta.Pallas.onCurve_iso_map
 assert_axioms CompElliptic.Curves.Pasta.Vesta.onCurve_iso_map
+assert_axioms CompElliptic.Isogenies.ThreeIsogeny.map_add
+assert_axioms CompElliptic.Curves.Pasta.Pallas.iso_map_add
+assert_axioms CompElliptic.Curves.Pasta.Vesta.iso_map_add
 
 /-! ## Computable point enumeration — the curve group's `Fintype`, as plain data
 

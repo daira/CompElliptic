@@ -7,6 +7,7 @@ Authors: Daira-Emma Hopwood, Gregor Mitscha-Baude
 import CompElliptic.Curves.Pasta
 import CompElliptic.Curves.IsoPasta
 import CompElliptic.CurveOrder
+import CompElliptic.Isogenies.Homomorphism
 
 /-!
 # Orders of the Pasta and iso-Pasta curve groups
@@ -95,6 +96,19 @@ two groups have the same order. -/
 theorem iso_map_bijective : Function.Bijective iso.map :=
   iso.map_bijective (by decide) no_onCurve_y_zero (iso_card_eq.trans card_eq.symm)
 
+
+/-- No point of iso-Pallas has `y = 0`: such a point would map to a `y = 0` point of
+Pallas under the isogeny, and Pallas has none. -/
+theorem iso_no_onCurve_y_zero (x : PallasBaseField) :
+    ¬ OnCurve isoCurve.A isoCurve.B (x, 0) :=
+  iso.no_y_zero_of_codomain no_onCurve_y_zero x
+
+/-- **The deployed Pallas isogeny is a group homomorphism on rational points.** All
+of its hypotheses are discharged by the 2-torsion exclusions. -/
+theorem iso_map_add (P Q : SWPoint isoCurve) :
+    iso.map (P + Q) = iso.map P + iso.map Q :=
+  iso.map_add (by decide) iso_no_onCurve_y_zero no_onCurve_y_zero P Q
+
 end Pallas
 
 namespace Vesta
@@ -150,6 +164,13 @@ injective with no homomorphism property consumed (`ThreeIsogeny.map_injective`),
 two groups have the same order. -/
 theorem iso_map_bijective : Function.Bijective iso.map :=
   iso.map_bijective (by decide) no_onCurve_y_zero (iso_card_eq.trans card_eq.symm)
+
+
+/-- **The deployed Vesta isogeny is a group homomorphism on rational points.** All
+of its hypotheses are discharged by the 2-torsion exclusions. -/
+theorem iso_map_add (P Q : SWPoint isoCurve) :
+    iso.map (P + Q) = iso.map P + iso.map Q :=
+  iso.map_add (by decide) iso_no_onCurve_y_zero no_onCurve_y_zero P Q
 
 end Vesta
 
