@@ -121,6 +121,165 @@ chord = chord_tmpl.format(hp=lw(hp_i, 14), v2=v2, v3=v3, nns=lw(NNs_i, 16),
                           wus=lw(Wus_i, 16), goal=lw(goal_i, 6),
                           c1=lw(c1, 8), c2=lw(c2, 8), c3=lw(c3, 8))
 
+# ---------------------------------------------- chord wrapper support ----
+# Support lemmas for the chord wrapper, in the same centred-symmetric coordinates
+# as the certificate. The geometric input reduces to three hypotheses in those
+# coordinates: the two curve-membership relations with the chord line substituted
+# for the ordinates (RC1, RC2, cleared of the halves from d = (e ± dd)/2), and
+# psi3. Each lemma lifts over that ideal, with a dd-saturation power where the
+# Vieta elimination needs one. The targets: the certificate's own hp polynomial;
+# the two identities relating the real-coefficient symmetric quotients to the
+# certificate's atom polynomials; and the one nonvanishing correction tying the
+# slope-free cleared conclusion to the certificate's goal instance (the ws²
+# coefficients agree identically, asserted below).
+V = PolynomialRing(QQ, ["e", "dd", "l", "mp", "x0", "A", "B"], order="degrevlex")
+ve, vdd, vl, vmp, vx0, vA, vB = V.gens()
+d1c = (ve + vdd)/2
+d2c = (ve - vdd)/2
+
+def clear2(P):
+    P = V(P)
+    j = lcm([c.denominator() for c in P.coefficients()]).valuation(2)
+    return 2^j * P, j
+
+gcub = lambda dv: (vx0 + dv)^3 + vA*(vx0 + dv) + vB
+RC1_i, _ = clear2((vl*d1c + vmp)^2 - gcub(d1c))
+RC2_i, _ = clear2((vl*d2c + vmp)^2 - gcub(d2c))
+psiV = 3*vx0^4 + 6*vA*vx0^2 + 12*vB*vx0 - vA^2
+cgens = [RC1_i, RC2_i, psiV]
+cnames = ["hR1", "hR2", "hpsi"]
+
+# certificate-side polynomials, coerced into V (they involve no A, B)
+toV = A2.hom([ve, vdd, vl, vmp, vx0, V.zero(), V.zero()], V)
+hpV = toV(hp_i)
+NNsV = toV(NNs_i)
+WusV = toV(Wus_i)
+
+# real-coefficient symmetric quotients (antisymmetric numerators divided by dd)
+vAc = 2*(3*vx0^2 + vA)
+uAc = 4*(vx0^3 + vA*vx0 + vB)
+NAc = lambda dv: (vx0 + dv)*dv^2 + vAc*dv + uAc
+MAc = lambda dv: dv^3 - vAc*dv - 2*uAc
+yln = lambda dv: vl*dv + vmp
+NN_num, jN = clear2(NAc(d2c)*d1c^2 - NAc(d1c)*d2c^2)
+WA_num, jW = clear2(yln(d2c)*MAc(d2c)*d1c^3 - yln(d1c)*MAc(d1c)*d2c^3)
+NNA_i = NN_num // vdd
+WA_i = WA_num // vdd
+
+# the correction Cns: atom- and ordinate-free, then transported to V
+Wc = PolynomialRing(QQ, ["x1", "x2", "l", "mp", "x0", "A", "B", "ns", "ws"],
+                    order="degrevlex")
+cx1, cx2, cl, cmp_, cx0, cA, cB, cns, cws = Wc.gens()
+instc = A2.hom([(cx1 - cx0) + (cx2 - cx0), cx1 - cx2, cl, cmp_, cx0, cns, cws], Wc)
+GpolyC = instc(goal_i)
+vAc2 = 2*(3*cx0^2 + cA)
+uAc2 = 4*(cx0^3 + cA*cx0 + cB)
+NA3 = lambda s_: s_*(s_ - cx0)^2 + vAc2*(s_ - cx0) + uAc2
+x3c = cl^2 - cx1 - cx2
+d3c = x3c - cx0
+FinalPolyC = (NA3(x3c)*(cx1 - cx0)^2*(cx2 - cx0)^2*cns^2
+              - (cws^2 - (NA3(cx1)*(cx2 - cx0)^2
+                          + NA3(cx2)*(cx1 - cx0)^2)*cns^2)*d3c^2)
+DeltaC = 2^v0 * (cx1 - cx2)^2 * FinalPolyC - GpolyC
+CnsC = DeltaC.coefficient({cns: 2, cws: 0})
+CwsC = DeltaC.coefficient({cns: 0, cws: 2})
+assert DeltaC == CnsC*cns^2 + CwsC*cws^2
+assert CwsC == 0, "the ws^2 correction no longer vanishes"
+CnsC = CnsC // (cx1 - cx2)^2
+cenC = Wc.hom([vx0 + d1c, vx0 + d2c, vl, vmp, vx0, vA, vB, V.zero(), V.zero()], V)
+Cns_i, _ = clear2(cenC(CnsC))
+
+support_parts = []
+support_docs = {
+    "chord_psi3_bridge": """\
+/-- The certificate's `hp` input, derived from the geometry: modulo the two
+line-substituted curve relations and `ψ₃(x₀) = 0`, the polynomial that
+`chord_x_certificate` takes as `hp` vanishes. Carries one saturation factor of
+`dd` —the Vieta elimination of the curve coefficients through the line holds only
+after saturating by the abscissa difference— and a 2-power from clearing, both
+cancelled by the consumer. -/""",
+    "chord_ns_semantics": """\
+/-- The meaning of the `ns` atom: the symmetric quotient of the image-abscissa
+difference numerator, written with the true curve coefficients `A` and `B`,
+agrees with the certificate's atom polynomial, which has the coefficients
+eliminated through the line. Scaled by one `dd` and by 2-powers, both cancelled
+by the consumer. -/""",
+    "chord_ws_semantics": """\
+/-- The meaning of the `ws` atom: the symmetric quotient of the image-ordinate
+difference numerator, written with the true curve coefficients, agrees with the
+certificate's atom polynomial. Scaled like `chord_ns_semantics`. -/""",
+    "chord_final_correction": """\
+/-- The correction closing the wrapper's final step: the slope-free cleared form
+of the target equation differs from the certificate's goal instance by
+`dd² · C · ns²`, where `C` is the polynomial here and the matching `ws²` gap
+vanishes identically (asserted by the generator). This lemma proves `C` vanishes
+modulo the same relations, after one `dd` saturation factor and a 2-power from
+clearing. -/""",
+}
+support_tmpl = """\
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 8000 in
+{doc}
+theorem {name} {{F : Type*}} [CommRing F]
+    (e dd l m' x0 A B : F)
+{binders} :
+    {goal} :=
+  by
+    linear_combination
+      {combo}"""
+hyp_lines = {
+    "hR1": "    (hR1 : (" + lw(RC1_i, 12) + ") = 0)",
+    "hR2": "    (hR2 : (" + lw(RC2_i, 12) + ") = 0)",
+    "hpsi": "    (hpsi : 3*x0^4 + 6*A*x0^2 + 12*B*x0 - A^2 = 0)",
+}
+for name, lhs_poly, lhs_pow, rhs_poly, rhs_pow in [
+        ("chord_psi3_bridge", hpV, 0, None, 0),
+        ("chord_ns_semantics", NNA_i, v2, NNsV, jN),
+        ("chord_ws_semantics", WA_i, v3, WusV, jW),
+        ("chord_final_correction", Cns_i, 0, None, 0)]:
+    T0 = lhs_poly * 2^lhs_pow - (rhs_poly * 2^rhs_pow if rhs_poly is not None else 0)
+    for k in range(4):
+        T = vdd^k * T0
+        try:
+            lift = T.lift(V.ideal(cgens))
+        except ValueError:
+            continue
+        assert sum(c*g for c, g in zip(lift, cgens)) == T
+        break
+    else:
+        raise AssertionError(name + " not in ideal")
+    # scale the whole identity by the cofactors' 2-denominator so the emitted
+    # coefficients are integers; the consumer cancels with (2 : F) ≠ 0
+    dens = [lcm([q.denominator() for q in c.coefficients()]) for c in lift if c != 0]
+    for d in dens:
+        assert d == 2^(d.valuation(2)), (name, d)
+    dj = max([0] + [d.valuation(2) for d in dens])
+    lift = [2^dj * c for c in lift]
+    T = 2^dj * T
+    assert sum(c*g for c, g in zip(lift, cgens)) == T
+    assert all(all(q in ZZ for q in c.coefficients()) for c in lift)
+    lhs_pow += dj
+    if rhs_poly is not None:
+        rhs_pow += dj
+    mass = sum(len(c.monomials())*len(g.monomials()) for c, g in zip(lift, cgens))
+    print(name, ": saturation", k, "; cofactors",
+          [len(c.monomials()) for c in lift], "; mass", mass)
+    used = [(nm, c) for nm, c in zip(cnames, lift) if c != 0]
+    combo = "\n      + ".join("(" + lw(c, 8) + ") * " + nm for nm, c in used)
+    sat = "" if k == 0 else ("dd * " if k == 1 else "dd^" + str(k) + " * ")
+    p2 = lambda j: "" if j == 0 else "(2 : F)^" + str(j) + " * "
+    if rhs_poly is None:
+        goal = sat + p2(lhs_pow) + "(" + lw(lhs_poly, 6) + ")\n    = 0"
+    else:
+        goal = (sat + p2(lhs_pow) + "(" + lw(lhs_poly, 6) + ")\n    = "
+                + sat + p2(rhs_pow) + "(" + lw(rhs_poly, 8) + ")")
+    support_parts.append(support_tmpl.format(
+        name=name, doc=support_docs[name],
+        binders="\n".join(hyp_lines[nm] for nm, _ in used),
+        goal=goal, combo=combo))
+
+support = "\n\n".join(support_parts)
+
 # --------------------------------------------------------------- tangent ----
 S = PolynomialRing(QQ, ["z1", "u", "v", "z0", "k", "t"], order="degrevlex")
 z1, u, v, z0, k, t = S.gens()
@@ -184,7 +343,7 @@ tang = tang_tmpl.format(hp=lw(zhp_c, 14), k1x=lw(K1x_c, 16), t1x=lw(T1x_c, 16),
                         goal=lw(goal_t, 6), c0=lw(tcof_c[0], 8),
                         c1=lw(tcof_c[1], 8), c2=lw(tcof_c[2], 8))
 
-text = chord + "\n\n" + tang + "\n"
+text = chord + "\n\n" + support + "\n\n" + tang + "\n"
 # The Sage ring names `mp` and `vp` stand for the primed intercepts; rename to the
 # Lean identifiers m' and v' (whole words only).
 text = re.sub(r"\bmp\b", "m'", text)
@@ -196,8 +355,17 @@ def indent(s_):
 
 
 flat = text.split("\n")
+in_comment = False
 for i, line in enumerate(flat):
     stripped = line.strip()
+    if in_comment:
+        if stripped.endswith("-/"):
+            in_comment = False
+        continue
+    if stripped.startswith("/--") or stripped.startswith("/-!"):
+        if not stripped.endswith("-/"):
+            in_comment = True
+        continue
     if stripped == "by" or stripped.endswith(" by"):
         nxt = next((l2 for l2 in flat[i+1:] if l2.strip()), "")
         assert indent(nxt) > indent(line), (i + 1, line[:40], nxt[:40])
