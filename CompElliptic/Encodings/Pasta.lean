@@ -50,7 +50,9 @@ namespace Curves.Pasta.Pallas
 /-- The test point `G = (-1, 2)` as an on-curve `SWPoint`, for exercising `toBytes`. -/
 def G_point : SWPoint curve := ⟨-1, 2, by decide⟩
 
-#eval (toBytes G_point).toList
+example : (toBytes G_point).toList
+    = [0, 0, 0, 0, 237, 48, 45, 153, 27, 249, 76, 9, 252, 152, 70, 34,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64] := by decide
 
 end Curves.Pasta.Pallas
 
@@ -60,7 +62,9 @@ namespace Curves.Pasta.Vesta
 `toBytes` over the Vesta base field (`= PallasScalarField`). -/
 def G_point : SWPoint curve := ⟨-1, 2, by decide⟩
 
-#eval (toBytes G_point).toList
+example : (toBytes G_point).toList
+    = [0, 0, 0, 0, 33, 235, 70, 140, 221, 168, 148, 9, 252, 152, 70, 34,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64] := by decide
 
 end Curves.Pasta.Vesta
 
