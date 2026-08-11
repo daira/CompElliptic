@@ -5,6 +5,7 @@ as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
 import CompElliptic.Curves.IsoPasta
+import CompElliptic.Isogenies.Homomorphism
 import CompElliptic.Hashing.SimplifiedSWU
 import CompElliptic.Hashing.SignedLift
 import Mathlib.Tactic.ReduceModChar
@@ -98,6 +99,30 @@ example : sswu.θ = 0xca330bcc09ac318e
     + 0x51f64fc4dc888857 * 2^64
     + 0x4647aef782d5cdc8 * 2^128
     + 0x0f7bdb65814179b4 * 2^192 := by decide
+
+/-- `sgn0` is a sign function on the Pallas base field: the modulus is odd. -/
+theorem isSignFunction_sgn0 : IsSignFunction (sgn0 (p := PALLAS_BASE_CARD)) :=
+  haveI : NeZero PALLAS_BASE_CARD := ⟨by decide⟩
+  CompElliptic.Hashing.isSignFunction_sgn0 (Nat.odd_iff.mpr (by decide))
+
+/-- The deployed `map_to_curve` for Pallas: simplified SWU onto iso-Pallas,
+then the 3-isogeny down to Pallas. -/
+def mapToCurve (u : PallasBaseField) : SWPoint curve :=
+  iso.map (sswu.map u)
+
+/-- The deployed mapping is odd away from `0`: simplified SWU is
+(`SSWUParams.map_neg`), and the isogeny commutes with negation
+(`ThreeIsogeny.map_neg`). -/
+theorem mapToCurve_neg {u : PallasBaseField} (hu : u ≠ 0) :
+    mapToCurve (-u) = -(mapToCurve u) := by
+  simp only [mapToCurve]
+  rw [sswu.map_neg isSignFunction_sgn0 hu]
+  exact iso.map_neg (sswu.map u)
+
+/-- The zero-repaired deployed mapping is literally odd — the form the
+character-sum analysis consumes. -/
+theorem isOdd_zeroRepaired_mapToCurve : IsOdd (zeroRepaired mapToCurve) :=
+  isOdd_zeroRepaired fun _ hu => mapToCurve_neg hu
 
 /-! ### Fixtures for `mapXY` against `hashtocurve.sage`
 
@@ -194,6 +219,30 @@ example : sswu.θ = 0x632cae9872df1b5d
     + 0x38578ccadf03ac27 * 2^64
     + 0x53c3808d9e2f2357 * 2^128
     + 0x2b3483a1ee9a382f * 2^192 := by decide
+
+/-- `sgn0` is a sign function on the Vesta base field: the modulus is odd. -/
+theorem isSignFunction_sgn0 : IsSignFunction (sgn0 (p := PALLAS_SCALAR_CARD)) :=
+  haveI : NeZero PALLAS_SCALAR_CARD := ⟨by decide⟩
+  CompElliptic.Hashing.isSignFunction_sgn0 (Nat.odd_iff.mpr (by decide))
+
+/-- The deployed `map_to_curve` for Vesta: simplified SWU onto iso-Vesta,
+then the 3-isogeny down to Vesta. -/
+def mapToCurve (u : VestaBaseField) : SWPoint curve :=
+  iso.map (sswu.map u)
+
+/-- The deployed mapping is odd away from `0`: simplified SWU is
+(`SSWUParams.map_neg`), and the isogeny commutes with negation
+(`ThreeIsogeny.map_neg`). -/
+theorem mapToCurve_neg {u : VestaBaseField} (hu : u ≠ 0) :
+    mapToCurve (-u) = -(mapToCurve u) := by
+  simp only [mapToCurve]
+  rw [sswu.map_neg isSignFunction_sgn0 hu]
+  exact iso.map_neg (sswu.map u)
+
+/-- The zero-repaired deployed mapping is literally odd — the form the
+character-sum analysis consumes. -/
+theorem isOdd_zeroRepaired_mapToCurve : IsOdd (zeroRepaired mapToCurve) :=
+  isOdd_zeroRepaired fun _ hu => mapToCurve_neg hu
 
 /-! ### Fixtures for `mapXY` against `hashtocurve.sage`
 

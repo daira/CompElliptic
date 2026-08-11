@@ -5,6 +5,7 @@ as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
 import CompElliptic.Curves.PastaOrder
+import CompElliptic.Hashing.PastaSSWU
 import CompElliptic.Curves.Pasta.Fast.Projective
 import CompElliptic.Curves.Pasta.Fast.Msm
 import CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv
@@ -103,6 +104,10 @@ assert_axioms CompElliptic.Curves.Pasta.Pallas.iso_map_bijective +native(
 assert_axioms CompElliptic.Curves.Pasta.Vesta.iso_map_bijective +native(
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_isoGpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms CompElliptic.Curves.Pasta.Pallas.isOdd_zeroRepaired_mapToCurve +native(
+  CompElliptic.Fields.Pasta.pallasBase)
+assert_axioms CompElliptic.Curves.Pasta.Vesta.isOdd_zeroRepaired_mapToCurve +native(
+  CompElliptic.Fields.Pasta.vestaBase)
 
 /-! ## Fast Vesta arithmetic — proven against the affine group law, standard axioms only
 

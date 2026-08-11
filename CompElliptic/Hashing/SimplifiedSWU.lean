@@ -35,11 +35,14 @@ choice affects the mapping's output.
 
 ## The mapping
 
-`mapToCurveSimpleSwuXY` computes the spec's thirteen steps verbatim, with the
-spec's own intermediate names (`Zuu`, `ta`, `x1num`, `xdiv`, `U`, `x2num`,
-`y1`, `y2`, `xnum`, `y'`, `y`); `onCurve_mapToCurveSimpleSwuXY` proves the
-result lies on the curve —never the identity— and `mapToCurveSimpleSwu`
-packages both as an `SWPoint`. The proof has three strands. The final
+`mapXYUpToSign` computes the spec's steps with the spec's own intermediate
+names (`Zuu`, `ta`, `x1num`, `xdiv`, `U`, `x2num`, `y1`, `y2`, `xnum`, `y'`),
+stopping just before the sign-matching step; `mapXY` applies that final step,
+so their composition is step-for-step the spec's list. `onCurve_mapXY` proves
+the result lies on the curve —never the identity— and `map` packages both as
+an `SWPoint`. The signed-lift section factors the mapping through `signedLift`
+(`candidateMap`, `map_eq_signedLift`) and derives oddness away from `0`
+(`map_neg`). The on-curve proof has three strands. The final
 sign-matching step squares away. In the square branch, the curve equation at
 `x1num/xdiv` is the definition of `U`. In the nonsquare branch the root `y1`
 squares to `lam·U/xdiv³`, and the algebra rests on two facts. First,
@@ -155,10 +158,13 @@ variable {F : Type*} [Field F] [Fintype F] [DecidableEq F]
 theorem Z_nonzero (G : SSWUParams F) : G.Z ≠ 0 :=
   fun h => G.Z_nonsquare (h ▸ ⟨0, (mul_zero 0).symm⟩)
 
-/-- The coordinates of `map_to_curve_simple_swu` (spec §5.4.9.8), thirteen steps
-with the spec's intermediate names. The output abscissa is `xnum/xdiv`; the
-ordinate is the branch root with its sign matched to the input's. -/
-def mapXY (G : SSWUParams F) (u : F) : F × F :=
+/-- The coordinates of `map_to_curve_simple_swu` before its final step: the
+spec's steps with the spec's intermediate names, keeping the candidate ordinate
+`y'` that the sign-matching step would overwrite. Splitting the definition here
+diverges slightly from the spec's single list, but the composition `mapXY` is
+step-for-step the spec's, and the split is what lets the mapping be analysed as
+a signed lift (`map_eq_signedLift`). -/
+def mapXYUpToSign (G : SSWUParams F) (u : F) : F × F :=
   let Zuu := G.Z * u^2
   let ta := Zuu^2 + Zuu
   let x1num := G.E.B * (ta + 1)
@@ -170,15 +176,20 @@ def mapXY (G : SSWUParams F) (u : F) : F × F :=
   let y2 := G.θ * Zuu * u * y1
   let xnum := if sr.2 then x1num else x2num
   let y' := if sr.2 then y1 else y2
-  let y := if G.sgn y' = G.sgn u then y' else -y'
-  (xnum / xdiv, y)
+  (xnum / xdiv, y')
+
+/-- The coordinates of `map_to_curve_simple_swu` (spec §5.4.9.8): `mapXYUpToSign`,
+then the sign-matching step on the candidate ordinate. -/
+def mapXY (G : SSWUParams F) (u : F) : F × F :=
+  let p := G.mapXYUpToSign u
+  (p.1, if G.sgn p.2 = G.sgn u then p.2 else -p.2)
 
 /-- **`map_to_curve_simple_swu` lands on the curve** — moreover always on an
 affine point, never the identity. See the module docstring for the shape of the
 argument. -/
 theorem onCurve_mapXY (G : SSWUParams F) (u : F) :
     OnCurve G.E.A G.E.B (G.mapXY u) := by
-  simp only [mapXY]
+  simp only [mapXY, mapXYUpToSign]
   set Zuu := G.Z * u^2 with hZuu
   set ta := Zuu^2 + Zuu with hta
   set x1num := G.E.B * (ta + 1) with hx1num
@@ -259,6 +270,66 @@ theorem onCurve_mapXY (G : SSWUParams F) (u : F) :
 which are on the curve by `onCurve_mapXY`. -/
 def map (G : SSWUParams F) (u : F) : SWPoint G.E :=
   ⟨(G.mapXY u).1, (G.mapXY u).2, Or.inl (G.onCurve_mapXY u)⟩
+
+/-! ## The signed-lift structure of the mapping
+
+The last step of `mapXY` is RFC 9380's sign matching, which `signedLift`
+isolates. Packaging the earlier steps as the candidate point `candidateMap`
+exhibits `map` as a signed lift (`map_eq_signedLift`), and oddness away from
+`0` follows from `signedLift_neg`: the candidate is even up to the sign
+carried by the nonsquare branch's bare factor of `u`. -/
+
+/-- The candidate coordinates are representable: `mapXY u` is on the curve,
+and its ordinate is the candidate's up to sign, so the squares agree. -/
+theorem valid_pre (G : SSWUParams F) (u : F) :
+    Valid G.E.A G.E.B (G.mapXYUpToSign u) := by
+  left
+  have h : OnCurve G.E.A G.E.B (G.mapXY u) := G.onCurve_mapXY u
+  have heq : G.mapXY u = ((G.mapXYUpToSign u).1,
+      if G.sgn (G.mapXYUpToSign u).2 = G.sgn u
+      then (G.mapXYUpToSign u).2 else -(G.mapXYUpToSign u).2) := rfl
+  rw [heq] at h
+  simp only [OnCurve] at h ⊢
+  split_ifs at h
+  · exact h
+  · rwa [neg_sq] at h
+
+/-- `mapXYUpToSign`, packaged as a curve point: the candidate that the sign-matching
+step corrects. -/
+def candidateMap (G : SSWUParams F) (u : F) : SWPoint G.E :=
+  ⟨(G.mapXYUpToSign u).1, (G.mapXYUpToSign u).2, G.valid_pre u⟩
+
+/-- `map` is the signed lift of the candidate `candidateMap`. -/
+theorem map_eq_signedLift (G : SSWUParams F) (u : F) :
+    G.map u = signedLift G.candidateMap G.sgn u := by
+  apply SWPoint.ext_pair
+  rw [show ((G.map u).x, (G.map u).y) = G.mapXY u from rfl]
+  simp only [signedLift, candidateMap, mapXY]
+  split_ifs <;> rfl
+
+/-- The candidate map is even up to sign: the square branch is even in the
+input, and the nonsquare branch is odd — its candidate root carries a bare
+factor of `u`. -/
+theorem candidateMap_neg (G : SSWUParams F) (u : F) :
+    G.candidateMap (-u) = G.candidateMap u ∨ G.candidateMap (-u) = -(G.candidateMap u) := by
+  have hx : (G.candidateMap (-u)).x = (G.candidateMap u).x := by
+    simp only [candidateMap, mapXYUpToSign, neg_sq]
+  have hy : (G.candidateMap (-u)).y = (G.candidateMap u).y
+      ∨ (G.candidateMap (-u)).y = -(G.candidateMap u).y := by
+    simp only [candidateMap, mapXYUpToSign, neg_sq]
+    split_ifs <;> first
+      | exact Or.inl rfl
+      | exact Or.inr (by ring)
+  rcases hy with h | h
+  · exact Or.inl (SWPoint.ext_pair (by rw [hx, h]))
+  · exact Or.inr (SWPoint.ext_pair
+      (by rw [SWPoint.neg_x, SWPoint.neg_y, hx, h]))
+
+/-- The mapping is odd away from `0`, by `signedLift_neg`. -/
+theorem map_neg (G : SSWUParams F) (hsgn : IsSignFunction G.sgn) {u : F}
+    (hu : u ≠ 0) : G.map (-u) = -(G.map u) := by
+  rw [map_eq_signedLift, map_eq_signedLift]
+  exact signedLift_neg G.candidateMap_neg hsgn hu
 
 end SSWUParams
 

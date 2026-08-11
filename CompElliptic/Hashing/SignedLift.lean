@@ -37,9 +37,12 @@ difference of the two character values there — in norm, at most `2`. This is t
 `O(1)` bookkeeping term of the pencil-and-paper analysis, carried here as an
 identity rather than an estimate.
 
-The concrete simplified-SWU abscissa and root chooser for the Pasta curves are
-not yet defined in CompElliptic; this file provides the generic layer, with the
-sign-function half instantiated (`sgn0` on `ZMod p`, `isSignFunction_sgn0`).
+This file provides the generic layer, with the sign-function half instantiated
+(`sgn0` on `ZMod p`, `isSignFunction_sgn0`). The concrete simplified-SWU
+candidate map is `SSWUParams.candidateMap` (`Hashing/SimplifiedSWU.lean`), whose
+signed lift is the mapping itself (`SSWUParams.map_eq_signedLift`);
+`Hashing/PastaSSWU.lean` composes it with the isogenies as the deployed
+`mapToCurve`.
 -/
 
 namespace CompElliptic.Hashing
@@ -93,71 +96,63 @@ omit [DecidableEq F] in
 /-- Negation on `SWPoint` negates the ordinate. -/
 @[simp] theorem SWPoint.neg_y (P : SWPoint E) : (-P).y = -P.y := rfl
 
-/-- The *signed lift*: given an abscissa map `xmap`, a root chooser `root` (any
-fixed choice of `y` over each abscissa, valid by `hval`), and a sign function
-`sgn`, select between the two points over `xmap u` by matching the sign of `y` to
-the sign of `u`. This is the shape of RFC 9380's step "if `sgn0 u ≠ sgn0 y`, set
-`y = -y`". -/
-def signedLift (xmap root : F → F) (sgn : F → Bool)
-    (hval : ∀ u, Valid E.A E.B (xmap u, root u)) (u : F) : SWPoint E :=
-  if sgn (root u) = sgn u then ⟨xmap u, root u, hval u⟩
-  else ⟨xmap u, -(root u), valid_neg (hval u)⟩
+/-- The *signed lift*: given a candidate point map `m`, correct the sign of
+each output by matching the sign of its ordinate to the sign of the input.
+This is the shape of RFC 9380's step "if `sgn0 u ≠ sgn0 y`, set `y = -y`". -/
+def signedLift (m : F → SWPoint E) (sgn : F → Bool) (u : F) : SWPoint E :=
+  if sgn (m u).y = sgn u then m u else -(m u)
 
 omit [DecidableEq F] in
-/-- **The signed lift is odd away from `0`.** The abscissa map must be even, but
-the root chooser only has to be even *up to sign* —`root (-u) = ±(root u)`— and
-the sign rule must flip on negation; then negating a nonzero input negates the
-output point. The up-to-sign allowance is what the deployed algorithm needs: its
-nonsquare branch computes the candidate root as `θ·Z·u²·u·y1`, whose bare factor
-of `u` makes the chooser odd rather than even there. That is harmless: at a fixed
-input, the parity-matching step selects the same point whichever sign the chooser
-produced, because the output's sign is re-derived from `sgn0 u`. Across `±u` the
-outputs still have opposite signs — `sgn0` flips on negation — which is exactly
-the oddness proved here. -/
-theorem signedLift_neg {xmap root : F → F} {sgn : F → Bool}
-    {hval : ∀ u, Valid E.A E.B (xmap u, root u)}
-    (hx : ∀ u, xmap (-u) = xmap u)
-    (hroot : ∀ u, root (-u) = root u ∨ root (-u) = -(root u))
+/-- **The signed lift is odd away from `0`.** The candidate map only has to be
+even *up to sign* —`m (-u) = ±(m u)`— and the sign rule must flip on negation;
+then negating a nonzero input negates the output point. The up-to-sign
+allowance is what the deployed algorithm needs: its nonsquare branch computes
+the candidate root as `θ·Z·u²·u·y1`, whose bare factor of `u` makes the
+chooser odd rather than even there. That is harmless: at a fixed input, the
+sign-matching step selects the same point whichever sign the chooser produced,
+because the output's sign is re-derived from `sgn0 u`. Across `±u` the outputs
+still have opposite signs — `sgn0` flips on negation — which is exactly the
+oddness proved here. -/
+theorem signedLift_neg {m : F → SWPoint E} {sgn : F → Bool}
+    (hm : ∀ u, m (-u) = m u ∨ m (-u) = -(m u))
     (hsgn : IsSignFunction sgn) {u : F} (hu : u ≠ 0) :
-    signedLift xmap root sgn hval (-u) = -(signedLift xmap root sgn hval u) := by
+    signedLift m sgn (-u) = -(signedLift m sgn u) := by
   have hflip : sgn (-u) ≠ sgn u := hsgn u hu
-  have even_case : root (-u) = root u →
-      signedLift xmap root sgn hval (-u) = -(signedLift xmap root sgn hval u) := by
+  have hnn : ∀ P : SWPoint E, - -P = P := fun P => SWPoint.ext_pair (by simp)
+  have even_case : m (-u) = m u →
+      signedLift m sgn (-u) = -(signedLift m sgn u) := by
     intro hre
-    by_cases h : sgn (root u) = sgn u
-    · have h' : ¬ sgn (root (-u)) = sgn (-u) := by
+    by_cases h : sgn (m u).y = sgn u
+    · have h' : ¬ sgn (m (-u)).y = sgn (-u) := by
         rw [hre]
         exact fun hc => hflip (by rw [← hc, h])
-      apply SWPoint.ext_pair
-      simp only [signedLift, if_pos h, if_neg h', SWPoint.neg_x, SWPoint.neg_y]
-      rw [hx u, hre]
-    · have h' : sgn (root (-u)) = sgn (-u) := by
+      simp only [signedLift, if_pos h, if_neg h']
+      rw [hre]
+    · have h' : sgn (m (-u)).y = sgn (-u) := by
         rw [hre]
-        cases hb : sgn u <;> cases hc : sgn (root u) <;> cases hd : sgn (-u) <;>
+        cases hb : sgn u <;> cases hc : sgn (m u).y <;> cases hd : sgn (-u) <;>
           simp_all
-      apply SWPoint.ext_pair
-      simp only [signedLift, if_neg h, if_pos h', SWPoint.neg_x, SWPoint.neg_y]
-      rw [hx u, hre, _root_.neg_neg]
-  rcases hroot u with hr | hr
+      simp only [signedLift, if_neg h, if_pos h']
+      rw [hre, hnn]
+  rcases hm u with hr | hr
   · exact even_case hr
-  · by_cases hr0 : root u = 0
-    · exact even_case (by rw [hr, hr0, neg_zero])
-    · have hrflip : sgn (root (-u)) ≠ sgn (root u) := by
+  · by_cases hy0 : (m u).y = 0
+    · exact even_case (hr.trans (SWPoint.ext_pair
+        (by rw [SWPoint.neg_x, SWPoint.neg_y, hy0, neg_zero])))
+    · have hyflip : sgn (m (-u)).y ≠ sgn (m u).y := by
+        rw [hr, SWPoint.neg_y]
+        exact hsgn (m u).y hy0
+      by_cases h : sgn (m u).y = sgn u
+      · have h' : sgn (m (-u)).y = sgn (-u) := by
+          cases hb : sgn u <;> cases hc : sgn (m u).y <;> cases hd : sgn (-u) <;>
+            cases he : sgn (m (-u)).y <;> simp_all
+        simp only [signedLift, if_pos h, if_pos h']
         rw [hr]
-        exact hsgn (root u) hr0
-      by_cases h : sgn (root u) = sgn u
-      · have h' : sgn (root (-u)) = sgn (-u) := by
-          cases hb : sgn u <;> cases hc : sgn (root u) <;> cases hd : sgn (-u) <;>
-            cases he : sgn (root (-u)) <;> simp_all
-        apply SWPoint.ext_pair
-        simp only [signedLift, if_pos h, if_pos h', SWPoint.neg_x, SWPoint.neg_y]
-        rw [hx u, hr]
-      · have h' : ¬ sgn (root (-u)) = sgn (-u) := by
-          cases hb : sgn u <;> cases hc : sgn (root u) <;> cases hd : sgn (-u) <;>
-            cases he : sgn (root (-u)) <;> simp_all
-        apply SWPoint.ext_pair
-        simp only [signedLift, if_neg h, if_neg h', SWPoint.neg_x, SWPoint.neg_y]
-        rw [hx u, hr, _root_.neg_neg]
+      · have h' : ¬ sgn (m (-u)).y = sgn (-u) := by
+          cases hb : sgn u <;> cases hc : sgn (m u).y <;> cases hd : sgn (-u) <;>
+            cases he : sgn (m (-u)).y <;> simp_all
+        simp only [signedLift, if_neg h, if_neg h']
+        rw [hr]
 
 /-! ## Repairing the zero exception -/
 
