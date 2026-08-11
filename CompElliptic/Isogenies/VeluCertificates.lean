@@ -379,4 +379,88 @@ theorem tangent_x_certificate {F : Type*} [CommRing F]
         36*u*v'^2*x0*k + 144*d*v'*x0^2*k + 65*d^4*t - 108*d^2*u*v'*t + 36*u^2*v'^2*t +
         60*d^3*x0*t - 216*d*u*v'*x0*t - 36*d^2*x0^2*t - 108*v'^2*x0*t) * ht
 
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 8000 in
+/-- The certificate's `hp` input for the doubling case: modulo the tangent-line
+curve membership and the tangency relation, the polynomial that
+`tangent_x_certificate` takes as `hp` vanishes. No saturation factor is needed:
+the tangency relation is linear in `A`, so the elimination is clean. -/
+theorem tangent_psi3_bridge {F : Type*} [CommRing F]
+    (d u v' x0 A B : F)
+    (hT1 : (d^2*u^2 - d^3 + 2*d*u*v' - 3*d^2*x0 - 3*d*x0^2 - x0^3 + v'^2 - d*A - x0*A - B) = 0)
+    (hT2 : (2*d*u^2 - 3*d^2 + 2*u*v' - 6*d*x0 - 3*x0^2 - A) = 0)
+    (hpsi : 3*x0^4 + 6*A*x0^2 + 12*B*x0 - A^2 = 0) :
+    (-4*d^2*u^4 + 12*d^3*u^2 - 8*d*u^3*v' + 12*d^2*u^2*x0 - 9*d^4 + 12*d^2*u*v' - 4*u^2*v'^2 -
+      12*d^3*x0 + 24*d*u*v'*x0 + 12*v'^2*x0)
+    = 0 :=
+  by
+    linear_combination
+      (12*x0) * hT1
+      + (-2*d*u^2 + 3*d^2 - 2*u*v' - 6*d*x0 - 3*x0^2 - A) * hT2
+      + (1) * hpsi
+
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 8000 in
+/-- The meaning of the `k` atom: `2·y·ynum·d`, written with the true curve
+coefficients, agrees with the certificate's polynomial. -/
+theorem tangent_k_semantics {F : Type*} [CommRing F]
+    (d u v' x0 A B : F)
+    (hT1 : (d^2*u^2 - d^3 + 2*d*u*v' - 3*d^2*x0 - 3*d*x0^2 - x0^3 + v'^2 - d*A - x0*A - B) = 0)
+    (hT2 : (2*d*u^2 - 3*d^2 + 2*u*v' - 6*d*x0 - 3*x0^2 - A) = 0) :
+    (2*d^5*u - 12*d^3*u*x0^2 - 16*d^2*u*x0^3 + 2*d^4*v' - 12*d^2*v'*x0^2 - 16*d*v'*x0^3 -
+      4*d^3*u*A - 16*d^2*u*x0*A - 4*d^2*v'*A - 16*d*v'*x0*A - 16*d^2*u*B - 16*d*v'*B)
+    = (8*d^4*u^3 - 18*d^5*u - 24*d^4*u*x0 - 18*d^4*v' - 24*d^2*u*v'^2 - 24*d^3*v'*x0 -
+        16*d*v'^3) :=
+  by
+    linear_combination
+      (16*d^2*u + 16*d*v') * hT1
+      + (-12*d^3*u - 12*d^2*v') * hT2
+
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 8000 in
+/-- The meaning of the `t` atom: `3·xnum² + A'·d⁴` —the numerator parts of the
+codomain doubling slope— written with the true curve coefficients, agrees with
+the certificate's polynomial. -/
+theorem tangent_t_semantics {F : Type*} [CommRing F]
+    (d u v' x0 A B : F)
+    (hT1 : (d^2*u^2 - d^3 + 2*d*u*v' - 3*d^2*x0 - 3*d*x0^2 - x0^3 + v'^2 - d*A - x0*A - B) = 0)
+    (hT2 : (2*d*u^2 - 3*d^2 + 2*u*v' - 6*d*x0 - 3*x0^2 - A) = 0) :
+    (3*d^6 + 6*d^5*x0 + 9*d^4*x0^2 + 60*d^3*x0^3 + 132*d^2*x0^4 + 144*d*x0^5 + 48*x0^6 +
+      3*d^4*A + 36*d^3*x0*A + 96*d^2*x0^2*A + 192*d*x0^3*A + 96*x0^4*A + 12*d^2*A^2 +
+      48*d*x0*A^2 + 48*x0^2*A^2 + 24*d^3*B + 24*d^2*x0*B + 144*d*x0^2*B + 96*x0^3*B + 48*d*A*B +
+      96*x0*A*B + 48*B^2)
+    = (-18*d^5*u^2 + 54*d^6 + 54*d^4*u*v' + 48*d^2*u^2*v'^2 + 72*d^5*x0 + 24*d^3*u*v'*x0 +
+        72*d^3*v'^2 + 96*d*u*v'^3 + 24*d^2*v'^2*x0 + 48*v'^4) :=
+  by
+    linear_combination
+      (-48*d^3 - 48*d*u*v' - 24*d^2*x0 - 72*d*x0^2 - 48*x0^3 - 48*v'^2 - 24*d*A - 48*x0*A -
+        48*B) * hT1
+      + (33*d^4 + 24*d^2*u*v' + 12*d^3*x0 + 36*d^2*x0^2 + 24*d*x0^3 + 24*d*v'^2 + 12*d^2*A +
+        24*d*x0*A + 24*d*B) * hT2
+
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 8000 in
+/-- The correction closing the doubling wrapper's final step: the slope-free
+cleared form of the target differs from the certificate's goal by `C · k²` for
+the polynomial `C` here (the `t²` gap vanishes identically, asserted by the
+generator), and `C` vanishes modulo the same relations. -/
+theorem tangent_correction {F : Type*} [CommRing F]
+    (d u v' x0 A B : F)
+    (hT1 : (d^2*u^2 - d^3 + 2*d*u*v' - 3*d^2*x0 - 3*d*x0^2 - x0^3 + v'^2 - d*A - x0*A - B) = 0)
+    (hT2 : (2*d*u^2 - 3*d^2 + 2*u*v' - 6*d*x0 - 3*x0^2 - A) = 0) :
+    (-32*d^3*u^4 - 32*d*u^5*v' + 48*d*u^4*x0^2 + 32*u^4*x0^3 + 136*d^4*u^2 + 112*d^2*u^3*v' -
+      32*u^4*v'^2 + 192*d^3*u^2*x0 + 192*d*u^3*v'*x0 - 168*d^2*u^2*x0^2 - 416*d*u^2*x0^3 -
+      192*u^2*x0^4 + 16*d*u^4*A + 32*u^4*x0*A - 144*d^5 - 96*d^3*u*v' + 128*d*u^2*v'^2 -
+      408*d^4*x0 - 336*d^2*u*v'*x0 + 192*u^2*v'^2*x0 - 144*d^3*x0^2 - 288*d*u*v'*x0^2 +
+      648*d^2*x0^3 + 816*d*x0^4 + 288*x0^5 - 56*d^2*u^2*A - 224*d*u^2*x0*A - 192*u^2*x0^2*A +
+      32*u^4*B - 144*d^2*v'^2 - 384*d*v'^2*x0 - 288*v'^2*x0^2 + 48*d^3*A + 312*d^2*x0*A +
+      528*d*x0^2*A + 288*x0^3*A - 128*d*u^2*B - 192*u^2*x0*B + 144*d^2*B + 384*d*x0*B +
+      288*x0^2*B)
+    = 0 :=
+  by
+    linear_combination
+      (-32*u^4 + 224*d*u^2 + 192*u^2*x0 - 288*d^2 + 96*u*v' - 672*d*x0 - 432*x0^2 - 48*A) * hT1
+      + (16*d*u^4 - 120*d^2*u^2 - 96*d*u^2*x0 + 144*d^3 - 96*d*u*v' + 360*d^2*x0 + 288*d*x0^2 +
+        48*x0^3 - 48*v'^2 + 48*d*A + 48*x0*A + 48*B) * hT2
+
 end CompElliptic.Isogenies

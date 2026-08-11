@@ -187,7 +187,8 @@ assert DeltaC == CnsC*cns^2 + CwsC*cws^2
 assert CwsC == 0, "the ws^2 correction no longer vanishes"
 CnsC = CnsC // (cx1 - cx2)^2
 cenC = Wc.hom([vx0 + d1c, vx0 + d2c, vl, vmp, vx0, vA, vB, V.zero(), V.zero()], V)
-Cns_i, _ = clear2(cenC(CnsC))
+Cns_i, jC = clear2(cenC(CnsC))
+print("correction clearing exponent jC =", jC)
 
 support_parts = []
 support_docs = {
@@ -221,7 +222,7 @@ set_option maxHeartbeats 4000000 in
 set_option maxRecDepth 8000 in
 {doc}
 theorem {name} {{F : Type*}} [CommRing F]
-    (e dd l m' x0 A B : F)
+    {vars}
 {binders} :
     {goal} :=
   by
@@ -274,7 +275,7 @@ for name, lhs_poly, lhs_pow, rhs_poly, rhs_pow in [
         goal = (sat + p2(lhs_pow) + "(" + lw(lhs_poly, 6) + ")\n    = "
                 + sat + p2(rhs_pow) + "(" + lw(rhs_poly, 8) + ")")
     support_parts.append(support_tmpl.format(
-        name=name, doc=support_docs[name],
+        name=name, doc=support_docs[name], vars="(e dd l m' x0 A B : F)",
         binders="\n".join(hyp_lines[nm] for nm, _ in used),
         goal=goal, combo=combo))
 
@@ -343,7 +344,107 @@ tang = tang_tmpl.format(hp=lw(zhp_c, 14), k1x=lw(K1x_c, 16), t1x=lw(T1x_c, 16),
                         goal=lw(goal_t, 6), c0=lw(tcof_c[0], 8),
                         c1=lw(tcof_c[1], 8), c2=lw(tcof_c[2], 8))
 
-text = chord + "\n\n" + support + "\n\n" + tang + "\n"
+# --------------------------------------------- tangent wrapper support ----
+# Support lemmas for the tangent (doubling) wrapper, mirroring the chord set. The
+# generating relations are the curve membership with the tangent line substituted
+# (hT1) and the tangency relation (hT2, the derivative condition `2y·u = 3x² + A`,
+# linear in A) — so the Vieta elimination is clean and no saturation factors
+# appear. The t²-correction vanishes identically (asserted below), leaving one
+# k²-correction.
+V2 = PolynomialRing(QQ, ["d", "u", "vp", "x0", "A", "B"], order="degrevlex")
+td, tu, tvp, tx0, tA, tB = V2.gens()
+RT1_p = (tu*td + tvp)^2 - ((tx0 + td)^3 + tA*(tx0 + td) + tB)
+RT2_p = 2*tu*(tu*td + tvp) - (3*(tx0 + td)^2 + tA)
+psiV2 = 3*tx0^4 + 6*tA*tx0^2 + 12*tB*tx0 - tA^2
+tgens2 = [RT1_p, RT2_p, psiV2]
+tnames2 = ["hT1", "hT2", "hpsi"]
+toV2 = S2.hom([td, tu, tvp, tx0, V2.zero(), V2.zero()], V2)
+hpT = toV2(zhp_c)
+K1T = toV2(K1x_c)
+T1T = toV2(T1x_c)
+tvA = 2*(3*tx0^2 + tA)
+tuA = 4*(tx0^3 + tA*tx0 + tB)
+NAt = lambda dv: (tx0 + dv)*dv^2 + tvA*dv + tuA
+MAt = lambda dv: dv^3 - tvA*dv - 2*tuA
+K_real = 2*(tu*td + tvp)*MAt(td)*td
+T_real = 3*NAt(td)^2 + (tA - 10*(3*tx0^2 + tA))*td^4
+
+Wt = PolynomialRing(QQ, ["d", "u", "vp", "x0", "A", "B", "k", "t"],
+                    order="degrevlex")
+wd2, wu2, wvp2, wx02, wA2, wB2, wk2, wt2 = Wt.gens()
+instT = S2.hom([wd2, wu2, wvp2, wx02, wk2, wt2], Wt)
+GT = instT(goal_t)
+wvA2 = 2*(3*wx02^2 + wA2)
+wuA2 = 4*(wx02^3 + wA2*wx02 + wB2)
+NAw = lambda dv: (wx02 + dv)*dv^2 + wvA2*dv + wuA2
+d3w = wu2^2 - 2*wd2 - 3*wx02
+FinalPolyT = NAw(d3w)*wk2^2*wd2^2 - (wt2^2*wd2^2 - 2*NAw(wd2)*wk2^2)*d3w^2
+DeltaT = 4*FinalPolyT - GT
+CkT = DeltaT.coefficient({wk2: 2, wt2: 0})
+CtT = DeltaT.coefficient({wk2: 0, wt2: 2})
+assert DeltaT == CkT*wk2^2 + CtT*wt2^2
+assert CtT == 0, "the t^2 correction no longer vanishes"
+toV2b = Wt.hom(list(V2.gens()) + [V2.zero(), V2.zero()], V2)
+CkV = toV2b(CkT)
+
+tsupport_docs = {
+    "tangent_psi3_bridge": """\
+/-- The certificate's `hp` input for the doubling case: modulo the tangent-line
+curve membership and the tangency relation, the polynomial that
+`tangent_x_certificate` takes as `hp` vanishes. No saturation factor is needed:
+the tangency relation is linear in `A`, so the elimination is clean. -/""",
+    "tangent_k_semantics": """\
+/-- The meaning of the `k` atom: `2·y·ynum·d`, written with the true curve
+coefficients, agrees with the certificate's polynomial. -/""",
+    "tangent_t_semantics": """\
+/-- The meaning of the `t` atom: `3·xnum² + A'·d⁴` —the numerator parts of the
+codomain doubling slope— written with the true curve coefficients, agrees with
+the certificate's polynomial. -/""",
+    "tangent_correction": """\
+/-- The correction closing the doubling wrapper's final step: the slope-free
+cleared form of the target differs from the certificate's goal by `C · k²` for
+the polynomial `C` here (the `t²` gap vanishes identically, asserted by the
+generator), and `C` vanishes modulo the same relations. -/""",
+}
+thyp_lines = {
+    "hT1": "    (hT1 : (" + lw(RT1_p, 12) + ") = 0)",
+    "hT2": "    (hT2 : (" + lw(RT2_p, 12) + ") = 0)",
+    "hpsi": "    (hpsi : 3*x0^4 + 6*A*x0^2 + 12*B*x0 - A^2 = 0)",
+}
+tsupport_parts = []
+for name, lhs_poly, rhs_poly in [
+        ("tangent_psi3_bridge", hpT, None),
+        ("tangent_k_semantics", K_real, K1T),
+        ("tangent_t_semantics", T_real, T1T),
+        ("tangent_correction", CkV, None)]:
+    T0 = lhs_poly - (rhs_poly if rhs_poly is not None else 0)
+    lift = T0.lift(V2.ideal(tgens2))
+    assert sum(c*g for c, g in zip(lift, tgens2)) == T0
+    dens = [lcm([q.denominator() for q in c.coefficients()]) for c in lift if c != 0]
+    for dnm in dens:
+        assert dnm == 2^(dnm.valuation(2)), (name, dnm)
+    dj = max([0] + [dnm.valuation(2) for dnm in dens])
+    lift = [2^dj * c for c in lift]
+    assert sum(c*g for c, g in zip(lift, tgens2)) == 2^dj * T0
+    assert all(all(q in ZZ for q in c.coefficients()) for c in lift)
+    mass = sum(len(c.monomials())*len(g.monomials()) for c, g in zip(lift, tgens2))
+    print(name, ": cofactors", [len(c.monomials()) for c in lift], "; mass", mass)
+    used = [(nm, c) for nm, c in zip(tnames2, lift) if c != 0]
+    combo = "\n      + ".join("(" + lw(c, 8) + ") * " + nm for nm, c in used)
+    p2t = "" if dj == 0 else "(2 : F)^" + str(dj) + " * "
+    if rhs_poly is None:
+        goal = p2t + "(" + lw(lhs_poly, 6) + ")\n    = 0"
+    else:
+        goal = (p2t + "(" + lw(lhs_poly, 6) + ")\n    = "
+                + p2t + "(" + lw(rhs_poly, 8) + ")")
+    tsupport_parts.append(support_tmpl.format(
+        name=name, doc=tsupport_docs[name], vars="(d u v' x0 A B : F)",
+        binders="\n".join(thyp_lines[nm] for nm, _ in used),
+        goal=goal, combo=combo))
+
+tsupport = "\n\n".join(tsupport_parts)
+
+text = chord + "\n\n" + support + "\n\n" + tang + "\n\n" + tsupport + "\n"
 # The Sage ring names `mp` and `vp` stand for the primed intercepts; rename to the
 # Lean identifiers m' and v' (whole words only).
 text = re.sub(r"\bmp\b", "m'", text)
