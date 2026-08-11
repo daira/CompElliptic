@@ -20,6 +20,7 @@ import CompElliptic.Curves.Pasta
 import CompElliptic.Curves.IsoPasta
 import CompElliptic.Curves.PastaOrder
 import CompElliptic.Hashing.CharacterSum
+import CompElliptic.Hashing.PastaSSWU
 import CompElliptic.Hashing.SignedLift
 import CompElliptic.Hashing.SimplifiedSWU
 import CompElliptic.Hashing.TwoTermUniformity
