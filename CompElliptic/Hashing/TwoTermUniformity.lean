@@ -376,4 +376,150 @@ theorem sq_sum_abs_prob_dev_le [Nonempty F] (f : F → G) {C : ℝ}
     _ = ((Fintype.card G : ℝ) - 1) * C^4
           * ((Fintype.card G : ℝ) * (Fintype.card F : ℝ)^2)^2 := by ring
 
+
+/-! ## Exports for the indifferentiability arc
+
+The game-side consumer (zcash/ironwood#198) works in `ℝ≥0∞` and should never
+need a square root. `sum_abs_prob_dev_le` states the L¹ bound against any
+budget `ε` whose square dominates the squared bound, so a concrete `ε` is
+checked by squaring, in exact arithmetic. `card_dev_ge_le` is the
+Chebyshev-style counting form of the L² bound: regularity does not
+lower-bound individual fibres, so the rejection sampler's acceptance
+constant holds only outside a bad set of fibres, whose size this bounds.
+`sum_abs_pairCount_sub_le` prices replacing the zero-repaired mapping by the
+deployed one: the two mappings differ at the single input `0`, so their
+two-term pair counts differ only on pairs containing it. -/
+
+/-- The L¹ probability deviation, unsquared, against an arbitrary budget: if
+`ε²` dominates the squared bound then the deviation is at most `ε`. -/
+theorem sum_abs_prob_dev_le [Nonempty F] (f : F → G) {C : ℝ}
+    (h : WeilBounded f C) {ε : ℝ} (hε : 0 ≤ ε)
+    (hbound : ((Fintype.card G : ℝ) - 1) * C^4 / (Fintype.card F : ℝ)^2
+      ≤ ε^2) :
+    ∑ Q, |(pairCount f Q : ℝ) / (Fintype.card F : ℝ)^2
+        - 1 / (Fintype.card G : ℝ)| ≤ ε := by
+  have hx : 0 ≤ ∑ Q, |(pairCount f Q : ℝ) / (Fintype.card F : ℝ)^2
+      - 1 / (Fintype.card G : ℝ)| :=
+    Finset.sum_nonneg fun Q _ => abs_nonneg _
+  have hsq := (sq_sum_abs_prob_dev_le f h).trans hbound
+  nlinarith [hsq, hx, hε]
+
+/-- **Chebyshev-style bad-set counting**: the number of outputs whose pair
+count deviates from its uniform value by at least `τ`, multiplied by `τ²`,
+is at most the summed squared deviation. -/
+theorem card_dev_ge_le (f : F → G) {C : ℝ} (h : WeilBounded f C) {τ : ℝ}
+    (hτ : 0 ≤ τ) :
+    ((univ.filter fun Q => τ ≤ |(Fintype.card G : ℝ) * pairCount f Q
+        - (Fintype.card F : ℝ)^2|).card : ℝ) * τ^2
+      ≤ (Fintype.card G : ℝ) * ((Fintype.card G : ℝ) - 1)
+          * (C^2 * Fintype.card F)^2 := by
+  classical
+  refine le_trans ?_ (sum_sq_dev_le f h)
+  calc ((univ.filter fun Q => τ ≤ |(Fintype.card G : ℝ) * pairCount f Q
+          - (Fintype.card F : ℝ)^2|).card : ℝ) * τ^2
+      = ∑ _Q ∈ univ.filter (fun Q => τ ≤ |(Fintype.card G : ℝ) * pairCount f Q
+          - (Fintype.card F : ℝ)^2|), τ^2 := by
+        rw [Finset.sum_const, nsmul_eq_mul]
+    _ ≤ ∑ Q ∈ univ.filter (fun Q => τ ≤ |(Fintype.card G : ℝ) * pairCount f Q
+          - (Fintype.card F : ℝ)^2|),
+          ((Fintype.card G : ℝ) * pairCount f Q
+            - (Fintype.card F : ℝ)^2)^2 := by
+        refine Finset.sum_le_sum fun Q hQ => ?_
+        have hdev := (Finset.mem_filter.mp hQ).2
+        calc τ^2 ≤ |(Fintype.card G : ℝ) * pairCount f Q
+              - (Fintype.card F : ℝ)^2|^2 := pow_le_pow_left₀ hτ hdev 2
+          _ = _ := sq_abs _
+    _ ≤ ∑ Q, ((Fintype.card G : ℝ) * pairCount f Q
+          - (Fintype.card F : ℝ)^2)^2 :=
+        Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _)
+          fun Q _ _ => sq_nonneg _
+
+/-- **The zero-repair transport for pair counts**: two mappings agreeing away
+from a single input have two-term pair counts within `4·#F - 2` of each other
+in L¹, because only the pairs containing that input can differ. -/
+theorem sum_abs_pairCount_sub_le [Nonempty F] (f g : F → G) (u₀ : F)
+    (h : ∀ u, u ≠ u₀ → f u = g u) :
+    ∑ Q, |(pairCount f Q : ℝ) - (pairCount g Q : ℝ)|
+      ≤ 4 * Fintype.card F - 2 := by
+  classical
+  set T : Finset (F × F) := univ.filter (fun p => p.1 = u₀ ∨ p.2 = u₀)
+    with hT
+  -- Pairs away from `T` have equal sums under `f` and `g`.
+  have hagree : ∀ p : F × F, p ∉ T → f p.1 + f p.2 = g p.1 + g p.2 := by
+    intro p hp
+    simp only [hT, mem_filter, mem_univ, true_and, not_or] at hp
+    rw [h p.1 hp.1, h p.2 hp.2]
+  -- Each pair count splits at `T`, and the parts away from `T` agree.
+  have hsplit : ∀ (m : F → G) (Q : G), (pairCount m Q : ℕ)
+      = ((univ.filter fun p : F × F => m p.1 + m p.2 = Q) \ T).card
+        + (T.filter fun p => m p.1 + m p.2 = Q).card := by
+    intro m Q
+    have hinter : (univ.filter fun p : F × F => m p.1 + m p.2 = Q) ∩ T
+        = T.filter fun p => m p.1 + m p.2 = Q := by
+      ext p
+      simp only [Finset.mem_inter, mem_filter, mem_univ, true_and]
+      exact ⟨fun ⟨a, b⟩ => ⟨b, a⟩, fun ⟨a, b⟩ => ⟨b, a⟩⟩
+    rw [pairCount, ← hinter, add_comm]
+    exact (Finset.card_inter_add_card_sdiff _ _).symm
+  have hkey : ∀ Q : G, |(pairCount f Q : ℝ) - (pairCount g Q : ℝ)|
+      ≤ ((T.filter fun p => f p.1 + f p.2 = Q).card : ℝ)
+        + ((T.filter fun p => g p.1 + g p.2 = Q).card : ℝ) := by
+    intro Q
+    have hsdiff : ((univ.filter fun p : F × F => f p.1 + f p.2 = Q) \ T)
+        = ((univ.filter fun p : F × F => g p.1 + g p.2 = Q) \ T) := by
+      ext p
+      simp only [Finset.mem_sdiff, mem_filter, mem_univ, true_and]
+      exact ⟨fun ⟨hpQ, hpT⟩ => ⟨by rw [← hagree p hpT]; exact hpQ, hpT⟩,
+        fun ⟨hpQ, hpT⟩ => ⟨by rw [hagree p hpT]; exact hpQ, hpT⟩⟩
+    rw [hsplit f Q, hsplit g Q, hsdiff]
+    push_cast
+    have hx : (0 : ℝ) ≤ (T.filter fun p => f p.1 + f p.2 = Q).card :=
+      Nat.cast_nonneg _
+    have hy : (0 : ℝ) ≤ (T.filter fun p => g p.1 + g p.2 = Q).card :=
+      Nat.cast_nonneg _
+    rw [abs_le]
+    constructor <;> [linarith; linarith]
+  -- Sum the per-output bounds; each side totals `T.card` fibrewise.
+  have hfib : ∀ m : F → G, ∑ Q : G,
+      ((T.filter fun p => m p.1 + m p.2 = Q).card : ℝ) = (T.card : ℝ) := by
+    intro m
+    exact_mod_cast (Finset.card_eq_sum_card_fiberwise
+      (f := fun p : F × F => m p.1 + m p.2) (s := T) (t := univ)
+      fun p _ => mem_univ _).symm
+  -- `T` is two axis copies of `F` overlapping in one pair.
+  have hTcard : T.card = 2 * Fintype.card F - 1 := by
+    have h1 : (univ.filter fun p : F × F => p.1 = u₀) = {u₀} ×ˢ univ := by
+      ext p
+      simp only [mem_filter, mem_univ, true_and, Finset.mem_product,
+        Finset.mem_singleton, and_true]
+    have h2 : (univ.filter fun p : F × F => p.2 = u₀) = univ ×ˢ {u₀} := by
+      ext p
+      simp only [mem_filter, mem_univ, true_and, Finset.mem_product,
+        Finset.mem_singleton, true_and]
+    have hint : (univ.filter fun p : F × F => p.1 = u₀)
+        ∩ (univ.filter fun p : F × F => p.2 = u₀) = {(u₀, u₀)} := by
+      ext p
+      simp [Finset.mem_inter, Prod.ext_iff]
+    have hcards := Finset.card_union_add_card_inter
+      (univ.filter fun p : F × F => p.1 = u₀)
+      (univ.filter fun p : F × F => p.2 = u₀)
+    rw [hint, h1, h2] at hcards
+    simp only [Finset.card_product, Finset.card_singleton, Finset.card_univ,
+      one_mul, mul_one] at hcards
+    rw [hT, Finset.filter_or, h1, h2]
+    omega
+  have hF1 : 1 ≤ 2 * Fintype.card F := by
+    have := Fintype.card_pos (α := F)
+    omega
+  calc ∑ Q, |(pairCount f Q : ℝ) - (pairCount g Q : ℝ)|
+      ≤ ∑ Q : G, (((T.filter fun p => f p.1 + f p.2 = Q).card : ℝ)
+          + ((T.filter fun p => g p.1 + g p.2 = Q).card : ℝ)) :=
+        Finset.sum_le_sum fun Q _ => hkey Q
+    _ = (T.card : ℝ) + (T.card : ℝ) := by
+        rw [Finset.sum_add_distrib, hfib f, hfib g]
+    _ = 4 * Fintype.card F - 2 := by
+        rw [hTcard]
+        push_cast [Nat.cast_sub hF1]
+        ring
+
 end CompElliptic.Hashing
