@@ -199,4 +199,23 @@ theorem card_map_fibre_le (G : SSWUParams F) (hsq : IsSquare (-1 : F))
 
 end SSWUParams
 
+/-- Composing with an injective map does not grow fibres: a fibre bound for
+`f` is a fibre bound for `g ∘ f`. Stated with the auxiliary predicate that
+the fibre-bound statements carry. -/
+theorem card_fibre_comp_le {α β γ : Type*} [Fintype α] [DecidableEq β]
+    [DecidableEq γ] {f : α → β} {g : β → γ} (hg : Function.Injective g)
+    {pred : α → Prop} [DecidablePred pred] {n : ℕ}
+    (h : ∀ Q : β, (univ.filter fun u => pred u ∧ f u = Q).card ≤ n)
+    (P : γ) :
+    (univ.filter fun u => pred u ∧ g (f u) = P).card ≤ n := by
+  rcases (univ.filter fun u => pred u ∧ g (f u) = P).eq_empty_or_nonempty
+    with he | ⟨u₀, hu₀⟩
+  · rw [he, Finset.card_empty]
+    exact Nat.zero_le n
+  · rw [mem_filter] at hu₀
+    refine (Finset.card_le_card ?_).trans (h (f u₀))
+    intro u hu
+    rw [mem_filter] at hu ⊢
+    exact ⟨mem_univ u, hu.2.1, hg (hu.2.2.trans hu₀.2.2.symm)⟩
+
 end CompElliptic.Hashing
