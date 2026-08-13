@@ -153,6 +153,21 @@ character-sum analysis consumes. -/
 theorem isOdd_zeroRepaired_mapToCurve : IsOdd (zeroRepaired mapToCurve) :=
   isOdd_zeroRepaired fun _ hu => mapToCurve_neg hu
 
+/-- The zero-repair transport, composed at the deployed mapping: for every
+character, the deployed and repaired character sums differ by exactly
+`ψ (mapToCurve 0) - 1`. Conclusions about the literally-odd
+`zeroRepaired mapToCurve` carry back to the deployed mapping at this `O(1)`
+cost. -/
+theorem charSum_mapToCurve_sub_zeroRepaired (ψ : AddChar (SWPoint curve) ℂ) :
+    ∑ u, ψ (mapToCurve u) - ∑ u, ψ (zeroRepaired mapToCurve u)
+      = ψ (mapToCurve 0) - 1 :=
+  charSum_sub_zeroRepaired mapToCurve ψ
+
+/-- In norm, the deployed-to-repaired character-sum shift is at most `2`. -/
+theorem norm_charSum_mapToCurve_sub_zeroRepaired (ψ : AddChar (SWPoint curve) ℂ) :
+    ‖∑ u, ψ (mapToCurve u) - ∑ u, ψ (zeroRepaired mapToCurve u)‖ ≤ 2 :=
+  norm_charSum_sub_zeroRepaired mapToCurve ψ
+
 /-- The deployed hash-to-curve construction for Pallas after `hash_to_field`:
 add on the iso-curve, apply the isogeny once. -/
 def mapHashOutputsToCurve (u₀ u₁ : PallasBaseField) : SWPoint curve :=
@@ -309,6 +324,21 @@ theorem mapToCurve_neg {u : VestaBaseField} (hu : u ≠ 0) :
 character-sum analysis consumes. -/
 theorem isOdd_zeroRepaired_mapToCurve : IsOdd (zeroRepaired mapToCurve) :=
   isOdd_zeroRepaired fun _ hu => mapToCurve_neg hu
+
+/-- The zero-repair transport, composed at the deployed mapping: for every
+character, the deployed and repaired character sums differ by exactly
+`ψ (mapToCurve 0) - 1`. Conclusions about the literally-odd
+`zeroRepaired mapToCurve` carry back to the deployed mapping at this `O(1)`
+cost. -/
+theorem charSum_mapToCurve_sub_zeroRepaired (ψ : AddChar (SWPoint curve) ℂ) :
+    ∑ u, ψ (mapToCurve u) - ∑ u, ψ (zeroRepaired mapToCurve u)
+      = ψ (mapToCurve 0) - 1 :=
+  charSum_sub_zeroRepaired mapToCurve ψ
+
+/-- In norm, the deployed-to-repaired character-sum shift is at most `2`. -/
+theorem norm_charSum_mapToCurve_sub_zeroRepaired (ψ : AddChar (SWPoint curve) ℂ) :
+    ‖∑ u, ψ (mapToCurve u) - ∑ u, ψ (zeroRepaired mapToCurve u)‖ ≤ 2 :=
+  norm_charSum_sub_zeroRepaired mapToCurve ψ
 
 /-- The deployed hash-to-curve construction for Vesta after `hash_to_field`:
 add on the iso-curve, apply the isogeny once. -/

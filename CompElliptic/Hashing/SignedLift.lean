@@ -6,6 +6,7 @@ Authors: Daira-Emma Hopwood
 -/
 import CompElliptic.Hashing.CharacterSum
 import CompElliptic.CurveForms.ShortWeierstrass
+import Mathlib.Analysis.Normed.Ring.Finite
 import Mathlib.Data.ZMod.Basic
 
 /-!
@@ -32,10 +33,10 @@ does not have (except the identity, and the deployed mapping sends `0` to an
 ordinary finite point via its exceptional branch). The mismatch is confined to
 that single input. `zeroRepaired` is the variant sending `0` to the identity; it
 is odd everywhere (`isOdd_zeroRepaired`), and `sum_apply_sub_of_eq_except` makes
-the modelling cost exact: repairing one input shifts every character sum by the
-difference of the two character values there — in norm, at most `2`. This is the
-`O(1)` bookkeeping term of the pencil-and-paper analysis, carried here as an
-identity rather than an estimate.
+the modelling cost exact: the repair shifts every character sum by exactly
+`ψ (f 0) - 1` (`charSum_sub_zeroRepaired`) — in norm, at most `2`
+(`norm_charSum_sub_zeroRepaired`). This is the `O(1)` bookkeeping term of the
+pencil-and-paper analysis, carried here as an identity rather than an estimate.
 
 This file provides the generic layer, with the sign-function half instantiated
 (`sgn0` on `ZMod p`, `isSignFunction_sgn0`). The concrete simplified-SWU
@@ -175,19 +176,28 @@ theorem isOdd_zeroRepaired {F : Type*} [AddGroup F] [DecidableEq F] {f : F → G
   · have hnu : -u ≠ 0 := neg_ne_zero.mpr hu
     simp [zeroRepaired, hu, hnu, hodd u hu]
 
-/-- **The exact cost of the repair.** Two mappings that agree except at one input
-have character sums (indeed, sums of any function of their outputs) differing by
-exactly the difference of the two values there. Applied to a deployed mapping and
-its zero-repaired variant, this is the `O(1)` term of the character-sum analysis,
-as an identity: in norm the shift is at most `2`, against sums of size `√#F`. -/
-theorem sum_apply_sub_of_eq_except {F : Type*} [Fintype F] [DecidableEq F]
-    {G : Type*} {f g : F → G} {u₀ : F} (h : ∀ u, u ≠ u₀ → f u = g u)
-    (φ : G → ℂ) :
-    ∑ u, φ (f u) - ∑ u, φ (g u) = φ (f u₀) - φ (g u₀) := by
-  rw [← Finset.add_sum_erase univ (fun u => φ (f u)) (mem_univ u₀),
-    ← Finset.add_sum_erase univ (fun u => φ (g u)) (mem_univ u₀),
-    Finset.sum_congr rfl fun u hu => by rw [h u (Finset.mem_erase.mp hu).1]]
+/-- **The exact cost of the repair.** A mapping and its zero-repaired variant
+agree except at `0`, so their character sums differ by exactly the difference of
+the two character values there: `ψ (f 0) - 1`. This is the `O(1)` term of the
+character-sum analysis, as an identity rather than an estimate. -/
+theorem charSum_sub_zeroRepaired {F : Type*} [Fintype F] [Zero F] [DecidableEq F]
+    (f : F → G) (ψ : AddChar G ℂ) :
+    ∑ u, ψ (f u) - ∑ u, ψ (zeroRepaired f u) = ψ (f 0) - 1 := by
+  rw [← Finset.add_sum_erase univ (fun u => ψ (f u)) (mem_univ 0),
+    ← Finset.add_sum_erase univ (fun u => ψ (zeroRepaired f u)) (mem_univ 0),
+    Finset.sum_congr rfl fun u hu => by
+      rw [show f u = zeroRepaired f u by simp [zeroRepaired, (Finset.mem_erase.mp hu).1]],
+    show zeroRepaired f 0 = 0 from if_pos rfl, AddChar.map_zero_eq_one]
   ring
+
+/-- In norm, the repair's character-sum shift is at most `2` — the `O(1)` term
+against sums of size `√#F`. -/
+theorem norm_charSum_sub_zeroRepaired {F : Type*} [Fintype F] [Zero F]
+    [DecidableEq F] [Fintype G] (f : F → G) (ψ : AddChar G ℂ) :
+    ‖∑ u, ψ (f u) - ∑ u, ψ (zeroRepaired f u)‖ ≤ 2 := by
+  rw [charSum_sub_zeroRepaired]
+  calc ‖ψ (f 0) - 1‖ ≤ ‖ψ (f 0)‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
+    _ = 2 := by rw [ψ.norm_apply, norm_one]; norm_num
 
 end SignedLift
 

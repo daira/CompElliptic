@@ -108,6 +108,10 @@ assert_axioms CompElliptic.Curves.Pasta.Pallas.isOdd_zeroRepaired_mapToCurve +na
   CompElliptic.Fields.Pasta.pallasBase)
 assert_axioms CompElliptic.Curves.Pasta.Vesta.isOdd_zeroRepaired_mapToCurve +native(
   CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms CompElliptic.Curves.Pasta.Pallas.norm_charSum_mapToCurve_sub_zeroRepaired +native(
+  CompElliptic.Fields.Pasta.pallasBase)
+assert_axioms CompElliptic.Curves.Pasta.Vesta.norm_charSum_mapToCurve_sub_zeroRepaired +native(
+  CompElliptic.Fields.Pasta.vestaBase)
 assert_axioms CompElliptic.Curves.Pasta.Pallas.mapHashOutputsToCurve_eq +native(
   CompElliptic.Fields.Pasta.pallasBase)
 assert_axioms CompElliptic.Curves.Pasta.Vesta.mapHashOutputsToCurve_eq +native(
