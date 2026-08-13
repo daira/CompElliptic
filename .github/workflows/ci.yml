@@ -73,6 +73,31 @@ jobs:
       - name: Fail if the regenerated files differ from the committed ones
         run: git diff --exit-code CompElliptic/Fields/Pasta.lean CompElliptic/Fields/Jubjub.lean
 
+  velu-certificates:
+    name: Vélu certificates reproduce
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      # Sage pinned to the version that generated the committed certificates:
+      # Singular's `lift` output (the emitted cofactors) can differ between
+      # versions, so byte-reproducibility needs the same engine as the local
+      # regeneration.
+      - uses: mamba-org/setup-micromamba@f457c30a868e4760d3a6fcea5f25dc655b8edf39 # v3.2.1
+        with:
+          environment-name: sage
+          condarc: |
+            channels:
+              - conda-forge
+          create-args: sage=10.9
+          cache-environment: true
+      - name: Regenerate the certificate section
+        shell: bash -el {0}
+        run: sage scripts/gen_velu_certificates.sage
+      - name: Fail if the regenerated section differs from the committed one
+        run: git diff --exit-code CompElliptic/Isogenies/VeluCertificates.lean
+
   native-lane:
     name: FastFieldNative lane is core-only
     runs-on: ubuntu-latest
