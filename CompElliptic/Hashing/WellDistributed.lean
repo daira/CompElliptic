@@ -12,8 +12,13 @@ import CompElliptic.Hashing.CharacterSum
 A mapping `f : F → G` (from a finite field `F` to a finite abelian group `G`) is
 *well-distributed* when its nontrivial character sums are small: `‖∑ u, ψ (f u)‖`
 is `O(√#F)` for every nontrivial character `ψ`. Well-distributedness is what makes
-a two-term hash `m ↦ f (h₁ m) + f (h₂ m)` statistically close to uniform on `G`, and
-hence indifferentiable from a random oracle into `G`.
+a two-term hash `m ↦ f (h₁ m) + f (h₂ m)` statistically close to uniform on `G`.
+That regularity is one ingredient of indifferentiability from a random oracle
+into `G` — the mathematically deep one. The remaining ingredient, an efficient
+preimage simulator, is tracked in <https://github.com/daira/CompElliptic/issues/25>.
+The inner hash (`h₁`, `h₂`, the two `hash_to_field` outputs) stays abstract
+throughout, modelled as a random oracle: only its type matters to the
+formalization.
 
 `CharacterSum.lean` reduces that character sum, for the odd mappings used in
 hash-to-curve, to the sign-free covering-multiplicity deviation `mult f · - 1`,
@@ -79,9 +84,11 @@ is the elementary, orthogonality-only content of `CharacterSum.lean`.
   `|∑_{P ∈ X(F)} χ(P)| ≤ (2g − 2 + deg 𝔣(χ))·√q`. Theorem 3 is its workhorse form for
   encodings presented by a covering `C → E`. Theorem 6 instantiates it for the
   simplified SWU encoding (genus-8 covering, `|S_f(χ)| ≤ 52·√q + 151`, stated there
-  for fields of size `≡ 3 (mod 4)`). Carrying the constant to the generalized
-  variant deployed for the Pasta curves is a routine but unwritten redo of the same
-  genus computation.
+  for fields of size `≡ 3 (mod 4)`). The Pasta base fields have size `≡ 1 (mod 4)`,
+  so the deployed generalized variant needs the same genus computation redone for
+  its covering; that redo is routine but does not seem to be covered in the
+  literature. Separately, `WeilBounded` itself is an external input to the
+  formalization.
 -/
 
 namespace CompElliptic.Hashing
