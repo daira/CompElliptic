@@ -166,6 +166,11 @@ abbrev VestaBaseField := PallasScalarField
 /-- Vesta scalar field = Pallas base field. -/
 abbrev VestaScalarField := PallasBaseField
 
+/-- The Pallas base field (= the Vesta scalar field), under its `pasta_curves` letter. -/
+abbrev Fp := PallasBaseField
+/-- The Pallas scalar field (= the Vesta base field), under its `pasta_curves` letter. -/
+abbrev Fq := PallasScalarField
+
 /-- Tonelli–Shanks data for the Pallas base field `𝔽ₚ`: `p-1 = 2^32 · T`, with `rootOfUnity = 5ᵀ`
 (`pallas.py`). -/
 def pallasBase : TonelliShanks PallasBaseField where
