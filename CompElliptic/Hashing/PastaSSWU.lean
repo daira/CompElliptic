@@ -71,6 +71,21 @@ theorem neg_thirteen_not_isSquare : ¬ IsSquare (-13 : PallasBaseField) := by
   reduce_mod_char
   decide
 
+/-- The precomputed resolvent root for RFC 9380's criterion 3 on iso-Pallas is not a
+cube: `not_exists_pow_eq_of_pow_ne_one`, with the power evaluated by fast modular
+exponentiation as for `neg_five_not_isCube`. -/
+theorem crit3_w_not_isCube : ¬ ∃ u : PallasBaseField,
+    u ^ 3 = (0x27234601c28978a85e0960ed291d6536dbecfb7c12f0173667d69bce9a3d69bc
+      : PallasBaseField) := by
+  have hcard : Fintype.card PallasBaseField = PALLAS_BASE_CARD := ZMod.card _
+  refine Fields.not_exists_pow_eq_of_pow_ne_one (n := 3) (by rw [hcard]; decide)
+    (by decide) ?_
+  rw [hcard]
+  show (0x27234601c28978a85e0960ed291d6536dbecfb7c12f0173667d69bce9a3d69bc
+    : ZMod PALLAS_BASE_CARD) ^ ((PALLAS_BASE_CARD - 1) / 3) ≠ 1
+  reduce_mod_char
+  decide
+
 /-- The deployed simplified-SWU parameters targeting iso-Pallas. -/
 def sswu : SSWUParams PallasBaseField where
   E := isoCurve
@@ -83,6 +98,19 @@ def sswu : SSWUParams PallasBaseField where
   θ := 0x0f7bdb65814179b44647aef782d5cdc851f64fc4dc888857ca330bcc09ac318e
   θ_spec := by decide
   sgn := sgn0
+  crit2 := by decide
+  crit3 := by
+    -- `s` is a square root of the resolvent discriminant and `w` the resolvent
+    -- root, precomputed in Sagemath for `q := B - Z`; `decide` checks both.
+    have h := Fields.cubic_no_root_of_resolvent_noncube
+      (h2 := (by decide : (2 : PallasBaseField) ≠ 0))
+      (h3 := (by decide : (3 : PallasBaseField) ≠ 0))
+      (A := isoCurve.A) (q := isoCurve.B + 13)
+      (s := 0x0e468c038512f150bc12c1da523aca6d95935dfc1c933551368006b0347ad875)
+      (w := 0x27234601c28978a85e0960ed291d6536dbecfb7c12f0173667d69bce9a3d69bc)
+      (hs := by decide) (hw := by decide) (hnc := crit3_w_not_isCube)
+    intro x hx
+    exact h x (by linear_combination hx)
   crit4 := ⟨0x0333fa3f8cb3bbd6e18f2fba2717db760fa5b179f0e2993f73395bb94a9eabe4, by
     -- Clear the divisions first: modular inversion under `decide`'s kernel
     -- evaluation is infeasible, while the division-free identity is fast.
@@ -205,6 +233,21 @@ theorem neg_thirteen_not_isSquare : ¬ IsSquare (-13 : VestaBaseField) := by
   reduce_mod_char
   decide
 
+/-- The precomputed resolvent root for RFC 9380's criterion 3 on iso-Vesta is not a
+cube: `not_exists_pow_eq_of_pow_ne_one`, with the power evaluated by fast modular
+exponentiation as for `neg_five_not_isCube`. -/
+theorem crit3_w_not_isCube : ¬ ∃ u : VestaBaseField,
+    u ^ 3 = (0x2236a351e7028c01c80f079ca37fd81fd024e547a51813136e8516e4eaf7d998
+      : VestaBaseField) := by
+  have hcard : Fintype.card VestaBaseField = PALLAS_SCALAR_CARD := ZMod.card _
+  refine Fields.not_exists_pow_eq_of_pow_ne_one (n := 3) (by rw [hcard]; decide)
+    (by decide) ?_
+  rw [hcard]
+  show (0x2236a351e7028c01c80f079ca37fd81fd024e547a51813136e8516e4eaf7d998
+    : ZMod PALLAS_SCALAR_CARD) ^ ((PALLAS_SCALAR_CARD - 1) / 3) ≠ 1
+  reduce_mod_char
+  decide
+
 /-- The deployed simplified-SWU parameters targeting iso-Vesta. -/
 def sswu : SSWUParams VestaBaseField where
   E := isoCurve
@@ -217,6 +260,18 @@ def sswu : SSWUParams VestaBaseField where
   θ := 0x2b3483a1ee9a382f53c3808d9e2f235738578ccadf03ac27632cae9872df1b5d
   θ_spec := by decide
   sgn := sgn0
+  crit2 := by decide
+  crit3 := by
+    -- As for Pallas: precomputed Sagemath certificates, checked by `decide`.
+    have h := Fields.cubic_no_root_of_resolvent_noncube
+      (h2 := (by decide : (2 : VestaBaseField) ≠ 0))
+      (h3 := (by decide : (3 : VestaBaseField) ≠ 0))
+      (A := isoCurve.A) (q := isoCurve.B + 13)
+      (s := 0x046d46a3ce051803901e0f3946ffb03f7e033193409b7d4950c342a8d5efb82d)
+      (w := 0x2236a351e7028c01c80f079ca37fd81fd024e547a51813136e8516e4eaf7d998)
+      (hs := by decide) (hw := by decide) (hnc := crit3_w_not_isCube)
+    intro x hx
+    exact h x (by linear_combination hx)
   crit4 := ⟨0x1e004d52293581bcab805716bdb5ebcd8c1742ca68528997460503c7a51dd3e5, by
     -- Clear the divisions first, as for Pallas.
     have h13 : (13 : VestaBaseField) ≠ 0 := by decide

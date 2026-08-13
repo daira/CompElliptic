@@ -52,6 +52,33 @@ is special to the SSWU choice of `x1num` and `xdiv`, and false in the
 exceptional `ta = 0` case. The `ta = 0` case is unreachable in this branch:
 RFC 9380's criterion 4 on `Z` makes `g(B/(Z·A))` a square there, so
 `sqrt_ratio` took the square branch.
+
+## The `Z` criteria
+
+RFC 9380 §6.6.2 puts four criteria on `Z`. Two have mathematical content, and
+the proofs here consume exactly those two: criterion 1 (`Z` nonsquare) makes
+the two-candidate trick work, and criterion 4 (`g(B/(Z·A))` square) makes the
+exceptional case land in the square branch. Criterion 2 (`Z ≠ -1`) and
+criterion 3 (`g(X) - Z` irreducible over `F`) entered in draft 5 of the RFC
+to avoid two patents on deterministic hashing to elliptic curves,
+US 8,718,276 and US 8,712,038 (Icart et al., filed 2010, expiring June 2030;
+see <https://github.com/cfrg/draft-irtf-cfrg-hash-to-curve/pull/172> and
+<https://mailarchive.ietf.org/arch/msg/cfrg/jV4Wr4fbMKkd4vzsbEhKbous16Y>).
+
+The former patent claims constructions built on Skałba equalities. A Skałba
+equality is an identity `g(X₁(t))·g(X₂(t))·g(X₃(t)) = U(t)²` between rational
+functions: it forces some `g(Xᵢ(t))` to be square at every `t`, hence some
+`Xᵢ(t)` to be an abscissa on the curve. Simplified SWU satisfies
+`g(X₁(t))·g(X₂(t)) = Z·U(t)²`, so a third polynomial completing a Skałba
+equality would need `g(X₃(t)) = Z` identically; criterion 3 makes `Z` miss
+the image of `g` on `F`, so no such `X₃` exists and the mapping stays outside
+the claimed three-polynomial form. Criterion 2 avoids the second patent's
+`q ≡ 3 (mod 4)` variant, which fixes `Z = -1`. The criteria exclude the
+original parameters of the literature —the simplified SWU of Brier et al.
+(<https://eprint.iacr.org/2009/340>) is the `Z = -1` case, and Wahby–Boneh
+(<https://eprint.iacr.org/2019/403>) choose `ξ = -1` for BLS12-381— so they
+are strictly narrower than what is mathematically necessary, and no proof in
+this development depends on them.
 -/
 
 namespace CompElliptic.Hashing
@@ -132,9 +159,14 @@ open CompElliptic.CurveForms.ShortWeierstrass in
 (protocol spec §5.4.9.8): the mapping's nonsquare `Z`; the `sqrt_ratio` data
 —Tonelli–Shanks square-root data `d` and the arbitrary nonsquare `lam`—; the
 precomputed `θ` with `θ²·lam = Z`; and the sign function used by the final
-parity-matching step (`sgn0` for the deployed prime fields). `crit4` is
-RFC 9380's criterion 4 on `Z`: `g(B/(Z·A))` is square, which is exactly what
-keeps the exceptional `ta = 0` inputs out of the nonsquare branch. -/
+parity-matching step (`sgn0` for the deployed prime fields).
+
+The record also certifies RFC 9380's four criteria on `Z`
+(<https://www.rfc-editor.org/rfc/rfc9380.html#section-6.6.2>): criterion 1 is
+`Z_nonsquare`, and criteria 2–4 are `crit2`–`crit4`, with `crit3` stated as
+root-freeness of `g(X) - Z` (for a cubic, the RFC's irreducibility). The
+module documentation records the criteria's roles and the patent-avoidance
+provenance of criteria 2 and 3, which no proof consumes. -/
 structure SSWUParams (F : Type*) [Field F] [Fintype F] [DecidableEq F] where
   E : SWCurve F
   A_nonzero : E.A ≠ 0
@@ -146,6 +178,8 @@ structure SSWUParams (F : Type*) [Field F] [Fintype F] [DecidableEq F] where
   θ : F
   θ_spec : θ * θ * lam = Z
   sgn : F → Bool
+  crit2 : Z ≠ -1
+  crit3 : ∀ x : F, x ^ 3 + E.A * x + E.B ≠ Z
   crit4 : IsSquare ((E.B / (Z * E.A))^3 + E.A * (E.B / (Z * E.A)) + E.B)
 
 namespace SSWUParams
