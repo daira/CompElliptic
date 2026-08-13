@@ -88,9 +88,9 @@ where
 /-- Spec of the `go` accumulator: when some `2^j`-th power of `b2k` (with `j ≤ fuel`) is `1`,
 `go k b2k fuel = k + j₀` where `j₀` is the *least* such exponent. -/
 theorem leastPow2Order.go_spec {F : Type*} [Monoid F] [DecidableEq F] :
-    ∀ (fuel k : ℕ) (b2k : F), (∃ j ≤ fuel, b2k ^ 2^j = 1) →
-      ∃ j ≤ fuel, leastPow2Order.go k b2k fuel = k + j ∧ b2k ^ 2^j = 1 ∧
-        ∀ i < j, b2k ^ 2^i ≠ 1 := by
+    ∀ (fuel k : ℕ) (b2k : F), (∃ j ≤ fuel, b2k^(2^j) = 1) →
+      ∃ j ≤ fuel, leastPow2Order.go k b2k fuel = k + j ∧ b2k^(2^j) = 1 ∧
+        ∀ i < j, b2k^(2^i) ≠ 1 := by
   intro fuel
   induction fuel with
   | zero =>
@@ -101,12 +101,12 @@ theorem leastPow2Order.go_spec {F : Type*} [Monoid F] [DecidableEq F] :
   | succ fuel ih =>
     intro k b2k hex
     obtain ⟨j, hj, hbj⟩ := hex
-    have hconv : ∀ m : ℕ, (b2k * b2k) ^ 2^m = b2k ^ 2^(m+1) := fun m => by
+    have hconv : ∀ m : ℕ, (b2k * b2k)^(2^m) = b2k^(2^(m+1)) := fun m => by
       rw [← pow_two, ← pow_mul, ← pow_succ']
     by_cases hb1 : b2k = 1
     · exact ⟨0, Nat.zero_le _, by simp [leastPow2Order.go, hb1], by simpa using hb1,
         fun i hi => absurd hi (Nat.not_lt_zero i)⟩
-    · have hex' : ∃ j' ≤ fuel, (b2k * b2k) ^ 2^j' = 1 := by
+    · have hex' : ∃ j' ≤ fuel, (b2k * b2k)^(2^j') = 1 := by
         obtain _ | j := j
         · exact absurd (by simpa using hbj) hb1
         · exact ⟨j, by omega, by rw [hconv]; exact hbj⟩
@@ -131,18 +131,18 @@ theorem leastPow2Order_spec {F : Type*} [Monoid F] [DecidableEq F] (b : F) (y : 
     · exact h
   have hconv : ∀ m : ℕ, (b*b)^(2^m) = b^(2^(m+1)) := fun m => by
     rw [← pow_two, ← pow_mul, ← pow_succ']
-  have hwit : (b*b)^(2^(y-2)) = 1 := by rw [hconv, show y-2+1 = y-1 from by omega]; exact hy
-  obtain ⟨j, hj, hgo, hbj, hmin⟩ := leastPow2Order.go_spec y 1 (b*b) ⟨y-2, by omega, hwit⟩
+  have hwit : (b*b)^(2^(y - 2)) = 1 := by rw [hconv, show y - 2 + 1 = y-1 from by omega]; exact hy
+  obtain ⟨j, hj, hgo, hbj, hmin⟩ := leastPow2Order.go_spec y 1 (b*b) ⟨y - 2, by omega, hwit⟩
   have hk : leastPow2Order b y = 1 + j := hgo
-  have hjle : j ≤ y-2 := by
-    by_contra h; exact hmin (y-2) (Nat.lt_of_not_le h) hwit
+  have hjle : j ≤ y - 2 := by
+    by_contra h; exact hmin (y - 2) (Nat.lt_of_not_le h) hwit
   have hbk1 : b^(2^j) ≠ 1 := by
     obtain _ | j := j
     · simpa using hb
     · rw [← hconv]; exact hmin j (by omega)
   refine ⟨by omega, by omega, ?_, ?_⟩
   · rw [hk, show (1:ℕ)+j = j+1 from by omega, ← hconv]; exact hbj
-  · rw [hk, show 1+j-1 = j from by omega]; exact hbk1
+  · rw [hk, show 1 + j - 1 = j from by omega]; exact hbk1
 
 /-- Validity of Tonelli–Shanks data for `F`, as a predicate on the *bare components* (mirroring
 `IsCanonical` for encodings): the 2-adic factorization `card - 1 = 2^twoAdicity * oddPart` holds
@@ -219,8 +219,8 @@ theorem loop_sound {F : Type*} [Field F] [DecidableEq F] (a : F) :
       have hy2 : 2 ≤ y := by omega
       set k := leastPow2Order b y with hkdef
       set w := iterSq c (y - k - 1) with hwdef
-      have hw2 : w*w = c^(2^(y-k)) := by
-        rw [hwdef, iterSq_spec, ← pow_add, ← two_mul, ← pow_succ', show y-k-1+1 = y-k from by omega]
+      have hw2 : w*w = c^(2^(y - k)) := by
+        rw [hwdef, iterSq_spec, ← pow_add, ← two_mul, ← pow_succ', show y - k - 1 + 1 = y - k from by omega]
       have hcm1 : c^(2^(y-1)) = -1 := by
         have hne : c^(2^(y-1)) ≠ 1 := by
           intro h
@@ -245,12 +245,12 @@ theorem loop_sound {F : Type*} [Field F] [DecidableEq F] (a : F) :
       have hnewx : (x*w) * (x*w) = a * (b * (w*w)) := by
         rw [show (x*w) * (x*w) = (x*x) * (w*w) from by ring, hx]; ring
       have hnewb : (b * (w*w))^(2^(k-1)) = 1 := by
-        rw [hw2, mul_pow, hbm1, ← pow_mul, ← pow_add, show (y-k) + (k-1) = y-1 from by omega, hcm1]
+        rw [hw2, mul_pow, hbm1, ← pow_mul, ← pow_add, show (y - k) + (k-1) = y-1 from by omega, hcm1]
         ring
       have hnewc : orderOf (w*w) = 2^k := by
-        rw [hw2, orderOf_pow' c (pow_ne_zero (y-k) (by norm_num)), hc,
-            Nat.gcd_eq_right (pow_dvd_pow 2 (by omega : y-k ≤ y)),
-            Nat.pow_div (by omega : y-k ≤ y) (by norm_num), show y - (y-k) = k from by omega]
+        rw [hw2, orderOf_pow' c (pow_ne_zero (y - k) (by norm_num)), hc,
+            Nat.gcd_eq_right (pow_dvd_pow 2 (by omega : y - k ≤ y)),
+            Nat.pow_div (by omega : y - k ≤ y) (by norm_num), show y - (y - k) = k from by omega]
       have hkf : k ≤ fuel := by omega
       simp only [loop, if_neg hb1]
       exact ih (x*w) (b * (w*w)) (w*w) k hkf hnewx hnewb hnewc
@@ -311,7 +311,7 @@ theorem sqrt?_isSome_of_isSquare {F : Type*} [Field F] [Fintype F] [DecidableEq 
     exact absurd (by rw [fpow_spec, ← hexp]; exact (FiniteField.isSquare_iff hchar h0).mp ha) h1
 
 /-- A valid `rootOfUnity` is a quadratic non-residue. It has full 2-power order, so its
-Euler power `rootOfUnity ^ ((card-1)/2) = (rootOfUnity ^ (2^(twoAdicity-1)))^oddPart`
+Euler power `rootOfUnity^((card-1)/2) = (rootOfUnity^(2^(twoAdicity-1)))^oddPart`
 evaluates to `(-1)^oddPart = -1`, whereas Euler's criterion gives `1` for a nonzero
 square. This lets a deployment reuse `rootOfUnity` as an auxiliary nonsquare with no
 per-field computation. -/
@@ -329,15 +329,15 @@ theorem rootOfUnity_not_isSquare {F : Type*} [Field F] [Fintype F]
   have hexp : Fintype.card F / 2 = 2^(d.twoAdicity - 1) * d.oddPart := by
     rw [d.valid.card_eq, hpow, mul_assoc]; omega
   -- `rootOfUnity ≠ 0`, since it has a power equal to `1`.
-  have hone : d.rootOfUnity ^ 2^d.twoAdicity = 1 := by
+  have hone : d.rootOfUnity^(2^d.twoAdicity) = 1 := by
     rw [← d.valid.rootOfUnity_order]; exact pow_orderOf_eq_one _
   have hne : d.rootOfUnity ≠ 0 := fun h0 => by
     rw [h0, zero_pow (by positivity : (2:ℕ)^d.twoAdicity ≠ 0)] at hone
     exact zero_ne_one hone
   -- The half power squares to `1` but is not `1` (the order is too big), so it is `-1`.
-  have hhalf : d.rootOfUnity ^ 2^(d.twoAdicity - 1) = -1 := by
-    have hsq1 : d.rootOfUnity ^ 2^(d.twoAdicity - 1)
-        * d.rootOfUnity ^ 2^(d.twoAdicity - 1) = 1 := by
+  have hhalf : d.rootOfUnity^(2^(d.twoAdicity - 1)) = -1 := by
+    have hsq1 : d.rootOfUnity^(2^(d.twoAdicity - 1))
+        * d.rootOfUnity^(2^(d.twoAdicity - 1)) = 1 := by
       rw [← pow_add, ← two_mul, ← hpow]; exact hone
     refine (mul_self_eq_one_iff.mp hsq1).resolve_left fun h1 => ?_
     have hdvd : orderOf d.rootOfUnity ∣ 2^(d.twoAdicity - 1) :=
@@ -347,7 +347,7 @@ theorem rootOfUnity_not_isSquare {F : Type*} [Field F] [Fintype F]
     have := d.valid.twoAdicity_pos
     omega
   -- Euler's power of the square is `1`, but it evaluates to `(-1)^oddPart = -1`.
-  have heuler : d.rootOfUnity ^ (Fintype.card F / 2) = 1 :=
+  have heuler : d.rootOfUnity^(Fintype.card F / 2) = 1 :=
     (FiniteField.isSquare_iff hchar hne).mp hsq
   rw [hexp, pow_mul, hhalf, d.valid.oddPart_odd.neg_one_pow] at heuler
   exact Ring.neg_one_ne_one_of_char_ne_two hchar heuler

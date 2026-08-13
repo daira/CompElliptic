@@ -64,18 +64,18 @@ namespace CompElliptic.Curves.Pasta
 
 namespace Pallas
 
-/-- `-13` is a quadratic non-residue in the Pallas base field: Euler's criterion,
-with the power evaluated by fast modular exponentiation. -/
+/-- `-13` is a quadratic non-residue in the Pallas base field, by Euler's
+criterion with the power evaluated by fast modular exponentiation. -/
 theorem neg_thirteen_not_isSquare : ¬ IsSquare (-13 : PallasBaseField) := by
   rw [ZMod.euler_criterion PALLAS_BASE_CARD (by decide : (-13 : PallasBaseField) ≠ 0)]
   reduce_mod_char
   decide
 
-/-- The precomputed resolvent root for RFC 9380's criterion 3 on iso-Pallas is not a
-cube: `not_exists_pow_eq_of_pow_ne_one`, with the power evaluated by fast modular
-exponentiation as for `neg_five_not_isCube`. -/
+/-- The precomputed resolvent root for RFC 9380's criterion 3 on iso-Pallas is not
+a cube, by `not_exists_pow_eq_of_pow_ne_one` with the power evaluated by fast
+modular exponentiation, as for `neg_five_not_isCube`. -/
 theorem crit3_w_not_isCube : ¬ ∃ u : PallasBaseField,
-    u ^ 3 = (0x27234601c28978a85e0960ed291d6536dbecfb7c12f0173667d69bce9a3d69bc
+    u^3 = (0x27234601c28978a85e0960ed291d6536dbecfb7c12f0173667d69bce9a3d69bc
       : PallasBaseField) := by
   have hcard : Fintype.card PallasBaseField = PALLAS_BASE_CARD := ZMod.card _
   refine Fields.not_exists_pow_eq_of_pow_ne_one (n := 3) (by rw [hcard]; decide)
@@ -241,18 +241,18 @@ end Pallas
 
 namespace Vesta
 
-/-- `-13` is a quadratic non-residue in the Vesta base field: Euler's criterion,
-with the power evaluated by fast modular exponentiation. -/
+/-- `-13` is a quadratic non-residue in the Vesta base field, by Euler's
+criterion with the power evaluated by fast modular exponentiation. -/
 theorem neg_thirteen_not_isSquare : ¬ IsSquare (-13 : VestaBaseField) := by
   rw [ZMod.euler_criterion PALLAS_SCALAR_CARD (by decide : (-13 : VestaBaseField) ≠ 0)]
   reduce_mod_char
   decide
 
-/-- The precomputed resolvent root for RFC 9380's criterion 3 on iso-Vesta is not a
-cube: `not_exists_pow_eq_of_pow_ne_one`, with the power evaluated by fast modular
-exponentiation as for `neg_five_not_isCube`. -/
+/-- The precomputed resolvent root for RFC 9380's criterion 3 on iso-Vesta is not
+a cube, by `not_exists_pow_eq_of_pow_ne_one` with the power evaluated by fast
+modular exponentiation, as for `neg_five_not_isCube`. -/
 theorem crit3_w_not_isCube : ¬ ∃ u : VestaBaseField,
-    u ^ 3 = (0x2236a351e7028c01c80f079ca37fd81fd024e547a51813136e8516e4eaf7d998
+    u^3 = (0x2236a351e7028c01c80f079ca37fd81fd024e547a51813136e8516e4eaf7d998
       : VestaBaseField) := by
   have hcard : Fintype.card VestaBaseField = PALLAS_SCALAR_CARD := ZMod.card _
   refine Fields.not_exists_pow_eq_of_pow_ne_one (n := 3) (by rw [hcard]; decide)
@@ -402,10 +402,10 @@ yet, because Orchard's group hash targets Pallas — the gap is
 -- The script's printed Jacobian output, converted to the affine point pinned below.
 example :
     ((0x12763505036e0e1a6684b7a7d8d5afb7378cc2b191a95e34f44824a06fcbd08e
-        / 0x1b58d4aa4d68c3f4d9916b77c79ff9911597a27f2ee46244e98eb9615172d2ad ^ 2 :
+        / 0x1b58d4aa4d68c3f4d9916b77c79ff9911597a27f2ee46244e98eb9615172d2ad^2 :
         VestaBaseField),
      (0x0256eafc0188b79bfa7c4b2b393893ddc298e90da500fa4a9aee17c2ea4240e6
-        / 0x1b58d4aa4d68c3f4d9916b77c79ff9911597a27f2ee46244e98eb9615172d2ad ^ 3 :
+        / 0x1b58d4aa4d68c3f4d9916b77c79ff9911597a27f2ee46244e98eb9615172d2ad^3 :
         VestaBaseField))
       = (0x2e983e009cf3b86bc95f91b3411bd6cbd0a87f8c3c3dae80f3f2637084849204,
          0x310fb8f3316d069a1fb9374bdbc0fb1391c864a5208b2a812341db7f50b2e106) := by
