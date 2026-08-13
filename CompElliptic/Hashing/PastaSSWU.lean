@@ -17,9 +17,9 @@ import Mathlib.Tactic.ReduceModChar
 The concrete `SSWUParams` instances for hashing to Pallas and Vesta, as deployed
 (`hashtocurve.sage`, `pasta_curves`). Simplified SWU runs on the iso-curves
 (which have `A ≠ 0`), with `Z = -13` for both curves, the parity sign function
-`sgn0`, and the square-root split over the nonsquare `lam := rootOfUnity` — the
-primitive `2^{32}`-nd root of unity `5ᵀ` that drives Tonelli–Shanks, which
-`pasta_curves` reuses as `ROOT_OF_UNITY` — with `θ = √(Z/lam)` precomputed.
+`sgn0`, the square-root split over the nonsquare `lam := rootOfUnity`, and
+`θ = √(Z/lam)` precomputed. `lam` is the primitive `2^{32}`-nd root of unity
+`5ᵀ` that drives Tonelli–Shanks, which `pasta_curves` reuses as `ROOT_OF_UNITY`.
 `lam` needs no per-field non-residue check: a full-order root of unity is a
 nonsquare (`TonelliShanks.rootOfUnity_not_isSquare`).
 

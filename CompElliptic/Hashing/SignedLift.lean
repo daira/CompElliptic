@@ -28,20 +28,19 @@ nonzero input. Only two facts about the deployed construction enter:
 ## The zero exception, made explicit
 
 The deployed mapping is *not* odd at `u = 0`: `-0 = 0`, so oddness there would
-force `f 0 = -f 0` — a point of order dividing 2, which an odd-order curve group
-does not have (except the identity, and the deployed mapping sends `0` to an
-ordinary finite point via its exceptional branch). The mismatch is confined to
-that single input. `zeroRepaired` is the variant sending `0` to the identity; it
-is odd everywhere (`isOdd_zeroRepaired`), and `sum_apply_sub_of_eq_except` makes
-the modelling cost exact: the repair shifts every character sum by exactly
-`ψ (f 0) - 1` (`charSum_sub_zeroRepaired`) — in norm, at most `2`
+force `f 0 = -f 0` — a point of order dividing 2. For an odd-order curve group
+the only such point is the identity, and the deployed mapping sends `0` to an
+ordinary finite point via its exceptional branch. `zeroRepaired` is the variant
+sending `0` to the identity; it is odd everywhere (`isOdd_zeroRepaired`).
+`charSum_sub_zeroRepaired` makes the modelling cost exact: the repair shifts
+every character sum by exactly `ψ (f 0) - 1` — in norm, at most `2`
 (`norm_charSum_sub_zeroRepaired`). This is the `O(1)` bookkeeping term of the
 pencil-and-paper analysis, carried here as an identity rather than an estimate.
 
 This file provides the generic layer, with the sign-function half instantiated
 (`sgn0` on `ZMod p`, `isSignFunction_sgn0`). The concrete simplified-SWU
-candidate map is `SSWUParams.candidateMap` (`Hashing/SimplifiedSWU.lean`), whose
-signed lift is the mapping itself (`SSWUParams.map_eq_signedLift`);
+candidate map is `SSWUParams.candidateMap` (`Hashing/SimplifiedSWU.lean`),
+whose signed lift is the mapping itself (`SSWUParams.map_eq_signedLift`).
 `Hashing/PastaSSWU.lean` composes it with the isogenies as the deployed
 `mapToCurve`.
 -/
@@ -112,7 +111,7 @@ the candidate root as `θ·Z·u²·u·y1`, whose bare factor of `u` makes the
 chooser odd rather than even there. That is harmless: at a fixed input, the
 sign-matching step selects the same point whichever sign the chooser produced,
 because the output's sign is re-derived from `sgn0 u`. Across `±u` the outputs
-still have opposite signs — `sgn0` flips on negation — which is exactly the
+still have opposite signs —`sgn0` flips on negation— which is exactly the
 oddness proved here. -/
 theorem signedLift_neg {m : F → SWPoint E} {sgn : F → Bool}
     (hm : ∀ u, m (-u) = m u ∨ m (-u) = -(m u))
@@ -161,8 +160,8 @@ variable {G : Type*} [AddCommGroup G]
 
 /-- The variant of a mapping that sends `0` to the identity and agrees with the
 mapping everywhere else. The deployed hash-to-curve mapping differs from its
-zero-repaired variant at the single input `0` (its exceptional branch produces a
-finite point there); the repaired variant is what is literally odd. -/
+zero-repaired variant at the single input `0`; its exceptional branch produces a
+finite point there. The repaired variant is what is literally odd. -/
 def zeroRepaired {F : Type*} [Zero F] [DecidableEq F] (f : F → G) : F → G :=
   fun u => if u = 0 then 0 else f u
 

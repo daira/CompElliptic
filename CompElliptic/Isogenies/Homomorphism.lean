@@ -20,17 +20,16 @@ property is proved directly for the particular isogeny maps in use.
 The proof is layered. The coordinate-level theorems `chord_x_compat` and
 `tangent_x_compat` say that the image of a sum's third point has exactly the
 abscissa the codomain group law computes from the two image points. They consume
-the generated certificates and support lemmas of
-`Isogenies/VeluCertificates.lean`, and their parameters are pinned by defining
-equations so that the point-level layer can instantiate them against the
-branches of `add`. The point level then assembles `map_add_x` (abscissa
-agreement for every pair of points), upgrades it to `map_add_pm` (agreement up
-to sign, because two on-curve points sharing an abscissa are equal or
-negatives), and resolves the sign by group algebra: the ambiguous cases force an
-element of order two, and the codomain has none — rational 2-torsion needs a
-point with `y = 0`, which `hc` already excludes (`map_add`, through
-`eq_zero_of_two_nsmul_eq_zero`). Negation-compatibility (`map_neg`) carries the
-sentinel cases.
+the generated certificates and support lemmas of `Isogenies/VeluCertificates.lean`,
+and their parameters are pinned by defining equations so that the point-level
+layer can instantiate them against the branches of `add`. The point level then
+assembles `map_add_x` (abscissa agreement for every pair of points), upgrades it
+to `map_add_pm` (agreement up to sign, because two on-curve points sharing an
+abscissa are equal or negatives), and resolves the sign by group algebra. The
+ambiguous cases force an element of order two, and the codomain has none —
+rational 2-torsion needs a point with `y = 0`, which `hc` already excludes
+(`map_add`, through `eq_zero_of_two_nsmul_eq_zero`). Negation-compatibility
+(`map_neg`) carries the sentinel cases.
 -/
 
 open CompElliptic.CurveForms.ShortWeierstrass CompElliptic.CurveOrder

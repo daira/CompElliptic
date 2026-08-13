@@ -12,11 +12,11 @@ import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 # Two-term hash uniformity from character sums
 
 The hash-to-curve construction deployed for the Pasta curves computes
-`m ↦ f (h₁ m) + f (h₂ m)`: hash to two field elements, map each through `f` to a
-curve point, and add the two points. A single evaluation of `f`
-is visibly non-uniform (its image covers only a constant fraction of the curve),
-so the construction sums two independent copies. This file proves that the repair
-works: if all the nontrivial "character sums" of `f` are small —the `WeilBounded`
+`m ↦ f (h₁ m) + f (h₂ m)`: hash to two field elements, map each through `f` to
+a curve point, and add the two points. A single evaluation of `f` is visibly
+non-uniform (its image covers only a constant fraction of the curve), so the
+construction sums two independent copies. This file proves that the repair works:
+if all the nontrivial "character sums" of `f` are small —the `WeilBounded`
 hypothesis— then the two-term output distribution is within a small statistical
 distance of uniform on the whole group.
 

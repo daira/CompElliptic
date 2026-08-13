@@ -23,15 +23,15 @@ by mapping to an auxiliary curve that is 3-isogenous to the target and then carr
 the result across the isogeny.
 
 This module formalizes the method behind the specified maps, not only their
-coefficients. The maps in the protocol specification are the `rational_maps()` of the
-isogenies that `zcash/pasta`'s `amicable.sage` found with Sage's
+coefficients. The maps in the protocol specification are the `rational_maps()` of
+the isogenies that `zcash/pasta`'s `amicable.sage` found with Sage's
 `isogenies_prime_degree(3)`; Sage builds such maps by Vélu's formulae from the
 kernel, composed with the isomorphism `(x, y) ↦ (s²·x, s³·y)` that normalizes the
-codomain. `ThreeIsogeny` takes exactly that input —
-the kernel abscissa `x₀` and the normalizing scalar `s` — and derives the rational
-maps and the codomain coefficients from them. A concrete instance then only has to
-check that its specified coefficients match what the derivation yields, which is a
-handful of numeral equations rather than a curve-sized polynomial identity.
+codomain. `ThreeIsogeny` takes exactly that input —the kernel abscissa `x₀` and the
+normalizing scalar `s`— and derives the rational maps and the codomain coefficients
+from them. A concrete instance then only has to check that its specified coefficients
+match what the derivation yields, which is a handful of numeral equations rather than
+a curve-sized polynomial identity.
 
 A kernel of size 3 is `{𝒪, T, -T}` for a point `T = (x₀, ±y₀)` of order 3, and `x₀`
 being a root of the degree-3 division polynomial `ψ₃` says exactly that. The two
@@ -144,6 +144,7 @@ theorem ne_x₀ {x y : F} (h : OnCurve I.domain.A I.domain.B (x, y)) : x ≠ I.x
 /- The cleared on-curve identity behind `onCurve_mapXY` was checked, and its
 `linear_combination` cofactor computed, with this Sage script:
 
+```
   R.<x, x0, a, b> = PolynomialRing(QQ, order='lex')
   g    = x^3 + a*x + b
   psi3 = 3*x0^4 + 6*a*x0^2 + 12*b*x0 - a^2
@@ -158,6 +159,7 @@ theorem ne_x₀ {x y : F} (h : OnCurve I.domain.A I.domain.B (x, y)) : x ≠ I.x
   q, r = diff.quo_rem(psi3)
   assert r == 0
   print(q)
+```
 
 The remainder is zero — the identity holds modulo `ψ₃` alone — and `q` is the
 cofactor used below. -/
@@ -212,6 +214,7 @@ theorem no_y_zero_of_codomain
 /- The collision identity behind `abscissa_inj` was derived, and its cofactors computed,
 with this Sage script:
 
+```
   R.<u, w, y1, x0, a, b> = PolynomialRing(QQ)
   g0   = x0^3 + a*x0 + b
   psi3 = 3*x0^4 + 6*a*x0^2 + 12*b*x0 - a^2
@@ -227,6 +230,7 @@ with this Sage script:
   c1 = R(-16*g0)
   c3 = (E - c1*(y1^2 - (u^3 + a*u + b))) // psi3   # exact division
   assert (2*A2*w + A1)^2 - 16*g0*y1^2 - 4*A2*G - c1*(y1^2 - (u^3+a*u+b)) - c3*psi3 == 0
+```
 
 `G = 0` is the condition for the two abscissas to collide. It is quadratic in `w`, with
 leading coefficient `A2 = (u - x₀)²`, and its roots are the abscissas of the translates
