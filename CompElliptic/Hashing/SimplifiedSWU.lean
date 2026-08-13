@@ -179,7 +179,7 @@ structure SSWUParams (F : Type*) [Field F] [Fintype F] [DecidableEq F] where
   θ_spec : θ * θ * lam = Z
   sgn : F → Bool
   crit2 : Z ≠ -1
-  crit3 : ∀ x : F, x ^ 3 + E.A * x + E.B ≠ Z
+  crit3 : ∀ x : F, x^3 + E.A * x + E.B ≠ Z
   crit4 : IsSquare ((E.B / (Z * E.A))^3 + E.A * (E.B / (Z * E.A)) + E.B)
 
 namespace SSWUParams
@@ -201,7 +201,7 @@ a signed lift (`map_eq_signedLift`). -/
 def mapXYUpToSign (G : SSWUParams F) (u : F) : F × F :=
   let Zuu := G.Z * u^2
   let ta := Zuu^2 + Zuu
-  let x1num := G.E.B * (ta + 1)
+  let x1num := G.E.B * (ta+1)
   let xdiv := G.E.A * (if ta = 0 then G.Z else -ta)
   let U := (x1num^2 + G.E.A * xdiv^2) * x1num + G.E.B * xdiv^3
   let x2num := Zuu * x1num
@@ -226,7 +226,7 @@ theorem onCurve_mapXY (G : SSWUParams F) (u : F) :
   simp only [mapXY, mapXYUpToSign]
   set Zuu := G.Z * u^2 with hZuu
   set ta := Zuu^2 + Zuu with hta
-  set x1num := G.E.B * (ta + 1) with hx1num
+  set x1num := G.E.B * (ta+1) with hx1num
   set xdiv := G.E.A * (if ta = 0 then G.Z else -ta) with hxdiv
   set U := (x1num^2 + G.E.A * xdiv^2) * x1num + G.E.B * xdiv^3 with hU
   set x2num := Zuu * x1num with hx2num

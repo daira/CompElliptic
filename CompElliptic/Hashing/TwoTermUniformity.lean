@@ -25,7 +25,7 @@ distance of uniform on the whole group.
 The DFT analyzes a signal on `ℤ/N` against the reference waves
 `a ↦ exp (2πi·k·a/N)`, one per frequency `k`. What makes those waves work is not
 anything analytic about the exponential — it is the identity
-`exp(2πi·k·(a+b)/N) = exp(2πi·k·a/N) · exp(2πi·k·b/N)`, which turns addition of
+`exp(2πi·k·(a + b)/N) = exp(2πi·k·a/N) · exp(2πi·k·b/N)`, which turns addition of
 signal positions into multiplication of wave values. A **character** of a finite
 abelian group `G` keeps exactly that property and discards the rest: it is a map
 `ψ : G → ℂ` with `ψ (a + b) = ψ a * ψ b` (so `ψ 0 = 1`, and every value is a root

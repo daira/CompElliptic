@@ -52,9 +52,9 @@ theorem not_onCurve_zero : ¬ OnCurve a b (0, 0) :=
 /-- `5` is a quadratic non-residue in the Pallas base field, so `y² = x³ + 5` has no point with
 `x = 0` (Zcash protocol spec §5.4.9.7).
 
-Euler's criterion (`ZMod.euler_criterion`) reduces this to `5 ^ (p / 2) ≠ 1`. The LHS (`-1`) is
+Euler's criterion (`ZMod.euler_criterion`) reduces this to `5^(p / 2) ≠ 1`. The LHS (`-1`) is
 evaluated by `reduce_mod_char` (fast modular exponentiation via `NormNum.PowMod`), the same
-machinery the `PrattPartList.prime` legs use for their `a ^ k ≠ 1` conditions. -/
+machinery the `PrattPartList.prime` legs use for their `a^k ≠ 1` conditions. -/
 theorem five_not_isSquare : ¬ IsSquare (5 : PallasBaseField) := by
   rw [ZMod.euler_criterion PALLAS_BASE_CARD (by decide : (5 : PallasBaseField) ≠ 0)]
   reduce_mod_char
@@ -64,7 +64,7 @@ theorem five_not_isSquare : ¬ IsSquare (5 : PallasBaseField) := by
 unambiguously. -/
 theorem no_onCurve_x_zero (y : PallasBaseField) : ¬ OnCurve a b (0, y) := by
   intro h
-  have h' : y ^ 2 = 5 := by simpa [OnCurve, a, b] using h
+  have h' : y^2 = 5 := by simpa [OnCurve, a, b] using h
   exact five_not_isSquare ⟨y, by rw [← h', pow_two]⟩
 
 /-- `-5` is not a cube in the Pallas base field — the cubic analogue of `five_not_isSquare`, and
@@ -73,7 +73,7 @@ what rules out 2-torsion on the Pallas curve.
 `3 ∣ p - 1`, so `not_exists_pow_eq_of_pow_ne_one` reduces this to the single power
 `(-5)^((p-1)/3)`, which is not `1`. As for `five_not_isSquare`, `reduce_mod_char` (fast modular
 exponentiation) evaluates it and the kernel re-checks the result. -/
-theorem neg_five_not_isCube : ¬ ∃ x : PallasBaseField, x ^ 3 = -(5 : PallasBaseField) := by
+theorem neg_five_not_isCube : ¬ ∃ x : PallasBaseField, x^3 = -(5 : PallasBaseField) := by
   have hcard : Fintype.card PallasBaseField = PALLAS_BASE_CARD := ZMod.card _
   refine Fields.not_exists_pow_eq_of_pow_ne_one (n := 3) (by rw [hcard]; decide) (by decide) ?_
   rw [hcard]
@@ -87,7 +87,7 @@ theorem neg_five_not_isCube : ¬ ∃ x : PallasBaseField, x ^ 3 = -(5 : PallasBa
 not a cube (`neg_five_not_isCube`). Equivalently, the Pallas group has no 2-torsion. -/
 theorem no_onCurve_y_zero (x : PallasBaseField) : ¬ OnCurve a b (x, 0) := by
   intro h
-  have hsum : x ^ 3 + 5 = 0 := by simpa [OnCurve, a, b] using h.symm
+  have hsum : x^3 + 5 = 0 := by simpa [OnCurve, a, b] using h.symm
   exact neg_five_not_isCube ⟨x, by linear_combination hsum⟩
 
 -- `(-1, 2)` is on the curve: `2² = 4 = (-1)³ + 5`.
@@ -144,7 +144,7 @@ theorem not_onCurve_zero : ¬ OnCurve a b (0, 0) :=
 /-- `5` is a quadratic non-residue in the Vesta base field, so `y² = x³ + 5` has no point with
 `x = 0` (Zcash protocol spec §5.4.9.7).
 
-As for Pallas: Euler's criterion (`ZMod.euler_criterion`) reduces this to `5 ^ (q / 2) ≠ 1`, and
+As for Pallas: Euler's criterion (`ZMod.euler_criterion`) reduces this to `5^(q / 2) ≠ 1`, and
 `reduce_mod_char` (fast modular exponentiation) evaluates the power to `-1`. -/
 theorem five_not_isSquare : ¬ IsSquare (5 : VestaBaseField) := by
   rw [ZMod.euler_criterion PALLAS_SCALAR_CARD (by decide : (5 : VestaBaseField) ≠ 0)]
@@ -155,7 +155,7 @@ theorem five_not_isSquare : ¬ IsSquare (5 : VestaBaseField) := by
 unambiguously. -/
 theorem no_onCurve_x_zero (y : VestaBaseField) : ¬ OnCurve a b (0, y) := by
   intro h
-  have h' : y ^ 2 = 5 := by simpa [OnCurve, a, b] using h
+  have h' : y^2 = 5 := by simpa [OnCurve, a, b] using h
   exact five_not_isSquare ⟨y, by rw [← h', pow_two]⟩
 
 /-- `-5` is not a cube in the Vesta base field — the cubic analogue of `five_not_isSquare`, and
@@ -164,7 +164,7 @@ what rules out 2-torsion on the Vesta curve.
 `3 ∣ q - 1`, so `not_exists_pow_eq_of_pow_ne_one` reduces this to the single power
 `(-5)^((q-1)/3)`, which is not `1`. As for `five_not_isSquare`, `reduce_mod_char` (fast modular
 exponentiation) evaluates it and the kernel re-checks the result. -/
-theorem neg_five_not_isCube : ¬ ∃ x : VestaBaseField, x ^ 3 = -(5 : VestaBaseField) := by
+theorem neg_five_not_isCube : ¬ ∃ x : VestaBaseField, x^3 = -(5 : VestaBaseField) := by
   have hcard : Fintype.card VestaBaseField = PALLAS_SCALAR_CARD := ZMod.card _
   refine Fields.not_exists_pow_eq_of_pow_ne_one (n := 3) (by rw [hcard]; decide) (by decide) ?_
   rw [hcard]
@@ -179,7 +179,7 @@ theorem neg_five_not_isCube : ¬ ∃ x : VestaBaseField, x ^ 3 = -(5 : VestaBase
 a cube (`neg_five_not_isCube`). Equivalently, the Vesta group has no 2-torsion. -/
 theorem no_onCurve_y_zero (x : VestaBaseField) : ¬ OnCurve a b (x, 0) := by
   intro h
-  have hsum : x ^ 3 + 5 = 0 := by simpa [OnCurve, a, b] using h.symm
+  have hsum : x^3 + 5 = 0 := by simpa [OnCurve, a, b] using h.symm
   exact neg_five_not_isCube ⟨x, by linear_combination hsum⟩
 
 -- `(-1, 2)` is on the curve: `2² = 4 = (-1)³ + 5`.

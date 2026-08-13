@@ -147,15 +147,15 @@ theorem ne_x₀ {x y : F} (h : OnCurve I.domain.A I.domain.B (x, y)) : x ≠ I.x
 ```
   R.<x, x0, a, b> = PolynomialRing(QQ, order='lex')
   g    = x^3 + a*x + b
-  psi3 = 3*x0^4 + 6*a*x0^2 + 12*b*x0 - a^2
-  v    = 2*(3*x0^2 + a)
-  u    = 4*(x0^3 + a*x0 + b)
+  psi3 = 3 * x0^4 + 6 * a * x0^2 + 12*b*x0 - a^2
+  v    = 2 * (3 * x0^2 + a)
+  u    = 4 * (x0^3 + a*x0 + b)
   D    = x - x0
-  xnum = x*D^2 + v*D + u
+  xnum = x * D^2 + v*D + u
   ynum = D^3 - v*D - 2*u
   A1   = a - 5*v
-  B1   = b - 7*(u + v*x0)
-  diff = g*ynum^2 - (xnum^3 + A1*xnum*D^4 + B1*D^6)
+  B1   = b - 7 * (u + v*x0)
+  diff = g * ynum^2 - (xnum^3 + A1 * xnum * D^4 + B1 * D^6)
   q, r = diff.quo_rem(psi3)
   assert r == 0
   print(q)
@@ -217,31 +217,31 @@ with this Sage script:
 ```
   R.<u, w, y1, x0, a, b> = PolynomialRing(QQ)
   g0   = x0^3 + a*x0 + b
-  psi3 = 3*x0^4 + 6*a*x0^2 + 12*b*x0 - a^2
-  v    = 2*(3*x0^2 + a)
+  psi3 = 3 * x0^4 + 6 * a * x0^2 + 12*b*x0 - a^2
+  v    = 2 * (3 * x0^2 + a)
   uc   = 4*g0
-  xnum = lambda t: t*(t - x0)^2 + v*(t - x0) + uc
-  H  = xnum(u)*(w - x0)^2 - xnum(w)*(u - x0)^2
-  G  = H // (u - w)                      # exact: (u - w) divides H
-  A2 = R(G.coefficient({w: 2}))          # = (u - x0)^2
-  A1 = R(G.coefficient({w: 1}))
-  disc = A1^2 - 4*A2*R(G.coefficient({w: 0}))
-  E  = disc - 16*g0*y1^2
-  c1 = R(-16*g0)
-  c3 = (E - c1*(y1^2 - (u^3 + a*u + b))) // psi3   # exact division
-  assert (2*A2*w + A1)^2 - 16*g0*y1^2 - 4*A2*G - c1*(y1^2 - (u^3+a*u+b)) - c3*psi3 == 0
+  xnum = lambda t: t * (t - x0)^2 + v * (t - x0) + uc
+  H    = xnum(u) * (w - x0)^2 - xnum(w) * (u - x0)^2
+  G    = H // (u - w)                      # exact: (u - w) divides H
+  A2   = R(G.coefficient({w: 2}))          # = (u - x0)^2
+  A1   = R(G.coefficient({w: 1}))
+  disc = A1^2 - 4 * A2 * R(G.coefficient({w: 0}))
+  E    = disc - 16 * g0 * y1^2
+  c1   = R(-16*g0)
+  c3   = (E - c1 * (y1^2 - (u^3 + a*u + b))) // psi3   # exact division
+  assert (2*A2*w + A1)^2 - 16 * g0 * y1^2 - 4*A2*G - c1 * (y1^2 - (u^3 + a*u + b)) - c3*psi3 == 0
 ```
 
 `G = 0` is the condition for the two abscissas to collide. It is quadratic in `w`, with
 leading coefficient `A2 = (u - x₀)²`, and its roots are the abscissas of the translates
 `P ± T`. Its discriminant (the squared difference of its roots, scaled by `A2²`) is
-therefore forced to be `(x(P+T) - x(P-T))²·A2² = 16·y₀²·y₁²`, modulo the curve equation
+therefore forced to be `(x(P + T) - x(P - T))²·A2² = 16·y₀²·y₁²`, modulo the curve equation
 and `ψ₃`. Completing the square and multiplying through by `u - w` gives the identity
 `abscissa_inj` consumes, with `c3 = -4·(u - x₀)²`. -/
 
 /-- Distinct rational abscissas have distinct image abscissas. A collision would make
 the second abscissa a rational root of a quadratic whose discriminant is
-`(x(P+T) - x(P-T))²`, the squared difference of the abscissas of the two kernel
+`(x(P + T) - x(P - T))²`, the squared difference of the abscissas of the two kernel
 translates. That discriminant is `16·y₀²·y₁²` up to the square `(x₁ - x₀)⁴`, so a
 rational root exhibits the nonsquare `y₀²` as a square, contradicting
 `kernel_irrational`. The degenerate case `y₁ = 0` is rational 2-torsion, which `hd`
