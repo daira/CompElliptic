@@ -64,16 +64,16 @@ namespace CompElliptic.Curves.Pasta
 
 namespace Pallas
 
-/-- `-13` is a quadratic non-residue in the Pallas base field: Euler's criterion,
-with the power evaluated by fast modular exponentiation. -/
+/-- `-13` is a quadratic non-residue in the Pallas base field, by Euler's
+criterion with the power evaluated by fast modular exponentiation. -/
 theorem neg_thirteen_not_isSquare : ¬ IsSquare (-13 : PallasBaseField) := by
   rw [ZMod.euler_criterion PALLAS_BASE_CARD (by decide : (-13 : PallasBaseField) ≠ 0)]
   reduce_mod_char
   decide
 
-/-- The precomputed resolvent root for RFC 9380's criterion 3 on iso-Pallas is not a
-cube: `not_exists_pow_eq_of_pow_ne_one`, with the power evaluated by fast modular
-exponentiation as for `neg_five_not_isCube`. -/
+/-- The precomputed resolvent root for RFC 9380's criterion 3 on iso-Pallas is not
+a cube, by `not_exists_pow_eq_of_pow_ne_one` with the power evaluated by fast
+modular exponentiation, as for `neg_five_not_isCube`. -/
 theorem crit3_w_not_isCube : ¬ ∃ u : PallasBaseField,
     u^3 = (0x27234601c28978a85e0960ed291d6536dbecfb7c12f0173667d69bce9a3d69bc
       : PallasBaseField) := by
@@ -241,16 +241,16 @@ end Pallas
 
 namespace Vesta
 
-/-- `-13` is a quadratic non-residue in the Vesta base field: Euler's criterion,
-with the power evaluated by fast modular exponentiation. -/
+/-- `-13` is a quadratic non-residue in the Vesta base field, by Euler's
+criterion with the power evaluated by fast modular exponentiation. -/
 theorem neg_thirteen_not_isSquare : ¬ IsSquare (-13 : VestaBaseField) := by
   rw [ZMod.euler_criterion PALLAS_SCALAR_CARD (by decide : (-13 : VestaBaseField) ≠ 0)]
   reduce_mod_char
   decide
 
-/-- The precomputed resolvent root for RFC 9380's criterion 3 on iso-Vesta is not a
-cube: `not_exists_pow_eq_of_pow_ne_one`, with the power evaluated by fast modular
-exponentiation as for `neg_five_not_isCube`. -/
+/-- The precomputed resolvent root for RFC 9380's criterion 3 on iso-Vesta is not
+a cube, by `not_exists_pow_eq_of_pow_ne_one` with the power evaluated by fast
+modular exponentiation, as for `neg_five_not_isCube`. -/
 theorem crit3_w_not_isCube : ¬ ∃ u : VestaBaseField,
     u^3 = (0x2236a351e7028c01c80f079ca37fd81fd024e547a51813136e8516e4eaf7d998
       : VestaBaseField) := by

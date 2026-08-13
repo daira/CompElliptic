@@ -98,8 +98,8 @@ structure ThreeIsogeny (F : Type*) [Field F] where
   /-- `x₀` is a root of the domain's degree-3 division polynomial
   `ψ₃(X) = 3·X⁴ + 6·A·X² + 12·B·X - A²`. -/
   psi3 : 3 * x₀^4 + 6 * domain.A * x₀^2 + 12 * domain.B * x₀ - domain.A^2 = 0
-  /-- The square of the kernel ordinate, `y₀² = x₀³ + A·x₀ + B`, is a nonsquare: the
-  kernel points exist only over a quadratic extension. -/
+  /-- The square of the kernel ordinate, `y₀² = x₀³ + A·x₀ + B`, is a nonsquare,
+  so the kernel points exist only over a quadratic extension. -/
   kernel_irrational : ¬ IsSquare (x₀^3 + domain.A * x₀ + domain.B)
   /-- The codomain's `A`, as Vélu's formulae and the scaling dictate. -/
   codomain_A : codomain.A = s^4 * (domain.A - 10 * (3 * x₀^2 + domain.A))

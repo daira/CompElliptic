@@ -87,9 +87,9 @@ open CompElliptic.Fields
 
 variable {F : Type*} [Field F] [Fintype F] [DecidableEq F]
 
-/-- In a finite field, a nonsquare times a nonsquare is a square: the quadratic
-character is multiplicative and takes the value `-1` on exactly the nonsquares,
-so the product's character is `(-1)·(-1) = 1`. (In characteristic 2 the
+/-- In a finite field, a nonsquare times a nonsquare is a square, because the
+quadratic character is multiplicative and takes the value `-1` on exactly the
+nonsquares, so the product's character is `(-1)·(-1) = 1`. (In characteristic 2 the
 hypothesis `¬ IsSquare a` is vacuous —every element is a square— so no
 characteristic assumption is needed.) -/
 theorem isSquare_mul_of_not_isSquare {a b : F}
