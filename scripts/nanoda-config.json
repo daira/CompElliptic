@@ -14,7 +14,9 @@
         "CompElliptic.Fields.Pasta.vestaBase._native.native_decide.ax_1",
         "CompElliptic.Fields.Pasta.vestaBase._native.native_decide.ax_2",
         "CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt._native.native_decide.ax_1_1",
-        "CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt._native.native_decide.ax_1_1"
+        "CompElliptic.Curves.Pasta.Pallas.q_nsmul_isoGpt._native.native_decide.ax_1_1",
+        "CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt._native.native_decide.ax_1_1",
+        "CompElliptic.Curves.Pasta.Vesta.p_nsmul_isoGpt._native.native_decide.ax_1_1"
     ],
     "unpermitted_axiom_hard_error": true,
     "num_threads": 4,
@@ -26,7 +28,9 @@
         "CompElliptic.Fields.Pasta.vestaBase._native.native_decide.ax_1",
         "CompElliptic.Fields.Pasta.vestaBase._native.native_decide.ax_2",
         "CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt._native.native_decide.ax_1_1",
-        "CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt._native.native_decide.ax_1_1"
+        "CompElliptic.Curves.Pasta.Pallas.q_nsmul_isoGpt._native.native_decide.ax_1_1",
+        "CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt._native.native_decide.ax_1_1",
+        "CompElliptic.Curves.Pasta.Vesta.p_nsmul_isoGpt._native.native_decide.ax_1_1"
     ],
     "unknown_pp_declar_hard_error": true,
     "pp_to_stdout": true,
