@@ -522,4 +522,44 @@ theorem sum_abs_pairCount_sub_le [Nonempty F] (f g : F → G) (u₀ : F)
         push_cast [Nat.cast_sub hF1]
         ring
 
+/-- **The regularity distance of the deployed mapping**, through the transport:
+a mapping that agrees away from a single input with a Weil-bounded one has
+regularity distance at most the Weil-bounded mapping's budget `ε` plus the
+transported pair-count difference divided through by `(#F)²`. The triangle
+inequality splits each output's deviation into the Weil-bounded mapping's
+deviation plus the pair-count difference, so `sum_abs_prob_dev_le` and
+`sum_abs_pairCount_sub_le` bound the two sums. -/
+theorem sum_abs_prob_dev_transport_le [Nonempty F] (f g : F → G) (u₀ : F)
+    (hfg : ∀ u, u ≠ u₀ → f u = g u) {C : ℝ} (h : WeilBounded g C) {ε : ℝ}
+    (hε : 0 ≤ ε)
+    (hbound : ((Fintype.card G : ℝ) - 1) * C^4 / (Fintype.card F : ℝ)^2
+      ≤ ε^2) :
+    ∑ Q, |(pairCount f Q : ℝ) / (Fintype.card F : ℝ)^2
+        - 1 / (Fintype.card G : ℝ)|
+      ≤ ε + (4 * Fintype.card F - 2) / (Fintype.card F : ℝ)^2 := by
+  have hF : (0 : ℝ) < (Fintype.card F : ℝ)^2 := by positivity
+  have htri : ∀ Q : G, |(pairCount f Q : ℝ) / (Fintype.card F : ℝ)^2
+      - 1 / (Fintype.card G : ℝ)|
+      ≤ |(pairCount g Q : ℝ) / (Fintype.card F : ℝ)^2
+          - 1 / (Fintype.card G : ℝ)|
+        + |(pairCount f Q : ℝ) - (pairCount g Q : ℝ)|
+          / (Fintype.card F : ℝ)^2 := by
+    intro Q
+    have hsplit : (pairCount f Q : ℝ) / (Fintype.card F : ℝ)^2
+        - 1 / (Fintype.card G : ℝ)
+        = ((pairCount g Q : ℝ) / (Fintype.card F : ℝ)^2
+            - 1 / (Fintype.card G : ℝ))
+          + ((pairCount f Q : ℝ) - (pairCount g Q : ℝ))
+            / (Fintype.card F : ℝ)^2 := by
+      field_simp
+      ring
+    rw [hsplit]
+    refine le_trans (abs_add_le _ _) (add_le_add le_rfl ?_)
+    rw [abs_div, abs_of_pos hF]
+  refine le_trans (Finset.sum_le_sum fun Q _ => htri Q) ?_
+  rw [Finset.sum_add_distrib, ← Finset.sum_div]
+  refine add_le_add (sum_abs_prob_dev_le g h hε hbound) ?_
+  gcongr
+  exact sum_abs_pairCount_sub_le f g u₀ hfg
+
 end CompElliptic.Hashing
