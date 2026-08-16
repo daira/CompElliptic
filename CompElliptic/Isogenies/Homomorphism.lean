@@ -546,8 +546,8 @@ operation: it is cryptographically hazardous unless composed with
 modelled as a random oracle by itself. Maps two field elements, intended to
 be outputs of `hash_to_field`, to the isogeny's domain curve, adds there, and
 applies the isogeny once (spec §5.4.9.8). -/
-def mapHashOutputsToCurve (m : F → SWPoint I.domain) (u₀ u₁ : F) : SWPoint I.codomain :=
-  I.map (m u₀ + m u₁)
+def mapHashOutputsToCurve (f : F → SWPoint I.domain) (u₀ u₁ : F) : SWPoint I.codomain :=
+  I.map (f u₀ + f u₁)
 
 /-- `mapHashOutputsToCurve` agrees with applying the isogeny to each point and
 adding on the codomain. RFC 9380 §6.6.3 notes exactly this optimization —add on
@@ -558,8 +558,8 @@ spec and `hashtocurve.sage` use the one-evaluation order, while
 theorem mapHashOutputsToCurve_eq (h2 : (2 : F) ≠ 0)
     (hd : ∀ X : F, ¬ OnCurve I.domain.A I.domain.B (X, 0))
     (hc : ∀ X : F, ¬ OnCurve I.codomain.A I.codomain.B (X, 0))
-    (m : F → SWPoint I.domain) (u₀ u₁ : F) :
-    I.mapHashOutputsToCurve m u₀ u₁ = I.map (m u₀) + I.map (m u₁) :=
-  I.map_add h2 hd hc (m u₀) (m u₁)
+    (f : F → SWPoint I.domain) (u₀ u₁ : F) :
+    I.mapHashOutputsToCurve f u₀ u₁ = I.map (f u₀) + I.map (f u₁) :=
+  I.map_add h2 hd hc (f u₀) (f u₁)
 
 end CompElliptic.Isogenies.ThreeIsogeny
