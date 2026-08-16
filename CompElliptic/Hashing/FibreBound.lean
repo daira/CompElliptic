@@ -17,10 +17,9 @@ indifferentiability arc's rejection sampler consumes (zcash/ironwood#198,
 CompElliptic#25): to sample a uniform preimage of a point under the deployed
 two-term construction, the sampler needs each single-term fibre to be
 computable and small; smallness is what makes its acceptance probability an
-explicit constant. The input `u = 0` is excluded rather than counted: the
-probability analysis already carries a negligible correction for pairs
-containing `0` (the deployed-vs-zero-repaired transport), and the sampler
-rides the same correction.
+explicit constant. The input `u = 0` is excluded from the count; a consumer
+needing the unconditional bound can add it back, as at most one extra
+preimage per point.
 
 The bound is by abscissa, and the argument is elementary root counting. On a
 field where `-1` is a square (both Pasta base fields, `q ≡ 1 (mod 4)`), a
@@ -186,8 +185,8 @@ theorem card_abscissaFibre_le (G : SSWUParams F) (hsq : IsSquare (-1 : F))
 
 /-- **At most 10 nonzero preimages per point** under the simplified SWU
 mapping. A preimage of `P` is in particular a preimage of its abscissa. The
-optimal constant is 4 (a planned follow-up); the input `u = 0` is excluded,
-priced by the probability analysis's existing zero-pair correction. -/
+optimal constant is 4; the input `u = 0` is excluded, and a consumer can
+count it separately as at most one extra preimage. -/
 theorem card_map_fibre_le (G : SSWUParams F) (hsq : IsSquare (-1 : F))
     (P : SWPoint G.E) :
     (univ.filter fun u => u ≠ 0 ∧ G.map u = P).card ≤ 10 := by
