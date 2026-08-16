@@ -83,12 +83,23 @@ is the elementary, orthogonality-only content of `CharacterSum.lean`.
   character `χ` of conductor `𝔣` on a curve `X` of genus `g` over a field of size `q`,
   `|∑_{P ∈ X(F)} χ(P)| ≤ (2g − 2 + deg 𝔣(χ))·√q`. Theorem 3 is its workhorse form for
   encodings presented by a covering `C → E`. Theorem 6 instantiates it for the
-  simplified SWU encoding (genus-8 covering, `|S_f(χ)| ≤ 52·√q + 151`, stated there
-  for fields of size `≡ 3 (mod 4)`). The Pasta base fields have size `≡ 1 (mod 4)`,
-  so the deployed generalized variant needs the same genus computation redone for
-  its covering; that redo is routine but does not seem to be covered in the
-  literature. Separately, `WeilBounded` itself is an external input to the
-  formalization.
+  simplified SWU encoding of Brier et al. with the residue-status sign rule of
+  Fouque-Tibouchi: `Z = -1`, fields of size `≡ 3 (mod 4)`, and the
+  `y`-coordinate's sign given by its quadratic-residue status. It obtains
+  `|S_f(χ)| ≤ 52·√q + 151` from genus-8 branch coverings; the conductor term
+  `deg y = 12` accounts for the residue-status indicator, which enters the
+  proof as a multiplicative character. The deployed variant differs in all
+  three parameters. RFC 9380's `Z` criteria exclude `Z = -1` outright, and the
+  deployed `Z = -13` is the first admissible candidate for each iso-curve
+  independently under the RFC's search order. The Pasta base fields have size
+  `≡ 1 (mod 4)`. The sign rule is the parity-based `sgn0`, which is not a
+  multiplicative character, so the indicator step of the proof does not apply
+  as written — though the sign-convention-free reduction in `CharacterSum.lean`
+  makes the hypothesis depend only on the ±-class multiplicities, so a redone
+  bound should not need a sign indicator at all. The genus computation for the
+  `Z = -13` branch curves remains to be carried out and does not seem to be
+  covered in the literature. Separately, `WeilBounded` itself is an external
+  input to the formalization.
 -/
 
 namespace CompElliptic.Hashing
