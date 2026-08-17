@@ -34,9 +34,10 @@ It does not, for four reasons that compound.
 
 1. **It is a bound on a different curve.** The character sum `∑ u, ψ (f u)` equals,
    up to `O(1)`, a character sum over the *covering curve* `C` attached to the
-   mapping (for simplified SWU, of genus 8). Its size is governed by Hasse–Weil
-   for `C` (`|#C(F) - (#F + 1)| ≤ 2·genus·√#F`), not by the order of the target
-   curve `E`. The order of `E` does not determine the order of `C`.
+   mapping (for the deployed simplified SWU, of genus 6 per branch). Its size is
+   governed by Hasse–Weil for `C` (`|#C(F) - (#F + 1)| ≤ 2·genus·√#F`), not by
+   the order of the target curve `E`. The order of `E` does not determine the
+   order of `C`.
 
 2. **One order is not a uniform family bound.** Well-distributedness needs the
    bound to hold *uniformly over every nontrivial character* `ψ`, i.e. over roughly
@@ -46,17 +47,17 @@ It does not, for four reasons that compound.
 
 3. **CompElliptic's order method is special to near-prime-order elliptic curves.**
    `CurveOrder` pins `#E` from a prime-order witness (`r • P = 0`) plus the fibre
-   bound `#E ≤ 2·#F + 1`. For a genus-8 curve the group to count is its Jacobian
+   bound `#E ≤ 2·#F + 1`. For a genus-6 curve the group to count is its Jacobian
    (the curve's own points carry no group law; the Jacobian's degree-0 divisor
    classes do, with the curve embedded in it), and that group has composite order
-   `≈ (#F)⁸` — no prime to pin, which is the decisive obstruction. And the fibre
+   `≈ (#F)⁶` — no prime to pin, which is the decisive obstruction. And the fibre
    bound is only good to a factor of about two, whereas the character sum needs
    `√#F`-precision — a far finer target than "pin to a prime". So the elementary
    method does not transfer.
 
 4. **Jacobian arithmetic is necessary but not sufficient.** Even implementing the
    Jacobian's group operations (which we do not), there is no witness-plus-fibre
-   shortcut at genus 8, and direct point counting over a field of size `≈ 2^{254}`
+   shortcut at genus 6, and direct point counting over a field of size `≈ 2^{254}`
    is infeasible (no verified higher-genus counting algorithm; the naive count is
    `≈ 2^{254}` points). Off-line tools (e.g. Sage) can in principle count Jacobian
    points, but the result is one order, not the uniform family bound of (2), and
@@ -94,12 +95,21 @@ is the elementary, orthogonality-only content of `CharacterSum.lean`.
   independently under the RFC's search order. The Pasta base fields have size
   `≡ 1 (mod 4)`. The sign rule is the parity-based `sgn0`, which is not a
   multiplicative character, so the indicator step of the proof does not apply
-  as written — though the sign-convention-free reduction in `CharacterSum.lean`
-  makes the hypothesis depend only on the ±-class multiplicities, so a redone
-  bound should not need a sign indicator at all. The genus computation for the
-  `Z = -13` branch curves remains to be carried out and does not seem to be
-  covered in the literature. Separately, `WeilBounded` itself is an external
-  input to the formalization.
+  as written — and the sign-convention-free reduction in `CharacterSum.lean`
+  makes the hypothesis depend only on the ±-class multiplicities, so the redone
+  bound needs no sign indicator at all. The bound for the deployed parameters
+  has been calculated, in zcash/pasta's `weilbound.sage`
+  (<https://github.com/zcash/pasta/blob/acc1384bfa7a079b7ecc59182ac821215605cd39/weilbound.sage>):
+  re-rooting each branch covering as a hyperelliptic model over the input line
+  gives genus 6 per branch against FFSTV's 8, with dihedral monodromy, and the
+  exceptional input set is exactly `{0}` (for fields of size `≡ 1 (mod 4)`,
+  `-1/Z` is a nonsquare whenever `Z` is, so the `t = -1` fibre is empty). The
+  result, for both iso-curves, is `|S_f(χ)| ≤ 10·√q + 3`, and `C = 21/2`
+  comfortably absorbs the additive term at the deployed sizes. That is a
+  calculation, not a proof: the derivation write-up that would let
+  `WeilBounded` be instantiated at `C = 21/2` with a citable argument is
+  tracked at <https://github.com/daira/CompElliptic/issues/28>. Separately,
+  `WeilBounded` itself is an external input to the formalization.
 -/
 
 namespace CompElliptic.Hashing
