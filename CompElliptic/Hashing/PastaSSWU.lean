@@ -142,7 +142,7 @@ theorem isSignFunction_sgn0 : IsSignFunction (sgn0 (p := PALLAS_BASE_CARD)) :=
   CompElliptic.Hashing.isSignFunction_sgn0 (Nat.odd_iff.mpr (by decide))
 
 /-- The deployed `map_to_curve` for Pallas: simplified SWU onto iso-Pallas,
-then the 3-isogeny down to Pallas. -/
+then the 3-isogeny across to Pallas. -/
 def mapToCurve (u : PallasBaseField) : SWPoint curve :=
   iso.map (sswu.map u)
 
@@ -189,7 +189,7 @@ add on the iso-curve, apply the isogeny once. -/
 def mapHashOutputsToCurve (u₀ u₁ : PallasBaseField) : SWPoint curve :=
   iso.mapHashOutputsToCurve sswu.map u₀ u₁
 
-/-- The construction agrees with mapping each point down and adding on
+/-- The construction agrees with mapping each point across and adding on
 Pallas — the order `zcash-test-vectors` and `pasta_curves` use — by the
 homomorphism. -/
 theorem mapHashOutputsToCurve_eq (u₀ u₁ : PallasBaseField) :
@@ -329,7 +329,7 @@ theorem isSignFunction_sgn0 : IsSignFunction (sgn0 (p := PALLAS_SCALAR_CARD)) :=
   CompElliptic.Hashing.isSignFunction_sgn0 (Nat.odd_iff.mpr (by decide))
 
 /-- The deployed `map_to_curve` for Vesta: simplified SWU onto iso-Vesta,
-then the 3-isogeny down to Vesta. -/
+then the 3-isogeny across to Vesta. -/
 def mapToCurve (u : VestaBaseField) : SWPoint curve :=
   iso.map (sswu.map u)
 
@@ -376,7 +376,7 @@ add on the iso-curve, apply the isogeny once. -/
 def mapHashOutputsToCurve (u₀ u₁ : VestaBaseField) : SWPoint curve :=
   iso.mapHashOutputsToCurve sswu.map u₀ u₁
 
-/-- The construction agrees with mapping each point down and adding on
+/-- The construction agrees with mapping each point across and adding on
 Vesta — the order `zcash-test-vectors` and `pasta_curves` use — by the
 homomorphism. -/
 theorem mapHashOutputsToCurve_eq (u₀ u₁ : VestaBaseField) :
