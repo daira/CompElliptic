@@ -433,6 +433,16 @@ theorem not_isSquare_mul_sq {F : Type*} [Field F] {z c : F}
   field_simp
   linear_combination ht
 
+/-- A sum over a filtered product, decomposed into a double sum: outer over
+the first component, inner over the filter at that component. -/
+theorem sum_filter_prod {α β M : Type*} [Fintype α] [Fintype β]
+    [DecidableEq α] [DecidableEq β] [AddCommMonoid M]
+    (P : α → β → Prop) [∀ a b, Decidable (P a b)] (f : α × β → M) :
+    ∑ p ∈ (univ : Finset (α × β)).filter fun p => P p.1 p.2, f p
+      = ∑ a, ∑ b ∈ univ.filter fun b => P a b, f (a, b) := by
+  rw [Finset.sum_filter, Fintype.sum_prod_type]
+  exact Finset.sum_congr rfl fun a _ => (Finset.sum_filter _ _).symm
+
 namespace SSWUParams
 
 /-! ## The fibre over a nonzero input
@@ -615,6 +625,110 @@ theorem fibre_sum (hsq : IsSquare (-1 : F))
         SWPoint.neg_x, SWPoint.neg_y, hx, neg_div,
         mul_div_cancel_right₀ _ (G.scale2_ne_zero hsq u)]
     rw [hP, hQ]
+
+/-- **The covers, summed, with the boundary bookkeeping.** On the parameter
+range with `-A·B` a nonsquare,
+
+`S₁ + S₂ = Σ_{u ≠ 0} (φ (map u) + φ (-(map u))) + 4·φ 𝒪`,
+
+where `S_j` sums `φ` of the covering-map images over the full point set of
+cover `j`, for any `φ` into a commutative additive monoid. The boundary
+supplies the `4·φ 𝒪`:
+* cover 1 has no points at infinity, and its `u = 0` fibre is a rational
+  pair mapping to `𝒪`;
+* cover 2 has an empty `u = 0` fibre, and its rational pair at infinity
+  maps to `𝒪`. -/
+theorem modelPoints_sum (hsq : IsSquare (-1 : F))
+    (hy0 : ∀ x : F, ¬ OnCurve G.E.A G.E.B (x, 0))
+    (hAB : ¬ IsSquare (-(G.E.A * G.E.B)))
+    {M : Type*} [AddCommMonoid M] (φ : SWPoint G.E → M) :
+    (∑ P ∈ G.modelPoints1, φ (G.cover1Map hsq P))
+      + (∑ P ∈ G.modelPoints2, φ (G.cover2Map hsq P))
+      = (∑ u ∈ (univ : Finset F).erase 0,
+          (φ (G.map u) + φ (-(G.map u)))) + 4 • φ 0 := by
+  have hchar := G.ringChar_ne_two
+  -- The boundary square classes, under `-A·B` nonsquare:
+  -- cover 1 has no rational points at infinity …
+  have hT1 : ¬ IsSquare (G.twist1 * G.Z) := by
+    have h : G.twist1 * G.Z = -(G.E.A * G.E.B) * (G.E.A * G.Z^2)^2 := by
+      unfold twist1; ring
+    rw [h]
+    exact not_isSquare_mul_sq hAB
+      (mul_ne_zero G.A_nonzero (pow_ne_zero 2 G.Z_nonzero))
+  -- … cover 2 does …
+  have hT2 : IsSquare (G.twist2 * G.Z) := by
+    obtain ⟨r, hr⟩ := isSquare_mul_of_not_isSquare hAB G.Z_nonsquare
+    refine ⟨r * G.E.A, ?_⟩
+    unfold twist2
+    linear_combination (G.E.A^2) * hr
+  -- … cover 1's `u = 0` fibre is inhabited …
+  have h10 : IsSquare (G.model1 0) := by
+    rw [G.model1_zero]
+    obtain ⟨r, hr⟩ := isSquare_mul_of_not_isSquare hAB G.Z_nonsquare
+    refine ⟨r * (G.E.A * G.Z) * G.E.B, ?_⟩
+    unfold twist1
+    linear_combination (G.E.A^2 * G.Z^2 * G.E.B^2) * hr
+  -- … and cover 2's is empty.
+  have h20 : ¬ IsSquare (G.model2 0) := by
+    rw [G.model2_zero]
+    have h : G.twist2 * G.E.B^2 = -(G.E.A * G.E.B) * (G.E.A * G.E.B)^2 := by
+      unfold twist2; ring
+    rw [h]
+    exact not_isSquare_mul_sq hAB (mul_ne_zero G.A_nonzero G.E.B_nonzero)
+  -- Decompose the point-set sums into affine double sums and the boundary.
+  have hs1 : ∑ P ∈ G.modelPoints1, φ (G.cover1Map hsq P)
+      = ∑ u, ∑ W ∈ univ.filter fun W : F => W^2 = G.model1 u,
+          φ (G.cover1Map hsq (Sum.inl (u, W))) := by
+    unfold modelPoints1
+    rw [if_neg hT1, Finset.union_empty,
+      Finset.sum_image fun _ _ _ _ h => Sum.inl.inj h,
+      sum_filter_prod (fun u W => W^2 = G.model1 u)
+        (fun p => φ (G.cover1Map hsq (Sum.inl p)))]
+  have hs2 : ∑ P ∈ G.modelPoints2, φ (G.cover2Map hsq P)
+      = (∑ u, ∑ W ∈ univ.filter fun W : F => W^2 = G.model2 u,
+          φ (G.cover2Map hsq (Sum.inl (u, W)))) + (φ 0 + φ 0) := by
+    unfold modelPoints2
+    rw [if_pos hT2, Finset.sum_union (by simp [Finset.disjoint_left]),
+      Finset.sum_image fun _ _ _ _ h => Sum.inl.inj h,
+      Finset.sum_insert (by simp), Finset.sum_singleton,
+      sum_filter_prod (fun u W => W^2 = G.model2 u)
+        (fun p => φ (G.cover2Map hsq (Sum.inl p)))]
+    simp [cover2Map]
+  -- The `u = 0` inner sums: two `𝒪`-images on cover 1, none on cover 2.
+  have hA0 : ∑ W ∈ univ.filter fun W : F => W^2 = G.model1 0,
+      φ (G.cover1Map hsq (Sum.inl (0, W))) = 2 • φ 0 := by
+    calc ∑ W ∈ univ.filter fun W : F => W^2 = G.model1 0,
+          φ (G.cover1Map hsq (Sum.inl (0, W)))
+        = ∑ _W ∈ univ.filter fun W : F => W^2 = G.model1 0, φ 0 :=
+          Finset.sum_congr rfl fun W _ => by simp [cover1Map]
+      _ = ((univ.filter fun W : F => W^2 = G.model1 0).card) • φ 0 :=
+          Finset.sum_const _
+      _ = 2 • φ 0 := by
+          rw [filter_sq_card_of_isSquare hchar
+            (G.model1_ne_zero hsq hy0 0) h10]
+  have hB0 : ∑ W ∈ univ.filter fun W : F => W^2 = G.model2 0,
+      φ (G.cover2Map hsq (Sum.inl (0, W))) = 0 := by
+    rw [filter_sq_eq_empty h20, Finset.sum_empty]
+  -- Assemble: split `u = 0` off both outer sums and merge the rest.
+  rw [hs1, hs2,
+    ← Finset.add_sum_erase _ _ (mem_univ (0 : F)),
+    ← Finset.add_sum_erase _
+      (fun u => ∑ W ∈ univ.filter fun W : F => W^2 = G.model2 u,
+        φ (G.cover2Map hsq (Sum.inl (u, W)))) (mem_univ (0 : F)),
+    hA0, hB0]
+  have hmerge : (∑ u ∈ (univ : Finset F).erase 0,
+        ∑ W ∈ univ.filter fun W : F => W^2 = G.model1 u,
+          φ (G.cover1Map hsq (Sum.inl (u, W))))
+      + (∑ u ∈ (univ : Finset F).erase 0,
+        ∑ W ∈ univ.filter fun W : F => W^2 = G.model2 u,
+          φ (G.cover2Map hsq (Sum.inl (u, W))))
+      = ∑ u ∈ (univ : Finset F).erase 0,
+          (φ (G.map u) + φ (-(G.map u))) := by
+    rw [← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun u hu =>
+      G.fibre_sum hsq hy0 φ (Finset.mem_erase.mp hu).1
+  rw [← hmerge]
+  abel
 
 end FibreSum
 
