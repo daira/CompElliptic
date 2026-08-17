@@ -104,11 +104,12 @@ is the elementary, orthogonality-only content of `CharacterSum.lean`.
   gives genus 6 per branch against FFSTV's 8, with dihedral monodromy, and the
   exceptional input set is exactly `{0}` (for fields of size `≡ 1 (mod 4)`,
   `-1/Z` is a nonsquare whenever `Z` is, so the `t = -1` fibre is empty). The
-  result, for both iso-curves, is `|S_f(χ)| ≤ 10·√q + 3`, and `C = 21/2`
-  comfortably absorbs the additive term at the deployed sizes. That is a
-  calculation, not a proof: the derivation write-up that would let
-  `WeilBounded` be instantiated at `C = 21/2` with a citable argument is
-  tracked at <https://github.com/daira/CompElliptic/issues/28>. Separately,
+  result, for both iso-curves, is `|S_f(χ)| ≤ 10·√q + 1` (the script's
+  coarser audit gives `+ 3`), and `C = 21/2` absorbs the additive term at
+  the deployed sizes with margin `≈ 2^{127}`. The derivation is written up
+  in `design/weil-constant-derivation.md`; the remaining gaps toward a
+  fully rigorous account, and any formal recording, are tracked at
+  <https://github.com/daira/CompElliptic/issues/28>. Separately,
   `WeilBounded` itself is an external input to the formalization.
 -/
 
