@@ -13,13 +13,15 @@ of `map_to_curve_simple_swu` into the iso-curve E′. This discharges the
 with enormous margin: (10√q + 1)² ≤ (21/2)²·q needs 10.25·q ≥ 20√q + 1,
 and q > 2²⁵⁴.
 
-Status: this document is a hand derivation whose computational steps are
-verified by `weilbound.sage` (genus, monodromy statistics, square-class
-witnesses) and by the symbolic identity checks in
-`scripts/weil-derivation-checks.sage`. It cites Weil's theorem (via
-FFSTV's Lemma 1 and Theorem 3) as established mathematics; it is not a
-formal proof. Steps that a full write-up for publication would still
-expand are marked ⟨gap⟩.
+Status: this document is a proof of the bound, modulo results cited as
+established mathematics: Weil's theorem in the form of FFSTV's Lemma 1
+and Theorem 3, and the standard point bookkeeping for hyperelliptic
+models [Galbraith, ch. 10]. The symbolic identities it relies on are
+checked by `scripts/weil-derivation-checks.sage`; the per-instance
+facts (the empty w = 0 fibre, the Frobenius statistics, the
+square-class witnesses) by `weilbound.sage`. It is not machine-checked;
+formalizing the calculation in Lean is what remains of #28 — Weil's
+theorem itself stays a cited input.
 
 ## Background
 
@@ -143,19 +145,35 @@ geometric curve, two F_q-forms; the twist is the branch dichotomy
 itself.
 
 **Genus.** Φ(0) = B² and Φ = B² at t = −1, so Φ is coprime to u and to
-Z·u²+1; its degree is exactly 12 (leading coefficient B²·Z⁶ ≠ 0). Under
-the nondegeneracy condition
+Z·u²+1; its degree is exactly 12 (leading coefficient B²·Z⁶ ≠ 0). The
+odd-multiplicity part of the right-hand side is therefore (Z·u²+1)·Φ,
+of degree 14 — provided Φ is squarefree, which holds unconditionally:
 
-  ⟨N⟩: Φ is squarefree,
+**Lemma (Φ is squarefree).** Under the standing assumptions, Φ has no
+repeated root over the algebraic closure.
 
-the odd-multiplicity part of the right-hand side is (Z·u²+1)·Φ, of
-degree 14, so each C_j is hyperelliptic of genus ⌊(14 − 1)/2⌋ = 6.
-Condition ⟨N⟩ is verified at the deployed parameters by the script
-(odd-multiplicity part of degree 14 on every branch of both curves), and
-cross-checked by Sage's own genus computation at small-prime surrogates
-and over ℚ with the exact constants. ⟨gap⟩ A parameter-generic proof of
-⟨N⟩ (disc Φ ≠ 0 as a polynomial identity in A, B, Z away from an
-explicit degeneracy locus) would replace the per-instance check.
+*Proof.* Φ is a composition: Φ(u) = φ(ta(u)) with the cubic
+φ(T) = B²·(T+1)³ + A³·T² = B²·T³ + (A³+3·B²)·T² + 3·B²·T + B². A
+repeated root u₀ of Φ has Φ(u₀) = 0 and
+Φ′(u₀) = φ′(ta(u₀))·ta′(u₀) = 0. If φ′(ta(u₀)) = 0, then ta(u₀) is a
+repeated root of φ; but
+
+    disc(φ) = −A⁶·B²·(4·A³ + 27·B²) ≠ 0,
+
+since A·B ≠ 0 and 4·A³ + 27·B² ≠ 0 is exactly the ellipticity of E′.
+Otherwise ta′(u₀) = 2·Z·u₀·(2·Z·u₀² + 1) = 0 (char ≠ 2), so either
+u₀ = 0, where φ(ta(0)) = φ(0) = B² ≠ 0, or Z·u₀² = −1/2, where
+ta(u₀) = −1/4 and 64·φ(−1/4) = 4·A³ + 27·B² ≠ 0 — again ellipticity.
+Either way Φ(u₀) ≠ 0, a contradiction. ∎
+
+The discriminant factorization and both critical values are checked
+symbolically in `scripts/weil-derivation-checks.sage`. So each C_j is
+hyperelliptic of genus ⌊(14 − 1)/2⌋ = 6, for **every** valid parameter
+set — the pleasant surprise being that the two quantities the argument
+needs to be nonzero are the curve discriminant and A·B, both already
+assumed. The script's per-instance evidence (odd-multiplicity part of
+degree 14 on every branch, Sage's genus at small-prime surrogates and
+over ℚ) serves as cross-check rather than hypothesis discharge.
 
 ## 3. No unramified subcover
 
@@ -208,46 +226,71 @@ and (χ + χ̄)(f(u)) = χ(P) + χ(−P) depends only on the ±-class of f(u) �
 which the sign rule never influences. This is the same reduction that
 `CharacterSum.lean` formalizes as the ±-class multiplicity form.
 
-**The correspondence.** Fix u ∉ {0}. On the branch j with g(x_j(u)) a
-square, the fibre of C_j over u consists of the two ordinate-conjugate
-points (W = ±), which map under h_j to f(u) and −f(u), contributing
-exactly (χ + χ̄)(f(u)); the other branch's fibre has no rational points.
-Two boundary cases:
+**The correspondence.** All counting happens on the smooth model
+W² = H_j(u), with H_j = d_j·(Z·u²+1)·Φ squarefree of degree 14 by the
+Lemma. For such a model the rational points are read off in the
+standard way [Galbraith, ch. 10]. The affine locus is smooth, since a
+singular point would need W = 0 at a repeated root of H_j. Over each
+u₀ there are two rational points when H_j(u₀) is a nonzero square, one
+when H_j(u₀) = 0, and none when H_j(u₀) is a nonsquare. Since the
+degree 14 is even, there are two more points at infinity, rational
+exactly when the leading coefficient of H_j is a square.
 
-- **W = 0** would merge the two points; it happens only at rational
-  roots of Φ, whose h_j-images are rational 2-torsion points of E′.
-  Since #E′(F_q) is an odd prime, E′ has no rational 2-torsion, so Φ
-  has no rational roots and this case is empty.
-- **u = 0 and u = ∞** are the points of C_j(F_q) not accounted for by
-  inputs. Over u = 0 the model gives W² = d_j·B²: rational exactly when
-  d_j is a square. At u = ∞ (degree 14 is even, so two points) the
-  relevant class is d_j·Z·(leading coefficient of Φ) ≡ d_j·Z. Since
-  d₁ ≡ −A·B·Z and d₂ ≡ −A·B with Z a nonsquare, **exactly one** of each
-  pair is rational — two extra points on each cover in total. Their
-  images: x₁(u) → ∞ as u → 0 and x₂(u) → ∞ as u → ∞, so all four extra
-  points map to 𝒪. (At the deployed parameters −A·B is a nonsquare —
-  the script's empty w = 0 fibre — so the rational pairs are C₁'s over
-  u = 0 and C₂'s at ∞; if −A·B were square they would swap, with the
-  same count.)
+The model coordinate is W = y·s_j(u), with s₁ = A³·Z³·u³·(Z·u²+1)² and
+s₂ = A³·(Z·u²+1)²; the identities g(x_j(u))·s_j(u)² = H_j(u) are
+checked symbolically. Since Z·u²+1 has no rational roots (−1/Z is a
+nonsquare), s_j(u₀) ≠ 0 for every input u₀ ∉ {0}. Over such a u₀, then,
+y ↦ W = y·s_j(u₀) is a bijection between the rational points of
+y² = g(x_j(u)) and those of the model, and H_j(u₀) is a square exactly
+when g(x_j(u₀)) is. So on the branch j with g(x_j(u₀)) a square, the
+fibre of C_j over u₀ consists of the two ordinate-conjugate points,
+which map under h_j to f(u₀) and −f(u₀), contributing exactly
+(χ + χ̄)(f(u₀)); the other branch's fibre has no rational points. Three
+boundary cases:
+
+- **W = 0** would merge the two points. It happens only at rational
+  roots of (Z·u²+1)·Φ, hence only at rational roots of Φ; and a
+  rational root u₀ of Φ has g(x_j(u₀)) = 0, so its h_j-image is a
+  rational 2-torsion point of E′. Since #E′(F_q) is an odd prime, E′
+  has no rational 2-torsion, so Φ has no rational roots and this case
+  is empty.
+- **u = 0**: H_j(0) = d_j·B², in the square class of d_j.
+- **u = ∞**: the leading coefficient of H_j is d_j·B²·Z⁷, in the
+  square class of d_j·Z.
+
+Since d₁ ≡ −A·B·Z and d₂ ≡ −A·B differ by the nonsquare Z, exactly one
+of {C₁, C₂} has a rational pair over u = 0, and the other has its pair
+of rational points at infinity: four extra points in total, not
+accounted for by inputs. Their images under h_j are read off the
+abscissa functions (checked symbolically): x₁ has a pole at u = 0 and
+tends to −B/A at u = ∞, while x₂(0) = −B/A and x₂ has a pole at
+u = ∞. A pole of x_j at the place means the point maps to 𝒪. At the
+deployed parameters −A·B is a nonsquare (the script's empty w = 0
+fibre), so the rational pairs are C₁'s over u = 0 and C₂'s at
+infinity —both pole loci— and all four extra points map to 𝒪.
 
 Summing, with f(0) = 𝒪 and χ(𝒪) = 1:
 
     S_{C₁}(χ) + S_{C₂}(χ) = Σ_{u ≠ 0} (χ + χ̄)(f(u)) + 4
                           = 2·S_f(χ) − 2·χ(𝒪) + 4 = 2·S_f(χ) + 2.
 
-⟨gap⟩ The identification of the smooth-model points over u = 0 and ∞
-with the stated square classes is routine hyperelliptic bookkeeping but
-is asserted here, not derived.
+(If −A·B were a square, the rational pairs would swap to the −B/A
+loci: all four extra points would map to the two rational points of E′
+over w = 0, contributing 2·(χ + χ̄)(P₀) for P₀ one of them — bounded by
+4 rather than equal to 4. The bound of §5 then holds with additive
+constant 3 instead of 1. The deployed instances are in the nonsquare
+case, so this variant is not needed for them.)
 
 ## 5. Conclusion
 
     2·|S_f(χ)| ≤ |S_{C₁}(χ)| + |S_{C₂}(χ)| + 2 ≤ 20·√q + 2,
 
 so |S_f(χ)| ≤ 10·√q + 1 for every nontrivial χ, on both deployed
-iso-curves. The comparison with FFSTV's Theorem 6 (52·√q + 151 for
-Z = −1, q ≡ 3 (mod 4), residue-status sign rule): sign-freeness removes
-their conductor term and the per-branch double-count, and the deployed
-covers have genus 6 against their 8.
+iso-curves. (For a valid parameter set with −A·B square, §4's variant
+gives 10·√q + 3.) The comparison with FFSTV's Theorem 6 (52·√q + 151
+for Z = −1, q ≡ 3 (mod 4), residue-status sign rule): sign-freeness
+removes their conductor term and the per-branch double-count, and the
+deployed covers have genus 6 against their 8.
 
 The composition through the deployed 3-isogeny costs nothing: the
 isogeny is bijective on rational points, so χ ∘ iso ranges over the
