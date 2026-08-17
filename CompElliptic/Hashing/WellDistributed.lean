@@ -98,7 +98,7 @@ is the elementary, orthogonality-only content of `CharacterSum.lean`.
   as written — and the sign-convention-free reduction in `CharacterSum.lean`
   makes the hypothesis depend only on the ±-class multiplicities, so the redone
   bound needs no sign indicator at all. The bound for the deployed parameters
-  has been calculated, in zcash/pasta's `weilbound.sage`
+  is calculated in zcash/pasta's `weilbound.sage`
   (<https://github.com/zcash/pasta/blob/acc1384bfa7a079b7ecc59182ac821215605cd39/weilbound.sage>):
   re-rooting each branch covering as a hyperelliptic model over the input line
   gives genus 6 per branch against FFSTV's 8, with dihedral monodromy, and the
@@ -106,9 +106,11 @@ is the elementary, orthogonality-only content of `CharacterSum.lean`.
   `-1/Z` is a nonsquare whenever `Z` is, so the `t = -1` fibre is empty). The
   result, for both iso-curves, is `|S_f(χ)| ≤ 10·√q + 1` (the script's
   coarser audit gives `+ 3`), and `C = 21/2` absorbs the additive term at
-  the deployed sizes with margin `≈ 2^{127}`. The derivation is written up
-  in `design/weil-constant-derivation.md`; the remaining gaps toward a
-  fully rigorous account, and any formal recording, are tracked at
+  the deployed sizes with margin `≈ 2^{127}`. The bound is proven in
+  `design/weil-constant-derivation.md`, modulo results cited there as
+  established mathematics (Weil's theorem in the form of FFSTV's Lemma 1
+  and Theorem 3, and standard hyperelliptic point bookkeeping);
+  formalizing the calculation in Lean is what remains of
   <https://github.com/daira/CompElliptic/issues/28>. Separately,
   `WeilBounded` itself is an external input to the formalization.
 -/
