@@ -425,4 +425,199 @@ theorem filter_sq_eq_empty {F : Type*} [Field F] [Fintype F] [DecidableEq F]
   intro W _
   exact fun hW => hns ⟨W, by rw [← hW]; ring⟩
 
+/-- A nonsquare times a nonzero square is a nonsquare. -/
+theorem not_isSquare_mul_sq {F : Type*} [Field F] {z c : F}
+    (hz : ¬ IsSquare z) (hc : c ≠ 0) : ¬ IsSquare (z * c^2) := by
+  rintro ⟨t, ht⟩
+  refine hz ⟨t/c, ?_⟩
+  field_simp
+  linear_combination ht
+
+namespace SSWUParams
+
+/-! ## The fibre over a nonzero input
+
+Fix `u ≠ 0`. Exactly one branch's curve-equation value `g (x_j u)` is a
+nonzero square, and the mapping outputs a point over that branch's abscissa
+(`map_x`). On the square branch the model fibre `W² = H_j(u)` has the two
+roots `±(map u).y · s_j u`, whose covering-map images are `map u` and
+`-(map u)`; on the other branch the fibre is empty. `fibre_sum` packages
+this: summed over both covers, any function of the images contributes
+exactly `φ (map u) + φ (-(map u))`. -/
+
+section FibreSum
+
+variable {F : Type*} [Field F] [Fintype F] [DecidableEq F]
+variable (G : SSWUParams F)
+
+/-- The candidate ordinate squares to the curve equation at the output
+abscissa: the on-curve fact `onCurve_mapXY`, restated through `map`. -/
+theorem map_y_sq (u : F) :
+    ((G.map u).y)^2 = ((G.map u).x)^3 + G.E.A * (G.map u).x + G.E.B :=
+  G.onCurve_mapXY u
+
+/-- **The branch selection.** For `u ≠ 0`, the mapping outputs the branch
+whose curve-equation value is a square: the abscissa is `x₁ u` when
+`g (x₁ u)` is a square, else `x₂ u`. The square-root split tests exactly
+`IsSquare (U / xdiv³)`, and `U / xdiv³ = g (x₁ u)`. -/
+theorem map_x (hsq : IsSquare (-1 : F)) {u : F} (hu : u ≠ 0) :
+    (G.map u).x
+      = if IsSquare ((G.x1 u)^3 + G.E.A * G.x1 u + G.E.B) then G.x1 u
+        else G.x2 u := by
+  have hta : (G.Z * u^2)^2 + G.Z * u^2 ≠ 0 := G.ta_ne_zero_of_u_ne_zero hsq hu
+  have hden : G.E.A * -((G.Z * u^2)^2 + G.Z * u^2) ≠ 0 :=
+    mul_ne_zero G.A_nonzero (neg_ne_zero.mpr hta)
+  have hX := G.x1_mul_den hsq hu
+  -- The ratio the square-root split tests is the curve equation at `x₁ u`.
+  have hUdiv : ((G.E.B * (((G.Z * u^2)^2 + G.Z * u^2) + 1))^2
+        + G.E.A * (G.E.A * -((G.Z * u^2)^2 + G.Z * u^2))^2)
+          * (G.E.B * (((G.Z * u^2)^2 + G.Z * u^2) + 1))
+        + G.E.B * (G.E.A * -((G.Z * u^2)^2 + G.Z * u^2))^3
+      = ((G.x1 u)^3 + G.E.A * G.x1 u + G.E.B)
+          * (G.E.A * -((G.Z * u^2)^2 + G.Z * u^2))^3 := by
+    linear_combination (-((G.x1 u * (G.E.A * -((G.Z * u^2)^2 + G.Z * u^2)))^2
+      + G.x1 u * (G.E.A * -((G.Z * u^2)^2 + G.Z * u^2))
+          * (G.E.B * (((G.Z * u^2)^2 + G.Z * u^2) + 1))
+      + (G.E.B * (((G.Z * u^2)^2 + G.Z * u^2) + 1))^2
+      + G.E.A * (G.E.A * -((G.Z * u^2)^2 + G.Z * u^2))^2)) * hX
+  have hbiff : (sqrtRatio G.d G.lam
+        (((G.E.B * (((G.Z * u^2)^2 + G.Z * u^2) + 1))^2
+            + G.E.A * (G.E.A * -((G.Z * u^2)^2 + G.Z * u^2))^2)
+              * (G.E.B * (((G.Z * u^2)^2 + G.Z * u^2) + 1))
+            + G.E.B * (G.E.A * -((G.Z * u^2)^2 + G.Z * u^2))^3)
+        ((G.E.A * -((G.Z * u^2)^2 + G.Z * u^2))^3)).2 = true
+      ↔ IsSquare ((G.x1 u)^3 + G.E.A * G.x1 u + G.E.B) := by
+    rw [sqrtRatio_true_iff, hUdiv,
+      mul_div_cancel_right₀ _ (pow_ne_zero 3 hden)]
+  show (G.mapXYUpToSign u).1 = _
+  simp only [mapXYUpToSign]
+  rw [if_neg hta]
+  by_cases hgs : IsSquare ((G.x1 u)^3 + G.E.A * G.x1 u + G.E.B)
+  · rw [if_pos hgs, hbiff.mpr hgs, if_pos rfl]
+    rfl
+  · rw [if_neg hgs, Bool.eq_false_iff.mpr fun h => hgs (hbiff.mp h),
+      if_neg (by simp)]
+    unfold x2 x1
+    ring
+
+/-- The first covering map's abscissa at a genuine affine model point. -/
+theorem cover1Map_inl_x (hsq : IsSquare (-1 : F)) {u W : F} (hu : u ≠ 0)
+    (hW : W^2 = G.model1 u) :
+    (G.cover1Map hsq (Sum.inl (u, W))).x = G.x1 u := by
+  simp [cover1Map, hu, hW]
+
+/-- The first covering map's ordinate at a genuine affine model point. -/
+theorem cover1Map_inl_y (hsq : IsSquare (-1 : F)) {u W : F} (hu : u ≠ 0)
+    (hW : W^2 = G.model1 u) :
+    (G.cover1Map hsq (Sum.inl (u, W))).y = W / G.scale1 u := by
+  simp [cover1Map, hu, hW]
+
+/-- The second covering map's abscissa at a genuine affine model point. -/
+theorem cover2Map_inl_x (hsq : IsSquare (-1 : F)) {u W : F} (hu : u ≠ 0)
+    (hW : W^2 = G.model2 u) :
+    (G.cover2Map hsq (Sum.inl (u, W))).x = G.x2 u := by
+  simp [cover2Map, hu, hW]
+
+/-- The second covering map's ordinate at a genuine affine model point. -/
+theorem cover2Map_inl_y (hsq : IsSquare (-1 : F)) {u W : F} (hu : u ≠ 0)
+    (hW : W^2 = G.model2 u) :
+    (G.cover2Map hsq (Sum.inl (u, W))).y = W / G.scale2 u := by
+  simp [cover2Map, hu, hW]
+
+/-- **The fibre over a nonzero input, summed.** Over `u ≠ 0`, the two
+covers' affine model fibres together contribute the images `map u` and
+`-(map u)`, each once: the square branch's two roots supply them, and the
+other branch's fibre is empty. -/
+theorem fibre_sum (hsq : IsSquare (-1 : F))
+    (hy0 : ∀ x : F, ¬ OnCurve G.E.A G.E.B (x, 0))
+    {M : Type*} [AddCommMonoid M] (φ : SWPoint G.E → M) {u : F} (hu : u ≠ 0) :
+    (∑ W ∈ univ.filter fun W : F => W^2 = G.model1 u,
+        φ (G.cover1Map hsq (Sum.inl (u, W))))
+      + (∑ W ∈ univ.filter fun W : F => W^2 = G.model2 u,
+        φ (G.cover2Map hsq (Sum.inl (u, W))))
+      = φ (G.map u) + φ (-(G.map u)) := by
+  have hchar := G.ringChar_ne_two
+  have hH1 := G.model1_ne_zero hsq hy0 u
+  have hH2 := G.model2_ne_zero hsq hy0 u
+  have hg1 : (G.x1 u)^3 + G.E.A * G.x1 u + G.E.B ≠ 0 := fun h =>
+    hH1 (by rw [← G.model1_eq hsq hu, h, zero_mul])
+  have hg2 : (G.x2 u)^3 + G.E.A * G.x2 u + G.E.B ≠ 0 := fun h =>
+    hH2 (by rw [← G.model2_eq hsq hu, h, zero_mul])
+  have hu3 : G.Z * u^3 ≠ 0 := mul_ne_zero G.Z_nonzero (pow_ne_zero 3 hu)
+  by_cases hgs : IsSquare ((G.x1 u)^3 + G.E.A * G.x1 u + G.E.B)
+  · -- Branch 1 carries the square; branch 2's fibre is empty.
+    have hx : (G.map u).x = G.x1 u := by rw [G.map_x hsq hu, if_pos hgs]
+    have hy2 : ((G.map u).y)^2 = (G.x1 u)^3 + G.E.A * G.x1 u + G.E.B := by
+      rw [← hx]; exact G.map_y_sq u
+    have hyne : (G.map u).y ≠ 0 := fun h => hg1 (by rw [← hy2, h]; ring)
+    have hr2 : ((G.map u).y * G.scale1 u)^2 = G.model1 u := by
+      rw [mul_pow, hy2, G.model1_eq hsq hu]
+    have hrne : (G.map u).y * G.scale1 u ≠ 0 :=
+      mul_ne_zero hyne (G.scale1_ne_zero hsq hu)
+    have hns2 : ¬ IsSquare (G.model2 u) := by
+      obtain ⟨t, ht⟩ := hgs
+      have ht0 : t ≠ 0 := fun h => hg1 (by rw [ht, h, mul_zero])
+      have hM : G.model2 u = G.Z * (G.Z * u^3 * t * G.scale2 u)^2 := by
+        rw [← G.model2_eq hsq hu, G.g_x2_eq hsq hu, ht]; ring
+      rw [hM]
+      exact not_isSquare_mul_sq G.Z_nonsquare
+        (mul_ne_zero (mul_ne_zero hu3 ht0) (G.scale2_ne_zero hsq u))
+    rw [filter_sq_eq_empty hns2, Finset.sum_empty, _root_.add_zero,
+      filter_sq_eq_pair hr2, Finset.sum_pair fun h => hrne
+        ((Ring.eq_self_iff_eq_zero_of_char_ne_two hchar).mp h.symm)]
+    have hP : G.cover1Map hsq (Sum.inl (u, (G.map u).y * G.scale1 u))
+        = G.map u := by
+      refine SWPoint.ext_pair ?_
+      rw [G.cover1Map_inl_x hsq hu hr2, G.cover1Map_inl_y hsq hu hr2, hx,
+        mul_div_cancel_right₀ _ (G.scale1_ne_zero hsq hu)]
+    have hQ : G.cover1Map hsq (Sum.inl (u, -((G.map u).y * G.scale1 u)))
+        = -(G.map u) := by
+      have hr2' : (-((G.map u).y * G.scale1 u))^2 = G.model1 u := by
+        rw [neg_sq, hr2]
+      refine SWPoint.ext_pair ?_
+      rw [G.cover1Map_inl_x hsq hu hr2', G.cover1Map_inl_y hsq hu hr2',
+        SWPoint.neg_x, SWPoint.neg_y, hx, neg_div,
+        mul_div_cancel_right₀ _ (G.scale1_ne_zero hsq hu)]
+    rw [hP, hQ]
+  · -- Branch 2 carries the square; branch 1's fibre is empty.
+    have hZ3 : ¬ IsSquare ((G.Z * u^2)^3) := by
+      have h : (G.Z * u^2)^3 = G.Z * (G.Z * u^3)^2 := by ring
+      rw [h]
+      exact not_isSquare_mul_sq G.Z_nonsquare hu3
+    have hgs2 : IsSquare ((G.x2 u)^3 + G.E.A * G.x2 u + G.E.B) := by
+      rw [G.g_x2_eq hsq hu]
+      exact isSquare_mul_of_not_isSquare hZ3 hgs
+    have hx : (G.map u).x = G.x2 u := by rw [G.map_x hsq hu, if_neg hgs]
+    have hy2 : ((G.map u).y)^2 = (G.x2 u)^3 + G.E.A * G.x2 u + G.E.B := by
+      rw [← hx]; exact G.map_y_sq u
+    have hyne : (G.map u).y ≠ 0 := fun h => hg2 (by rw [← hy2, h]; ring)
+    have hr2 : ((G.map u).y * G.scale2 u)^2 = G.model2 u := by
+      rw [mul_pow, hy2, G.model2_eq hsq hu]
+    have hrne : (G.map u).y * G.scale2 u ≠ 0 :=
+      mul_ne_zero hyne (G.scale2_ne_zero hsq u)
+    have hns1 : ¬ IsSquare (G.model1 u) := by
+      rw [← G.model1_eq hsq hu]
+      exact not_isSquare_mul_sq hgs (G.scale1_ne_zero hsq hu)
+    rw [filter_sq_eq_empty hns1, Finset.sum_empty, _root_.zero_add,
+      filter_sq_eq_pair hr2, Finset.sum_pair fun h => hrne
+        ((Ring.eq_self_iff_eq_zero_of_char_ne_two hchar).mp h.symm)]
+    have hP : G.cover2Map hsq (Sum.inl (u, (G.map u).y * G.scale2 u))
+        = G.map u := by
+      refine SWPoint.ext_pair ?_
+      rw [G.cover2Map_inl_x hsq hu hr2, G.cover2Map_inl_y hsq hu hr2, hx,
+        mul_div_cancel_right₀ _ (G.scale2_ne_zero hsq u)]
+    have hQ : G.cover2Map hsq (Sum.inl (u, -((G.map u).y * G.scale2 u)))
+        = -(G.map u) := by
+      have hr2' : (-((G.map u).y * G.scale2 u))^2 = G.model2 u := by
+        rw [neg_sq, hr2]
+      refine SWPoint.ext_pair ?_
+      rw [G.cover2Map_inl_x hsq hu hr2', G.cover2Map_inl_y hsq hu hr2',
+        SWPoint.neg_x, SWPoint.neg_y, hx, neg_div,
+        mul_div_cancel_right₀ _ (G.scale2_ne_zero hsq u)]
+    rw [hP, hQ]
+
+end FibreSum
+
+end SSWUParams
+
 end CompElliptic.Hashing
