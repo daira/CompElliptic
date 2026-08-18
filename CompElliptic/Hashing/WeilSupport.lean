@@ -90,22 +90,12 @@ namespace SSWUParams
 variable {F : Type*} [Field F] [Fintype F] [DecidableEq F]
 variable (G : SSWUParams F)
 
-/-! ## The core `Φ` as a polynomial, and its cubic factor through `ta` -/
-
-/-- The cubic `φ(T) = B²·(T + 1)³ + A³·T²` through which the core factors:
-`Φ = φ ∘ ta` (design doc §2, the squarefreeness lemma). -/
-noncomputable def phiCubic : Polynomial F :=
-  (C G.E.B)^2 * (X + 1)^3 + (C G.E.A)^3 * X^2
+/-! ## The core `Φ` as a polynomial -/
 
 /-- The core `Φ(u) = B²·(ta + 1)³ + A³·ta²` as a polynomial in `u`
 (`phiCore` is its evaluation). -/
 noncomputable def phiPoly : Polynomial F :=
   (C G.E.B)^2 * (G.taPoly + 1)^3 + (C G.E.A)^3 * G.taPoly^2
-
-/-- `Φ` factors through `ta`: `Φ = φ ∘ ta`. -/
-theorem phiPoly_eq_comp : G.phiPoly = G.phiCubic.comp G.taPoly := by
-  simp only [phiPoly, phiCubic, add_comp, mul_comp, pow_comp, C_comp, X_comp,
-    one_comp]
 
 /-- `phiPoly` evaluates to the pointwise core `phiCore`. -/
 theorem eval_phiPoly (u : F) : G.phiPoly.eval u = G.phiCore u := by
@@ -118,11 +108,77 @@ theorem phiPoly_natDegree : G.phiPoly.natDegree = 12 := by
   compute_degree!
   exact ⟨G.E.B_nonzero, G.Z_nonzero⟩
 
+/-! ## The models `H_j = d_j·(Z·u²+1)·Φ` as polynomials -/
+
+/-- The first model `H₁ = d₁·(Z·u²+1)·Φ` as a polynomial in `u`. -/
+noncomputable def model1Poly : Polynomial F :=
+  C G.twist1 * ((G.tPoly + 1) * G.phiPoly)
+
+/-- The second model `H₂ = d₂·(Z·u²+1)·Φ` as a polynomial in `u`. -/
+noncomputable def model2Poly : Polynomial F :=
+  C G.twist2 * ((G.tPoly + 1) * G.phiPoly)
+
+/-- `model1Poly` evaluates to the pointwise model `model1`. -/
+theorem eval_model1Poly (u : F) : G.model1Poly.eval u = G.model1 u := by
+  simp only [model1Poly, model1, tPoly, eval_mul, eval_add, eval_C, eval_X,
+    eval_pow, eval_one, G.eval_phiPoly]
+  ring
+
+/-- `model2Poly` evaluates to the pointwise model `model2`. -/
+theorem eval_model2Poly (u : F) : G.model2Poly.eval u = G.model2 u := by
+  simp only [model2Poly, model2, tPoly, eval_mul, eval_add, eval_C, eval_X,
+    eval_pow, eval_one, G.eval_phiPoly]
+  ring
+
+/-! ## The genus inputs: `Φ` at `u = 0`, and coprime to `Z·X² + 1` -/
+
+/-- `Φ` has constant coefficient `B²`: it is coprime to `X`. This is the
+design doc's `φ(ta(0)) = B² ≠ 0` case of the squarefreeness lemma. -/
+theorem phiPoly_coeff_zero : G.phiPoly.coeff 0 = G.E.B^2 := by
+  rw [coeff_zero_eq_eval_zero, G.eval_phiPoly, G.phiCore_zero]
+
+/-- `Φ` is coprime to `Z·X² + 1`: modulo that factor, `ta = 0` and
+`Φ = B²`. This is the design doc's coprimality of `Φ` with the models'
+quadratic factor. -/
+theorem phiPoly_isCoprime_tPoly_add_one :
+    IsCoprime G.phiPoly (G.tPoly + 1) := by
+  refine isCoprime_of_bezout (u := 1)
+    (v := -(G.tPoly * ((C G.E.B)^2 * G.taPoly^2
+      + (3*(C G.E.B)^2 + (C G.E.A)^3) * G.taPoly + 3*(C G.E.B)^2)))
+    (c := G.E.B^2) (pow_ne_zero 2 G.E.B_nonzero) ?_
+  have hC : (C (G.E.B^2) : Polynomial F) = (C G.E.B)^2 := map_pow _ _ _
+  rw [hC, phiPoly, taPoly, tPoly]
+  ring
+
+/-- `Z·X² + 1` is separable: its Bézout certificate against its derivative
+`2·Z·X` has the constant `2`. -/
+theorem tPoly_add_one_separable : (G.tPoly + 1).Separable := by
+  have h2 : (2 : F) ≠ 0 := Ring.two_ne_zero G.ringChar_ne_two
+  have hd : (G.tPoly + 1).derivative = 2 * C G.Z * X := by
+    simp only [tPoly, derivative_add, derivative_mul, derivative_pow,
+      derivative_C, derivative_X, derivative_one, Nat.cast_ofNat, map_ofNat]
+    ring
+  rw [Polynomial.separable_def, hd]
+  refine isCoprime_of_bezout (u := 2) (v := -X) (c := 2) h2 ?_
+  have hC2 : (C (2 : F) : Polynomial F) = 2 := map_ofNat _ 2
+  rw [tPoly, hC2]
+  ring
+
 /-! ## Separability of the cubic, by Bézout certificate
 
 The cofactors were computed by `xgcd` in `scripts/weil-derivation-checks.sage`;
 the identity's constant is `A³·B²·(4·A³ + 27·B²)`, nonzero exactly from the
 standing assumptions plus ellipticity. -/
+
+/-- The cubic `φ(T) = B²·(T + 1)³ + A³·T²` through which the core factors:
+`Φ = φ ∘ ta` (design doc §2, the squarefreeness lemma). -/
+noncomputable def phiCubic : Polynomial F :=
+  (C G.E.B)^2 * (X + 1)^3 + (C G.E.A)^3 * X^2
+
+/-- `Φ` factors through `ta`: `Φ = φ ∘ ta`. -/
+theorem phiPoly_eq_comp : G.phiPoly = G.phiCubic.comp G.taPoly := by
+  simp only [phiPoly, phiCubic, add_comp, mul_comp, pow_comp, C_comp, X_comp,
+    one_comp]
 
 /-- The derivative of the cubic `φ`. -/
 theorem phiCubic_derivative :
@@ -174,11 +230,6 @@ theorem _root_.CompElliptic.Hashing.isCoprime_C_of_ne_zero
     {F : Type*} [Field F] {p : Polynomial F} {c : F} (hc : c ≠ 0) :
     IsCoprime p (C c) :=
   ⟨0, C c⁻¹, by simp [← C_mul, inv_mul_cancel₀ hc]⟩
-
-/-- `Φ` has constant coefficient `B²`: it is coprime to `X`. This is the
-design doc's `φ(ta(0)) = B² ≠ 0` case of the squarefreeness lemma. -/
-theorem phiPoly_coeff_zero : G.phiPoly.coeff 0 = G.E.B^2 := by
-  rw [coeff_zero_eq_eval_zero, G.eval_phiPoly, G.phiCore_zero]
 
 /-- The even-powers polynomial `Ψ` with `64·Φ = Ψ(2·Z·X² + 1)`: the core,
 re-expanded around the second critical locus of `ta`. Its constant term is
@@ -258,57 +309,7 @@ theorem phiPoly_squarefree (hdisc : 4*G.E.A^3 + 27*G.E.B^2 ≠ 0) :
     Squarefree G.phiPoly :=
   (G.phiPoly_separable hdisc).squarefree
 
-/-! ## The models: squarefree of degree 14
-
-`H_j = d_j·(Z·u²+1)·Φ` — the objects the cited hyperelliptic genus formula
-is applied to. -/
-
-/-- The first model `H₁ = d₁·(Z·u²+1)·Φ` as a polynomial in `u`. -/
-noncomputable def model1Poly : Polynomial F :=
-  C G.twist1 * ((G.tPoly + 1) * G.phiPoly)
-
-/-- The second model `H₂ = d₂·(Z·u²+1)·Φ` as a polynomial in `u`. -/
-noncomputable def model2Poly : Polynomial F :=
-  C G.twist2 * ((G.tPoly + 1) * G.phiPoly)
-
-/-- `model1Poly` evaluates to the pointwise model `model1`. -/
-theorem eval_model1Poly (u : F) : G.model1Poly.eval u = G.model1 u := by
-  simp only [model1Poly, model1, tPoly, eval_mul, eval_add, eval_C, eval_X,
-    eval_pow, eval_one, G.eval_phiPoly]
-  ring
-
-/-- `model2Poly` evaluates to the pointwise model `model2`. -/
-theorem eval_model2Poly (u : F) : G.model2Poly.eval u = G.model2 u := by
-  simp only [model2Poly, model2, tPoly, eval_mul, eval_add, eval_C, eval_X,
-    eval_pow, eval_one, G.eval_phiPoly]
-  ring
-
-/-- `Z·X² + 1` is separable: its Bézout certificate against its derivative
-`2·Z·X` has the constant `2`. -/
-theorem tPoly_add_one_separable : (G.tPoly + 1).Separable := by
-  have h2 : (2 : F) ≠ 0 := Ring.two_ne_zero G.ringChar_ne_two
-  have hd : (G.tPoly + 1).derivative = 2 * C G.Z * X := by
-    simp only [tPoly, derivative_add, derivative_mul, derivative_pow,
-      derivative_C, derivative_X, derivative_one, Nat.cast_ofNat, map_ofNat]
-    ring
-  rw [Polynomial.separable_def, hd]
-  refine isCoprime_of_bezout (u := 2) (v := -X) (c := 2) h2 ?_
-  have hC2 : (C (2 : F) : Polynomial F) = 2 := map_ofNat _ 2
-  rw [tPoly, hC2]
-  ring
-
-/-- `Φ` is coprime to `Z·X² + 1`: modulo that factor, `ta = 0` and
-`Φ = B²`. This is the design doc's coprimality of `Φ` with the models'
-quadratic factor. -/
-theorem phiPoly_isCoprime_tPoly_add_one :
-    IsCoprime G.phiPoly (G.tPoly + 1) := by
-  refine isCoprime_of_bezout (u := 1)
-    (v := -(G.tPoly * ((C G.E.B)^2 * G.taPoly^2
-      + (3*(C G.E.B)^2 + (C G.E.A)^3) * G.taPoly + 3*(C G.E.B)^2)))
-    (c := G.E.B^2) (pow_ne_zero 2 G.E.B_nonzero) ?_
-  have hC : (C (G.E.B^2) : Polynomial F) = (C G.E.B)^2 := map_pow _ _ _
-  rw [hC, phiPoly, taPoly, tPoly]
-  ring
+/-! ## The models are squarefree of degree 14 -/
 
 /-- **The first model is squarefree**: a unit times the product of the two
 coprime separable factors `Z·X² + 1` and `Φ`. -/
@@ -355,6 +356,26 @@ theorem model2Poly_natDegree : G.model2Poly.natDegree = 14 := by
     | exact G.E.B_nonzero
     | exact G.Z_nonzero
     | exact G.twist2_ne_zero
+
+/-! ## The fibre over `w = 0` -/
+
+/-- `g(-B/A) = -(B/A)³`: the curve equation at the abscissa of the two
+points over `w = 0`. -/
+theorem eval_g_neg_B_div_A :
+    (-(G.E.B/G.E.A))^3 + G.E.A * -(G.E.B/G.E.A) + G.E.B
+      = -(G.E.B/G.E.A)^3 := by
+  have hA := G.A_nonzero
+  field_simp
+  ring
+
+/-- `g(-B/A) ≠ 0`: the two points over `w = 0` have nonzero ordinate, so
+`w` vanishes simply at each — the input that makes the Eisenstein pattern
+mean total ramification in the cited argument. -/
+theorem g_neg_B_div_A_ne_zero :
+    (-(G.E.B/G.E.A))^3 + G.E.A * -(G.E.B/G.E.A) + G.E.B ≠ 0 := by
+  rw [G.eval_g_neg_B_div_A]
+  exact neg_ne_zero.mpr (pow_ne_zero 3
+    (div_ne_zero G.E.B_nonzero G.A_nonzero))
 
 /-! ## The branch quartics are Eisenstein at `w = 0`
 
@@ -464,26 +485,6 @@ theorem p1RecipPoly_isEisensteinAt :
   · rw [h0, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
     exact not_X_sq_dvd (C_ne_zero.mpr (pow_ne_zero 2 G.Z_nonzero))
       (natDegree_C _)
-
-/-! ## The fibre over `w = 0` -/
-
-/-- `g(-B/A) = -(B/A)³`: the curve equation at the abscissa of the two
-points over `w = 0`. -/
-theorem eval_g_neg_B_div_A :
-    (-(G.E.B/G.E.A))^3 + G.E.A * -(G.E.B/G.E.A) + G.E.B
-      = -(G.E.B/G.E.A)^3 := by
-  have hA := G.A_nonzero
-  field_simp
-  ring
-
-/-- `g(-B/A) ≠ 0`: the two points over `w = 0` have nonzero ordinate, so
-`w` vanishes simply at each — the input that makes the Eisenstein pattern
-mean total ramification in the cited argument. -/
-theorem g_neg_B_div_A_ne_zero :
-    (-(G.E.B/G.E.A))^3 + G.E.A * -(G.E.B/G.E.A) + G.E.B ≠ 0 := by
-  rw [G.eval_g_neg_B_div_A]
-  exact neg_ne_zero.mpr (pow_ne_zero 3
-    (div_ne_zero G.E.B_nonzero G.A_nonzero))
 
 /-! ## The monodromy square exclusions
 
