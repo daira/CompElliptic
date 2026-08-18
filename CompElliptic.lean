@@ -26,5 +26,6 @@ import CompElliptic.Hashing.SignedLift
 import CompElliptic.Hashing.SimplifiedSWU
 import CompElliptic.Hashing.TwoTermUniformity
 import CompElliptic.Hashing.WeilInstance
+import CompElliptic.Hashing.WeilSupport
 import CompElliptic.Hashing.WellDistributed
 import CompElliptic.TrustBoundary
