@@ -93,7 +93,6 @@ theorem cover_charSum (hsq : IsSquare (-1 : F))
     · exact Finset.sum_congr rfl fun u hu => by
         simp [zeroRepaired, (Finset.mem_erase.mp hu).1]
   rw [hneg, hfull, AddChar.map_zero_eq_one]
-  push_cast
   ring
 
 /-- **`WeilBounded` from the two cover bounds.** Weil's theorem at the two

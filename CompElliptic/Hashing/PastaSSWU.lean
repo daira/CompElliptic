@@ -10,6 +10,7 @@ import CompElliptic.Curves.PastaOrder
 import CompElliptic.Hashing.SimplifiedSWU
 import CompElliptic.Hashing.SignedLift
 import CompElliptic.Hashing.FibreBound
+import CompElliptic.Hashing.WeilInstance
 import Mathlib.Tactic.ReduceModChar
 
 /-!
@@ -183,6 +184,49 @@ theorem charSum_mapToCurve_sub_zeroRepaired (ψ : AddChar (SWPoint curve) ℂ) :
 theorem norm_charSum_mapToCurve_sub_zeroRepaired (ψ : AddChar (SWPoint curve) ℂ) :
     ‖∑ u, ψ (mapToCurve u) - ∑ u, ψ (zeroRepaired mapToCurve u)‖ ≤ 2 :=
   norm_charSum_sub_zeroRepaired mapToCurve ψ
+
+/-- `-A·B` for iso-Pallas is a quadratic non-residue, by Euler's criterion
+with the power evaluated by fast modular exponentiation. This puts the
+deployed instantiation in the branch of the boundary bookkeeping where all
+four extra cover points map to `𝒪`; it is the same fact as the emptiness of
+the `w = 0` fibre that `weilbound.sage` checks. -/
+theorem neg_AB_not_isSquare :
+    ¬ IsSquare (-(isoCurve.A * isoCurve.B) : PallasBaseField) := by
+  have h : (-(isoCurve.A * isoCurve.B) : PallasBaseField)
+      = 0x20ac6f47c8ff2fb79b416dfa18151f9498e4983c291cb11f8c10b822901f9e44 := by
+    decide
+  rw [h, ZMod.euler_criterion PALLAS_BASE_CARD (by decide :
+    (0x20ac6f47c8ff2fb79b416dfa18151f9498e4983c291cb11f8c10b822901f9e44
+      : PallasBaseField) ≠ 0)]
+  reduce_mod_char
+  decide
+
+/-- **The deployed Weil bound for the Pallas mapping.** Weil's theorem at
+the two branch covers of iso-Pallas —the `CharSumBounded` inputs at
+`100·#F`; see `Hashing/WeilInstance.lean`— gives
+`WeilBounded (zeroRepaired mapToCurve)` at the recorded constant `21/2`.
+The bound crosses the 3-isogeny because the isogeny is a bijective
+homomorphism on rational points, so characters pull back along it. -/
+theorem weilBounded_zeroRepaired_mapToCurve
+    (h1 : CharSumBounded sswu.modelPoints1 (sswu.cover1Map isSquare_neg_one)
+      (100 * (Fintype.card PallasBaseField : ℝ)))
+    (h2 : CharSumBounded sswu.modelPoints2 (sswu.cover2Map isSquare_neg_one)
+      (100 * (Fintype.card PallasBaseField : ℝ))) :
+    WeilBounded (zeroRepaired mapToCurve) (21/2) := by
+  have hbase := sswu.weilBounded_zeroRepaired isSquare_neg_one
+    iso_no_onCurve_y_zero neg_AB_not_isSquare isSignFunction_sgn0
+    (by rw [ZMod.card]; decide) h1 h2
+  have hcomp := hbase.comp (AddMonoidHom.mk' iso.map iso_map_add)
+    iso_map_bijective
+  have hfun : (fun u => (AddMonoidHom.mk' iso.map iso_map_add)
+      (zeroRepaired sswu.map u)) = zeroRepaired mapToCurve := by
+    funext u
+    rcases eq_or_ne u 0 with rfl | hu
+    · exact ((congrArg (AddMonoidHom.mk' iso.map iso_map_add)
+        (if_pos rfl)).trans (map_zero _)).trans (if_pos rfl).symm
+    · simp [zeroRepaired, hu, mapToCurve]
+  rw [← hfun]
+  exact hcomp
 
 /-- The deployed hash-to-curve construction for Pallas after `hash_to_field`:
 add on the iso-curve, apply the isogeny once. -/
@@ -370,6 +414,49 @@ theorem charSum_mapToCurve_sub_zeroRepaired (ψ : AddChar (SWPoint curve) ℂ) :
 theorem norm_charSum_mapToCurve_sub_zeroRepaired (ψ : AddChar (SWPoint curve) ℂ) :
     ‖∑ u, ψ (mapToCurve u) - ∑ u, ψ (zeroRepaired mapToCurve u)‖ ≤ 2 :=
   norm_charSum_sub_zeroRepaired mapToCurve ψ
+
+/-- `-A·B` for iso-Vesta is a quadratic non-residue, by Euler's criterion
+with the power evaluated by fast modular exponentiation. This puts the
+deployed instantiation in the branch of the boundary bookkeeping where all
+four extra cover points map to `𝒪`; it is the same fact as the emptiness of
+the `w = 0` fibre that `weilbound.sage` checks. -/
+theorem neg_AB_not_isSquare :
+    ¬ IsSquare (-(isoCurve.A * isoCurve.B) : VestaBaseField) := by
+  have h : (-(isoCurve.A * isoCurve.B) : VestaBaseField)
+      = 0x3722d4398ccc606a2c8a49902dbae3b72c59d02c5890bd61eb2e37c567e5258 := by
+    decide
+  rw [h, ZMod.euler_criterion PALLAS_SCALAR_CARD (by decide :
+    (0x3722d4398ccc606a2c8a49902dbae3b72c59d02c5890bd61eb2e37c567e5258
+      : VestaBaseField) ≠ 0)]
+  reduce_mod_char
+  decide
+
+/-- **The deployed Weil bound for the Vesta mapping.** Weil's theorem at
+the two branch covers of iso-Vesta —the `CharSumBounded` inputs at
+`100·#F`; see `Hashing/WeilInstance.lean`— gives
+`WeilBounded (zeroRepaired mapToCurve)` at the recorded constant `21/2`.
+The bound crosses the 3-isogeny because the isogeny is a bijective
+homomorphism on rational points, so characters pull back along it. -/
+theorem weilBounded_zeroRepaired_mapToCurve
+    (h1 : CharSumBounded sswu.modelPoints1 (sswu.cover1Map isSquare_neg_one)
+      (100 * (Fintype.card VestaBaseField : ℝ)))
+    (h2 : CharSumBounded sswu.modelPoints2 (sswu.cover2Map isSquare_neg_one)
+      (100 * (Fintype.card VestaBaseField : ℝ))) :
+    WeilBounded (zeroRepaired mapToCurve) (21/2) := by
+  have hbase := sswu.weilBounded_zeroRepaired isSquare_neg_one
+    iso_no_onCurve_y_zero neg_AB_not_isSquare isSignFunction_sgn0
+    (by rw [ZMod.card]; decide) h1 h2
+  have hcomp := hbase.comp (AddMonoidHom.mk' iso.map iso_map_add)
+    iso_map_bijective
+  have hfun : (fun u => (AddMonoidHom.mk' iso.map iso_map_add)
+      (zeroRepaired sswu.map u)) = zeroRepaired mapToCurve := by
+    funext u
+    rcases eq_or_ne u 0 with rfl | hu
+    · exact ((congrArg (AddMonoidHom.mk' iso.map iso_map_add)
+        (if_pos rfl)).trans (map_zero _)).trans (if_pos rfl).symm
+    · simp [zeroRepaired, hu, mapToCurve]
+  rw [← hfun]
+  exact hcomp
 
 /-- The deployed hash-to-curve construction for Vesta after `hash_to_field`:
 add on the iso-curve, apply the isogeny once. -/

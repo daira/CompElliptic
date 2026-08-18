@@ -140,4 +140,20 @@ theorem WeilBounded.deviation {f : F → G} {C : ℝ} (h : WeilBounded f C)
     ‖∑ Q, ((mult f Q : ℂ) - 1) * ψ Q‖^2 ≤ C^2 * (Fintype.card F : ℝ) := by
   rw [← charSum_eq hψ]; exact h ψ hψ
 
+omit [AddCommGroup F] [DecidableEq F] [Fintype G] [DecidableEq G] in
+/-- The Weil bound transfers along a bijective homomorphism of the target
+group. Characters of the new target pull back along the homomorphism;
+surjectivity keeps nontrivial characters nontrivial, and the pulled-back
+sum is the original one. This is what carries the bound across the deployed
+isogeny, which is bijective on rational points. -/
+theorem WeilBounded.comp {G' : Type*} [AddCommGroup G'] [Fintype G']
+    [DecidableEq G'] {f : F → G} {C : ℝ} (h : WeilBounded f C) (e : G →+ G')
+    (he : Function.Bijective e) : WeilBounded (fun u => e (f u)) C := by
+  intro ψ hψ
+  have hone : (1 : AddChar G' ℂ).compAddMonoidHom e = 1 := by
+    ext a; simp
+  have hne : ψ.compAddMonoidHom e ≠ 1 := fun hc =>
+    hψ (AddChar.compAddMonoidHom_injective_left e he.2 (hc.trans hone.symm))
+  simpa using h (ψ.compAddMonoidHom e) hne
+
 end CompElliptic.Hashing
