@@ -60,6 +60,20 @@ assert phi(0) == b^2
 assert 64*phi(-1/QQ(4)) == 4*a^3 + 27*b^2
 print("φ composition, discriminant, and critical values: OK")
 
+# The certificates transcribed in Hashing/WeilSupport.lean: φ's Bézout
+# cofactors, the re-expansion 64·Φ = Ψ(2·z·u² + 1), and the coprimality
+# decomposition of Φ against z·u² + 1:
+s3 = (6*a^3*b^2 + 36*b^4)*T + (4*a^6 + 36*a^3*b^2 + 63*b^4)
+t3 = (-2*a^3*b^2 - 12*b^4)*T^2 + (-2*a^6 - 18*a^3*b^2 - 33*b^4)*T \
+    + (-3*a^3*b^2 - 21*b^4)
+assert s3*phi + t3*phi.derivative() == a^3*b^2*(4*a^3 + 27*b^2)
+Psi = b^2*T^6 + (4*a^3 + 9*b^2)*T^4 + (27*b^2 - 8*a^3)*T^2 \
+    + (4*a^3 + 27*b^2)
+assert 64*Phi == Psi(2*z*u^2 + 1)
+assert Psi(0) == 4*a^3 + 27*b^2
+assert Phi == ta*(b^2*ta^2 + (3*b^2 + a^3)*ta + 3*b^2) + b^2
+print("WeilSupport certificates: OK")
+
 # g(−b/a) = −(b/a)³, so its square class is that of −a·b:
 assert g(-b/a) == -(b/a)^3
 print("Eisenstein-fibre ordinate identity: OK")

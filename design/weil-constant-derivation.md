@@ -19,9 +19,15 @@ and Theorem 3, and the standard point bookkeeping for hyperelliptic
 models [Galbraith, ch. 10]. The symbolic identities it relies on are
 checked by `scripts/weil-derivation-checks.sage`; the per-instance
 facts (the empty w = 0 fibre, the Frobenius statistics, the
-square-class witnesses) by `weilbound.sage`. It is not machine-checked;
-formalizing the calculation in Lean is what remains of #28 — Weil's
-theorem itself stays a cited input.
+square-class witnesses) by `weilbound.sage`. The calculation from the
+per-cover Weil inputs to the deployed constants is machine-checked
+(CompElliptic's `Hashing/BranchCovers.lean`, `Hashing/WeilInstance.lean`,
+and `Hashing/PastaSSWU.lean`), and so are the checkable inputs of the two
+cited steps (`Hashing/WeilSupport.lean`, whose facts are referenced at
+their points of use below; CI checks the correspondence in both
+directions). The cited steps themselves
+and Weil's theorem stay on paper — the vocabulary they need is tracked
+at #30.
 
 ## Background
 
@@ -82,9 +88,16 @@ as above.
 - **Eisenstein criterion at a place.** The classical irreducibility
   test transplants to function fields with "prime" replaced by "place
   of the base curve": lower coefficients vanishing at the place, the
-  constant term exactly once, leading coefficient a unit. Its
-  conclusion is what we use: the polynomial is irreducible there and
-  the cover is *totally ramified* over that place. [Stichtenoth, ch. 3]
+  constant term exactly once, leading coefficient a unit. The
+  transplant is an instantiation rather than a new theorem — the
+  criterion is a statement about any discrete valuation, whose
+  hypotheses force the Newton polygon to a single segment of slope
+  −1/n, so every root has valuation 1/n. Its conclusion is what we
+  use: the polynomial is irreducible there and the cover is *totally
+  ramified* over that place. [Stichtenoth, ch. 3] [Newton polygons:
+  J. S. Milne, *Algebraic Number Theory*, course notes, ch. 7,
+  Prop. 7.44 (stated for characteristic zero, but the argument is
+  characteristic-free) — free at <https://www.jmilne.org/math/CourseNotes/ant.html>]
 
 Throughout: q ≡ 1 (mod 4) is the base field size; E′ : y² = g(x) with
 g(x) = x³ + A·x + B, A·B ≠ 0, and #E′(F_q) an odd prime; Z is a
@@ -130,12 +143,14 @@ y² = g(x_j(u)). Direct computation (verified symbolically) factors both:
     g(x₁(u)) = −B·Φ(u) / (A³·ta³),
     g(x₂(u)) = −B·Φ(u) / (A³·(Z·u²+1)³),
 
-with the **shared degree-12 core**
+with the **shared degree-12 core** (`phiPoly`, matching the pointwise
+core by `eval_phiPoly`)
 
     Φ(u) = B²·(ta + 1)³ + A³·ta².
 
 Using ta = Z·u²·(Z·u²+1) and clearing squares, the two curves have
-hyperelliptic models
+hyperelliptic models (`model1Poly`, `model2Poly`, evaluating to the
+pointwise `model1`, `model2` by `eval_model1Poly`, `eval_model2Poly`)
 
     C₁ :  W² = d₁·(Z·u²+1)·Φ(u),     d₁ = −A³·B·Z³ ≡ −A·B·Z (mod squares),
     C₂ :  W² = d₂·(Z·u²+1)·Φ(u),     d₂ = −A³·B    ≡ −A·B   (mod squares).
@@ -145,7 +160,9 @@ geometric curve, two F_q-forms; the twist is the branch dichotomy
 itself.
 
 **Genus.** Φ(0) = B² and Φ = B² at t = −1, so Φ is coprime to u and to
-Z·u²+1; its degree is exactly 12 (leading coefficient B²·Z⁶ ≠ 0). The
+Z·u²+1 (`phiPoly_coeff_zero`, `phiPoly_isCoprime_tPoly_add_one`, with the
+quadratic factor separable, `tPoly_add_one_separable`); its degree is
+exactly 12 (leading coefficient B²·Z⁶ ≠ 0; `phiPoly_natDegree`). The
 odd-multiplicity part of the right-hand side is therefore (Z·u²+1)·Φ,
 of degree 14 — provided Φ is squarefree, which holds unconditionally:
 
@@ -153,18 +170,32 @@ of degree 14 — provided Φ is squarefree, which holds unconditionally:
 repeated root over the algebraic closure.
 
 *Proof.* Φ is a composition: Φ(u) = φ(ta(u)) with the cubic
-φ(T) = B²·(T+1)³ + A³·T² = B²·T³ + (A³+3·B²)·T² + 3·B²·T + B². A
-repeated root u₀ of Φ has Φ(u₀) = 0 and
+φ(T) = B²·(T+1)³ + A³·T² = B²·T³ + (A³+3·B²)·T² + 3·B²·T + B²
+(`phiCubic`, `phiPoly`, `phiPoly_eq_comp`; the derivative
+`phiCubic_derivative`). A repeated root u₀ of Φ has Φ(u₀) = 0 and
 Φ′(u₀) = φ′(ta(u₀))·ta′(u₀) = 0. If φ′(ta(u₀)) = 0, then ta(u₀) is a
 repeated root of φ; but
 
     disc(φ) = −A⁶·B²·(4·A³ + 27·B²) ≠ 0,
 
 since A·B ≠ 0 and 4·A³ + 27·B² ≠ 0 is exactly the ellipticity of E′.
-Otherwise ta′(u₀) = 2·Z·u₀·(2·Z·u₀² + 1) = 0 (char ≠ 2), so either
-u₀ = 0, where φ(ta(0)) = φ(0) = B² ≠ 0, or Z·u₀² = −1/2, where
-ta(u₀) = −1/4 and 64·φ(−1/4) = 4·A³ + 27·B² ≠ 0 — again ellipticity.
-Either way Φ(u₀) ≠ 0, a contradiction. ∎
+(The formal counterpart avoids the discriminant: `phiCubic_separable`
+witnesses coprimality of φ and φ′ directly, by a Bézout identity with
+constant A³·B²·(4·A³ + 27·B²), through the generic
+`isCoprime_of_bezout`.) Otherwise
+ta′(u₀) = 2·Z·u₀·(2·Z·u₀² + 1) = 0 (char ≠ 2; `taPoly_derivative`), so
+either u₀ = 0, where φ(ta(0)) = φ(0) = B² ≠ 0 (`phiPoly_coeff_zero`,
+via `isCoprime_X_of_coeff_zero`), or Z·u₀² = −1/2, where ta(u₀) = −1/4
+and 64·φ(−1/4) = 4·A³ + 27·B² ≠ 0 — again ellipticity (formally: the
+re-expansion 64·Φ = Ψ(2·Z·u² + 1), `psiPoly`, `phiPoly_64_eq`, has
+constant term the ellipticity, `psiPoly_coeff_zero`, giving
+`phiPoly_isCoprime_snd`). Either way Φ(u₀) ≠ 0, a contradiction. ∎
+
+The lemma is `phiPoly_squarefree` in `Hashing/WeilSupport.lean`
+(separability `phiPoly_separable`, assembled with the generic
+`isCoprime_C_of_ne_zero`), and the models inherit it:
+`model1Poly_squarefree` and `model2Poly_squarefree`, squarefree of
+degree exactly 14 (`model1Poly_natDegree`, `model2Poly_natDegree`).
 
 The discriminant factorization and both critical values are checked
 symbolically in `scripts/weil-derivation-checks.sage`. So each C_j is
@@ -183,19 +214,26 @@ rules every intermediate out at a stroke, since ramification indices
 multiply along a tower.
 
 Consider the fibre w = 0 of E′, i.e. the two geometric points
-(−B/A, ±y₀) with y₀² = g(−B/A) = −(B/A)³ ≠ 0 (B ≠ 0). Since y₀ ≠ 0, the
+(−B/A, ±y₀) with y₀² = g(−B/A) = −(B/A)³ ≠ 0 (B ≠ 0;
+`eval_g_neg_B_div_A`, `g_neg_B_div_A_ne_zero`). Since y₀ ≠ 0, the
 function w vanishes simply at each, so it is a uniformizer there.
 
 - P₂ = B·Z²·u⁴ + Z·w·u² + w is **Eisenstein** at each such point: lower
   coefficients divisible by w, constant term w exactly once, leading
-  coefficient B·Z² a unit. So C₂ → E′ is totally ramified over w = 0.
+  coefficient B·Z² a unit (`p2Poly`, with the coefficient pattern
+  `p2Poly_coeff`, degree `p2Poly_natDegree`, and the criterion
+  `p2Poly_isEisensteinAt`). So C₂ → E′ is totally ramified over w = 0.
 - P₁ = Z²·w·u⁴ + Z·w·u² + B is Eisenstein *reversed*: its reciprocal
-  polynomial B·u⁴ + Z·w·u² + Z²·w is Eisenstein at the same points, so
-  C₁ → E′ is totally ramified over w = 0 with the four roots merging at
-  u = ∞.
+  polynomial B·u⁴ + Z·w·u² + Z²·w is Eisenstein at the same points
+  (`p1RecipPoly`, `p1RecipPoly_coeff`, `p1RecipPoly_natDegree`,
+  `p1RecipPoly_isEisensteinAt`, with `not_X_sq_dvd` for the (w)²
+  condition), so C₁ → E′ is totally ramified over w = 0 with the four
+  roots merging at u = ∞.
 
 Hence neither cover factors through a nontrivial unramified subcover,
-with no condition beyond A·B ≠ 0.
+with no condition beyond A·B ≠ 0. The coefficient patterns and the
+fibre ordinate above are the formalized inputs; the step from them to
+total ramification is the cited part.
 
 Independently, the biquadratic shape puts the monodromy inside D₄, and
 the biquadratic Galois classification pins it: the group drops to V₄
@@ -301,3 +339,4 @@ For `WeilBounded` (squared form): C = 21/2 satisfies
 (10·√q + 1)² ≤ C²·q at the deployed sizes with margin ≈ 2¹²⁷. The
 downstream regularity distance ε ≈ C²·√(#G)/#F comes to about 2⁻¹²⁰,
 improving the ≈ 2⁻¹¹⁶ previously quoted from the FFSTV-sized constant.
+
