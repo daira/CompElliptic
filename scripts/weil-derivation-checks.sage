@@ -98,3 +98,32 @@ assert n1.leading_coefficient() / e1.leading_coefficient() == -b/a
 assert n2(0) / e2(0) == -b/a
 assert n2.degree() > e2.degree()
 print("boundary images of x_j: OK")
+
+# Monodromy square-exclusion certificates (design doc §3, WeilSupport):
+# g's separability, the coprimality of the V₄/C₄ linear factors with g,
+# and the Kappe–Warren reductions to the square classes b·w and
+# b·(w − 4·b) = b·(a·x − 3·b).
+Rx = PolynomialRing(K, 'x')
+X = Rx.gen()
+gx = X^3 + a*X + b
+gd = gx.derivative()
+assert (27*b - 18*a*X)*gx + (6*a*X^2 - 9*b*X + 4*a^2)*gd \
+    == 4*a^3 + 27*b^2
+assert (a^2*X^2 - a*b*X + (b^2 + a^3))*(a*X + b) - a^3*gx == b^3
+assert a^3*gx - (a^2*X^2 + 3*a*b*X + (9*b^2 + a^3))*(a*X - 3*b) \
+    == b*(4*a^3 + 27*b^2)
+assert gx(3*b/a) == b*(4*a^3 + 27*b^2)/a^3
+print("monodromy Bézout certificates: OK")
+
+# The Kappe–Warren square-class reductions. Writing each quartic monically
+# as u⁴ + p·u² + q over F_q(E′): V₄ needs q a square, C₄ needs q·(p² − 4·q)
+# a square. Both quartics reduce both tests to the same two square classes:
+FW = PolynomialRing(K, 'w').fraction_field()
+w = FW.gen()
+p1q, q1q = 1/FW(z), b/(z^2*w)
+p2q, q2q = w/(b*z), w/(b*z^2)
+assert q1q * (b*w) == (b/z)^2
+assert q2q * (b*w) == (w/z)^2
+assert q1q*(p1q^2 - 4*q1q) * (b*(w - 4*b)) == (b*(w - 4*b)/(z^2*w))^2
+assert q2q*(p2q^2 - 4*q2q) * (b*(w - 4*b)) == (w*(w - 4*b)/(b*z^2))^2
+print("Kappe–Warren square-class reductions: OK")

@@ -5,7 +5,10 @@ as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
 import CompElliptic.Hashing.BranchCovers
+import Mathlib.FieldTheory.RatFunc.Basic
 import Mathlib.FieldTheory.Separable
+import Mathlib.RingTheory.AdjoinRoot
+import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
 
 /-!
@@ -38,6 +41,13 @@ The ramification argument (§3) consumes:
   criterion (`Polynomial.IsEisensteinAt`) at the ideal `(w)`;
 * `eval_g_neg_B_div_A` — `g(-B/A) = -(B/A)³ ≠ 0` (this is why `w` is a
   uniformizer at both points over `w = 0`).
+
+The monodromy cross-check (§3) consumes `v4TestPoly_not_isSquare` and
+`c4TestPoly_not_isSquare`: the biquadratic V₄/C₄ square classes
+`B·(A·x + B)` and `B·(A·x - 3·B)` are not squares in the function
+field. The field is presented via `gPoly` as the quadratic algebra
+`K[Y]/(Y² - ĝ)` over `K = F_q(x)`. The section header below describes
+the decomposition machinery.
 
 The Eisenstein criterion is that the leading coefficient lies outside the
 ideal, every lower coefficient lies inside it, and the constant coefficient
@@ -474,6 +484,295 @@ theorem g_neg_B_div_A_ne_zero :
   rw [G.eval_g_neg_B_div_A]
   exact neg_ne_zero.mpr (pow_ne_zero 3
     (div_ne_zero G.E.B_nonzero G.A_nonzero))
+
+/-! ## The monodromy square exclusions
+
+Design doc §3 pins the monodromy group at full `D₄`: the biquadratic
+V₄/C₄ square-class tests reduce to `B·(A·x + B)` and `B·(A·x - 3·B)`
+being squares in `F_q(E′)`, and both fail. The paper argument is
+divisor parity. Its checkable core is elementary, because `F_q(E′)` is
+the quadratic algebra `K[Y]/(Y² - ĝ)` over `K = F_q(x)`:
+
+* a square from the base decomposes there — `a = p²` or `a = ĝ·p²` in
+  `K` (`sq_or_mul_sq_of_isSquare_adjoinRoot`);
+* a rational square root of a polynomial is a polynomial
+  (`exists_sq_eq_of_ratFunc_sq` — `F[X]` is integrally closed);
+* a squarefree polynomial of positive degree is not a polynomial square
+  (`not_isSquare_ratFunc_of_squarefree`) — the affine shadow of the
+  divisor parity.
+
+The Kappe–Warren reduction to the two square classes stays cited; it is
+checked symbolically in `scripts/weil-derivation-checks.sage`, along
+with the Bézout certificates used below. -/
+
+/-- A rational square root of a polynomial is a polynomial: `F[X]` is
+integrally closed in `F(X)`, and an element whose square is a polynomial
+is integral over `F[X]`. -/
+theorem _root_.CompElliptic.Hashing.exists_sq_eq_of_ratFunc_sq
+    {F : Type*} [Field F] {n : Polynomial F} {p : RatFunc F}
+    (h : p^2 = algebraMap (Polynomial F) (RatFunc F) n) :
+    ∃ f : Polynomial F, f^2 = n := by
+  have hint : IsIntegral (Polynomial F) p :=
+    ⟨X^2 - C n, monic_X_pow_sub_C n (by norm_num), by
+      simp only [eval₂_sub, eval₂_pow, eval₂_X, eval₂_C]
+      rw [h, sub_self]⟩
+  obtain ⟨f, hf⟩ := IsIntegrallyClosed.isIntegral_iff.mp hint
+  refine ⟨f, IsFractionRing.injective (Polynomial F) (RatFunc F) ?_⟩
+  rw [map_pow, hf, h]
+
+/-- A squarefree polynomial of positive degree is not a square in the
+rational-function field: a rational square root would be a polynomial
+(`exists_sq_eq_of_ratFunc_sq`). Its square divides the squarefree
+target, so it is a unit and the target is constant. -/
+theorem _root_.CompElliptic.Hashing.not_isSquare_ratFunc_of_squarefree
+    {F : Type*} [Field F] {n : Polynomial F} (hsf : Squarefree n)
+    (hdeg : n.natDegree ≠ 0) :
+    ¬ IsSquare (algebraMap (Polynomial F) (RatFunc F) n) := by
+  rintro ⟨p, hp⟩
+  obtain ⟨f, hf⟩ := exists_sq_eq_of_ratFunc_sq (p := p)
+    (by rw [sq]; exact hp.symm)
+  have hunit : IsUnit f := hsf f ⟨1, by rw [← hf]; ring⟩
+  refine hdeg ?_
+  rw [← hf, natDegree_pow, natDegree_eq_zero_of_isUnit hunit, mul_zero]
+
+/-- **Squares from the base of a quadratic extension decompose**. Write
+a square root of `a` in `K[Y]/(Y² - g)` as `p₀ + p₁·Y`; its square is
+`(p₀² + g·p₁²) + 2·p₀·p₁·Y`. So away from characteristic 2, either
+`a = p₀²` or `a = g·p₁²` in `K`. -/
+theorem _root_.CompElliptic.Hashing.sq_or_mul_sq_of_isSquare_adjoinRoot
+    {K : Type*} [Field K] (h2 : (2 : K) ≠ 0) {g a : K}
+    (h : IsSquare (AdjoinRoot.of (X^2 - C g) a)) :
+    (∃ p : K, a = p^2) ∨ ∃ p : K, a = g * p^2 := by
+  have hmonic : (X^2 - C g).Monic := monic_X_pow_sub_C g (by norm_num)
+  have hdeg2 : (X^2 - C g).degree = 2 := degree_X_pow_sub_C (by norm_num) g
+  -- Representations `of x + of y · root` are unique: a difference lifts
+  -- to a polynomial of degree at most 1 divisible by the monic quadratic.
+  have huniq : ∀ x y x' y' : K,
+      AdjoinRoot.of (X^2 - C g) x
+          + AdjoinRoot.of (X^2 - C g) y * AdjoinRoot.root (X^2 - C g)
+        = AdjoinRoot.of (X^2 - C g) x'
+          + AdjoinRoot.of (X^2 - C g) y' * AdjoinRoot.root (X^2 - C g) →
+      x = x' ∧ y = y' := by
+    intro x y x' y' hxy
+    have hmk : AdjoinRoot.mk (X^2 - C g)
+        (C (x - x') + C (y - y') * X) = 0 := by
+      rw [map_add, map_mul, AdjoinRoot.mk_C, AdjoinRoot.mk_C,
+        AdjoinRoot.mk_X, map_sub, map_sub]
+      linear_combination hxy
+    have hzero : (C (x - x') + C (y - y') * X : Polynomial K) = 0 := by
+      refine eq_zero_of_dvd_of_degree_lt (AdjoinRoot.mk_eq_zero.mp hmk) ?_
+      rw [hdeg2, add_comm]
+      exact lt_of_le_of_lt degree_linear_le
+        (by exact_mod_cast (by norm_num : (1 : ℕ) < 2))
+    constructor
+    · have h0 : x - x' = 0 := by
+        simpa using congrArg (fun p => Polynomial.coeff p 0) hzero
+      exact sub_eq_zero.mp h0
+    · have h1 : y - y' = 0 := by
+        simpa using congrArg (fun p => Polynomial.coeff p 1) hzero
+      exact sub_eq_zero.mp h1
+  obtain ⟨z, hz⟩ := h
+  obtain ⟨r, rfl⟩ := AdjoinRoot.mk_surjective z
+  -- Reduce the representative modulo the monic quadratic.
+  have hzr : AdjoinRoot.mk (X^2 - C g) r
+      = AdjoinRoot.mk (X^2 - C g) (r %ₘ (X^2 - C g)) := by
+    conv_lhs => rw [← modByMonic_add_div r (X^2 - C g)]
+    rw [map_add, map_mul, AdjoinRoot.mk_self, zero_mul, add_zero]
+  set p0 := (r %ₘ (X^2 - C g)).coeff 0 with hp0
+  set p1 := (r %ₘ (X^2 - C g)).coeff 1 with hp1
+  have hrep : r %ₘ (X^2 - C g) = C p1 * X + C p0 := by
+    rcases eq_or_ne (r %ₘ (X^2 - C g)) 0 with h0 | h0
+    · rw [hp0, hp1, h0]
+      simp
+    · refine eq_X_add_C_of_degree_le_one ?_
+      have hlt := degree_modByMonic_lt r hmonic
+      rw [hdeg2, degree_eq_natDegree h0] at hlt
+      rw [degree_eq_natDegree h0]
+      exact_mod_cast Nat.lt_succ_iff.mp (by exact_mod_cast hlt)
+  have hroot : (AdjoinRoot.root (X^2 - C g))^2
+      = AdjoinRoot.of (X^2 - C g) g := by
+    have h0 := AdjoinRoot.mk_self (f := X^2 - C g)
+    rw [map_sub, map_pow, AdjoinRoot.mk_X, AdjoinRoot.mk_C,
+      sub_eq_zero] at h0
+    exact h0
+  -- Expand `of a = (of p1 · root + of p0)²` over the basis `{1, root}`.
+  have hexpand : AdjoinRoot.of (X^2 - C g) a
+      = AdjoinRoot.of (X^2 - C g) (p0^2 + g * p1^2)
+        + AdjoinRoot.of (X^2 - C g) (2 * p0 * p1)
+          * AdjoinRoot.root (X^2 - C g) := by
+    rw [hz, hzr, hrep]
+    simp only [map_add, map_mul, map_pow, map_ofNat, AdjoinRoot.mk_C,
+      AdjoinRoot.mk_X]
+    linear_combination (AdjoinRoot.of (X^2 - C g) p1)^2 * hroot
+  obtain ⟨ha, hb⟩ := huniq a 0 (p0^2 + g * p1^2) (2 * p0 * p1) (by
+    rw [map_zero, zero_mul, add_zero]
+    exact hexpand)
+  have hzero : p0 = 0 ∨ p1 = 0 := by
+    rcases mul_eq_zero.mp hb.symm with h' | h'
+    · rcases mul_eq_zero.mp h' with h'' | h''
+      · exact absurd h'' h2
+      · exact Or.inl h''
+    · exact Or.inr h'
+  rcases hzero with h' | h'
+  · exact Or.inr ⟨p1, by rw [ha, h']; ring⟩
+  · exact Or.inl ⟨p0, by rw [ha, h']; ring⟩
+
+/-- The curve cubic `g = X³ + A·X + B` as a polynomial over `F`.
+Adjoining a square root of its image `ĝ` in `K = F_q(x)` presents the
+function field `F_q(E′)`. -/
+noncomputable def gPoly : Polynomial F := X^3 + C G.E.A * X + C G.E.B
+
+/-- `g` is separable, by the Bézout certificate
+`(27·B - 18·A·X)·g + (6·A·X² - 9·B·X + 4·A²)·g′ = 4·A³ + 27·B²`
+(checked in `scripts/weil-derivation-checks.sage`): the constant is
+nonzero exactly by ellipticity. -/
+theorem gPoly_separable (hdisc : 4*G.E.A^3 + 27*G.E.B^2 ≠ 0) :
+    G.gPoly.Separable := by
+  have hd : G.gPoly.derivative = 3 * X^2 + C G.E.A := by
+    simp only [gPoly, derivative_add, derivative_mul, derivative_pow,
+      derivative_C, derivative_X, Nat.cast_ofNat, map_ofNat]
+    ring
+  rw [Polynomial.separable_def, hd]
+  refine isCoprime_of_bezout
+    (u := 27 * C G.E.B - 18 * C G.E.A * X)
+    (v := 6 * C G.E.A * X^2 - 9 * C G.E.B * X + 4 * (C G.E.A)^2)
+    (c := 4*G.E.A^3 + 27*G.E.B^2) hdisc ?_
+  have hC : (C (4*G.E.A^3 + 27*G.E.B^2) : Polynomial F)
+      = 4*(C G.E.A)^3 + 27*(C G.E.B)^2 := by
+    simp only [map_add, map_mul, map_pow, map_ofNat]
+  rw [gPoly, hC]
+  ring
+
+/-- `ĝ` is not a square in `F_q(x)`: `g` is squarefree of odd degree. So
+`Y² - ĝ` is irreducible and the quadratic algebra below is the function
+field `F_q(E′)` itself. (The exclusions need only the ring structure, so
+that last step stays informal.) -/
+theorem gPoly_not_isSquare_ratFunc
+    (hdisc : 4*G.E.A^3 + 27*G.E.B^2 ≠ 0) :
+    ¬ IsSquare (algebraMap (Polynomial F) (RatFunc F) G.gPoly) := by
+  refine not_isSquare_ratFunc_of_squarefree
+    (G.gPoly_separable hdisc).squarefree ?_
+  have h3 : G.gPoly.natDegree = 3 := by unfold gPoly; compute_degree!
+  omega
+
+/-- **The common core of the two exclusions**: for any linear `l`
+coprime to `g`, the class `B·l` is not a square in the quadratic
+algebra `K[Y]/(Y² - ĝ)`. A square would decompose as `p²` or `ĝ·p²`
+over `K` (`sq_or_mul_sq_of_isSquare_adjoinRoot`), and each case
+descends to a polynomial square (`exists_sq_eq_of_ratFunc_sq`). That
+contradicts the squarefreeness of `B·l` (degree 1) and of `B·l·g`
+(degree 4) respectively, by `not_isSquare_ratFunc_of_squarefree`. -/
+theorem not_isSquare_adjoinRoot_of_linear
+    (hdisc : 4*G.E.A^3 + 27*G.E.B^2 ≠ 0) {l : Polynomial F}
+    (hdeg : l.natDegree = 1) (hcop : IsCoprime l G.gPoly) :
+    ¬ IsSquare (AdjoinRoot.of
+      (X^2 - C (algebraMap (Polynomial F) (RatFunc F) G.gPoly))
+      (algebraMap (Polynomial F) (RatFunc F) (C G.E.B * l))) := by
+  intro hsq
+  -- Characteristic ≠ 2 (`Z` is a nonsquare) transfers to `F_q(x)`.
+  have h2F : (2 : F) ≠ 0 := Ring.two_ne_zero G.ringChar_ne_two
+  have h2P : (2 : Polynomial F) ≠ 0 := fun h => h2F (by
+    simpa using congrArg (fun p => Polynomial.coeff p 0) h)
+  have h2 : (2 : RatFunc F) ≠ 0 := fun h => h2P
+    (IsFractionRing.injective (Polynomial F) (RatFunc F)
+      (by rw [map_ofNat, map_zero]; exact h))
+  -- The linear factor and both products are squarefree, with known
+  -- degrees.
+  have hl0 : l ≠ 0 := fun h => by simp [h] at hdeg
+  have hl1 : l.coeff 1 ≠ 0 := by
+    have hlc := leadingCoeff_ne_zero.mpr hl0
+    rwa [Polynomial.leadingCoeff, hdeg] at hlc
+  have hlsep : l.Separable := by
+    have hd : l.derivative = C (l.coeff 1) := by
+      conv_lhs => rw [eq_X_add_C_of_natDegree_le_one hdeg.le]
+      simp only [derivative_add, derivative_mul, derivative_C,
+        derivative_X, zero_mul, mul_one, zero_add, add_zero]
+    rw [Polynomial.separable_def, hd]
+    exact isCoprime_C_of_ne_zero hl1
+  have hτsep : (C G.E.B * l).Separable :=
+    Polynomial.Separable.mul ((separable_C _).mpr G.E.B_nonzero.isUnit)
+      hlsep ((isCoprime_C_of_ne_zero G.E.B_nonzero).symm)
+  have hτdeg : (C G.E.B * l).natDegree = 1 := by
+    rw [natDegree_mul (C_ne_zero.mpr G.E.B_nonzero) hl0, natDegree_C,
+      zero_add, hdeg]
+  have hgm : G.gPoly.Monic := by
+    unfold gPoly
+    rw [add_assoc]
+    exact monic_X_pow_add (lt_of_le_of_lt degree_linear_le
+      (by exact_mod_cast (by norm_num : (1 : ℕ) < 3)))
+  have hg3 : G.gPoly.natDegree = 3 := by unfold gPoly; compute_degree!
+  have hτgsf : Squarefree (C G.E.B * l * G.gPoly) :=
+    (Polynomial.Separable.mul hτsep (G.gPoly_separable hdisc)
+      (IsCoprime.mul_left ((isCoprime_C_of_ne_zero G.E.B_nonzero).symm)
+        hcop)).squarefree
+  -- Decompose the square over the base field and refute both cases.
+  rcases sq_or_mul_sq_of_isSquare_adjoinRoot h2 hsq with ⟨p, hp⟩ | ⟨p, hp⟩
+  · exact not_isSquare_ratFunc_of_squarefree hτsep.squarefree
+      (by rw [hτdeg]; norm_num) ⟨p, by rw [hp, sq]⟩
+  · refine not_isSquare_ratFunc_of_squarefree hτgsf
+      (by rw [natDegree_mul (mul_ne_zero (C_ne_zero.mpr G.E.B_nonzero) hl0)
+        hgm.ne_zero, hτdeg, hg3]; norm_num)
+      ⟨algebraMap (Polynomial F) (RatFunc F) G.gPoly * p, ?_⟩
+    rw [map_mul, hp]
+    ring
+
+/-- The V₄-test square class of the branch quartics: `B·w = B·(A·x + B)`. -/
+noncomputable def v4TestPoly : Polynomial F :=
+  C G.E.B * (C G.E.A * X + C G.E.B)
+
+/-- The C₄-test square class of the branch quartics: `B·(A·x - 3·B)`. -/
+noncomputable def c4TestPoly : Polynomial F :=
+  C G.E.B * (C G.E.A * X - 3 * C G.E.B)
+
+/-- **The V₄ exclusion** (design doc §3): `B·(A·x + B)` is not a square
+in the function field. The coprimality certificate is
+`(A²·X² - A·B·X + (B² + A³))·(A·X + B) - A³·g = B³` (checked in
+`scripts/weil-derivation-checks.sage`). -/
+theorem v4TestPoly_not_isSquare (hdisc : 4*G.E.A^3 + 27*G.E.B^2 ≠ 0) :
+    ¬ IsSquare (AdjoinRoot.of
+      (X^2 - C (algebraMap (Polynomial F) (RatFunc F) G.gPoly))
+      (algebraMap (Polynomial F) (RatFunc F) G.v4TestPoly)) := by
+  have hdeg : (C G.E.A * X + C G.E.B).natDegree = 1 := by
+    compute_degree!
+    all_goals exact G.A_nonzero
+  have hcop : IsCoprime (C G.E.A * X + C G.E.B) G.gPoly := by
+    refine isCoprime_of_bezout
+      (u := (C G.E.A)^2 * X^2 - C G.E.A * C G.E.B * X
+        + ((C G.E.B)^2 + (C G.E.A)^3))
+      (v := -(C G.E.A)^3)
+      (c := G.E.B^3) (pow_ne_zero 3 G.E.B_nonzero) ?_
+    have hC : (C (G.E.B^3) : Polynomial F) = (C G.E.B)^3 := map_pow _ _ _
+    rw [gPoly, hC]
+    ring
+  unfold v4TestPoly
+  exact G.not_isSquare_adjoinRoot_of_linear hdisc hdeg hcop
+
+/-- **The C₄ exclusion** (design doc §3): `B·(A·x - 3·B)` is not a square
+in the function field. The coprimality certificate is
+`A³·g - (A²·X² + 3·A·B·X + (9·B² + A³))·(A·X - 3·B) = B·(4·A³ + 27·B²)`
+(checked in `scripts/weil-derivation-checks.sage`); its constant is again
+a product of the standing nonzero quantities. -/
+theorem c4TestPoly_not_isSquare (hdisc : 4*G.E.A^3 + 27*G.E.B^2 ≠ 0) :
+    ¬ IsSquare (AdjoinRoot.of
+      (X^2 - C (algebraMap (Polynomial F) (RatFunc F) G.gPoly))
+      (algebraMap (Polynomial F) (RatFunc F) G.c4TestPoly)) := by
+  have hdeg : (C G.E.A * X - 3 * C G.E.B).natDegree = 1 := by
+    compute_degree!
+    all_goals exact G.A_nonzero
+  have hcop : IsCoprime (C G.E.A * X - 3 * C G.E.B) G.gPoly := by
+    refine isCoprime_of_bezout
+      (u := -((C G.E.A)^2 * X^2 + 3 * C G.E.A * C G.E.B * X
+        + (9*(C G.E.B)^2 + (C G.E.A)^3)))
+      (v := (C G.E.A)^3)
+      (c := G.E.B * (4*G.E.A^3 + 27*G.E.B^2))
+      (mul_ne_zero G.E.B_nonzero hdisc) ?_
+    have hC : (C (G.E.B * (4*G.E.A^3 + 27*G.E.B^2)) : Polynomial F)
+        = C G.E.B * (4*(C G.E.A)^3 + 27*(C G.E.B)^2) := by
+      simp only [map_mul, map_add, map_pow, map_ofNat]
+    rw [gPoly, hC]
+    ring
+  unfold c4TestPoly
+  exact G.not_isSquare_adjoinRoot_of_linear hdisc hdeg hcop
 
 end SSWUParams
 

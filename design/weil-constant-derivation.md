@@ -236,17 +236,43 @@ with no condition beyond A·B ≠ 0. The coefficient patterns and the
 fibre ordinate above are the formalized inputs; the step from them to
 total ramification is the cited part.
 
-Independently, the biquadratic shape puts the monodromy inside D₄, and
-the biquadratic Galois classification pins it: the group drops to V₄
-(three intermediate quadratics) only if the normalized constant term is
-a square in F_q(E′), and to C₄ only if q·(p² − 4q) is. These reduce to
-B·(A·x + B) and B·(A·x − 3·B) being squares in F_q(E′), which fail by
-divisor parity (each has two simple zeros and a double pole, so its
-divisor is not twice a divisor). So the monodromy is full D₄ and the
-v = u² subcover is the unique intermediate — consistent with the
-script's Frobenius statistics (5000 samples per branch match the D₄
-cycle-type proportions ⅛, ¼, ⅜, ¼ to within ±0.006) and its nonsquare
-specialization witnesses.
+Independently, the biquadratic shape puts the monodromy inside D₄,
+and the biquadratic Galois classification pins it. The group drops to
+V₄ (three intermediate quadratics) only if the normalized constant
+term is a square in F_q(E′), and to C₄ only if q·(p² − 4q) is. For
+both quartics, these reduce to the same two classes: B·(A·x + B) and
+B·(A·x − 3·B) being squares in F_q(E′). (The reductions are checked
+symbolically in `scripts/weil-derivation-checks.sage`.) Both fail by
+divisor parity: each class has two simple zeros and a double pole, so
+its divisor is not twice a divisor. So the monodromy is full D₄, and
+the v = u² subcover is the unique intermediate. This is consistent
+with the script's Frobenius statistics (5000 samples per branch match
+the D₄ cycle-type proportions ⅛, ¼, ⅜, ¼ to within ±0.006) and with
+its nonsquare specialization witnesses.
+
+The two failures are formalized as `v4TestPoly_not_isSquare` and
+`c4TestPoly_not_isSquare` (the classes are `v4TestPoly`, `c4TestPoly`),
+with no vocabulary beyond polynomials. F_q(E′) is the quadratic algebra
+K[Y]/(Y² − ĝ) over K = F_q(x), for ĝ the image of the curve cubic
+`gPoly`. The algebra is the field itself, because ĝ is not a square in
+K (`gPoly_not_isSquare_ratFunc`, via `gPoly_separable`). The parity
+argument's affine form rests on three facts:
+
+- a square from the base decomposes as p² or ĝ·p²
+  (`sq_or_mul_sq_of_isSquare_adjoinRoot`, in characteristic ≠ 2);
+- a rational square root of a polynomial is a polynomial
+  (`exists_sq_eq_of_ratFunc_sq` — F_q[x] is integrally closed);
+- a squarefree polynomial of positive degree is not a polynomial
+  square (`not_isSquare_ratFunc_of_squarefree`).
+
+The shared core `not_isSquare_adjoinRoot_of_linear` applies these to
+B·l of degree 1 and to B·l·g of degree 4. The coprimality of each
+linear factor l with g comes from a Bézout certificate. The two
+constants are B³ and B·(4·A³ + 27·B²) — ellipticity yet again. (The
+certificates are normalized with positive constants. That matches the
+file's other certificates, and it keeps a negation out of the
+constant-lifting step of the Lean proofs; it is why they differ by
+sign from the naïve division remainders.)
 
 ## 4. The sign-free assembly
 
