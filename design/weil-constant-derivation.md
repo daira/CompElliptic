@@ -11,7 +11,7 @@ where S_f(χ) = Σ_{u ∈ F_q} χ(f(u)) and f is the odd (zero-repaired) form
 of `map_to_curve_simple_swu` into the iso-curve E′. This discharges the
 `WeilBounded` hypothesis of `Hashing/WellDistributed.lean` at C = 21/2
 with enormous margin: (10√q + 1)² ≤ (21/2)²·q needs 10.25·q ≥ 20√q + 1,
-and q > 2²⁵⁴.
+and q > 2^{254}.
 
 Status: this document is a proof of the bound, modulo results cited as
 established mathematics: Weil's theorem in the form of FFSTV's Lemma 1
@@ -24,10 +24,9 @@ per-cover Weil inputs to the deployed constants is machine-checked
 (CompElliptic's `Hashing/BranchCovers.lean`, `Hashing/WeilInstance.lean`,
 and `Hashing/PastaSSWU.lean`), and so are the checkable inputs of the two
 cited steps (`Hashing/WeilSupport.lean`, whose facts are referenced at
-their points of use below; CI checks the correspondence in both
-directions). The cited steps themselves
-and Weil's theorem stay on paper — the vocabulary they need is tracked
-at #30.
+their points of use below; CI checks that this document references all
+of that file's declarations). The cited steps themselves and Weil's
+theorem stay on paper — the vocabulary they need is tracked at #30.
 
 ## Background
 
@@ -40,8 +39,8 @@ Public Key Cryptography*, CUP 2012, free at
 <https://link.springer.com/book/10.1007/978-3-540-76878-4>), and FFSTV
 as above.
 
-- **Curves via their function fields.** We work with a curve through its
-  field of rational functions; points of the curve correspond to
+- **Curves via their function fields.** We work with a curve through
+  its field of rational functions; points of the curve correspond to
   *places* of the field, and a function *vanishes simply* at a place
   when it is a local coordinate (a *uniformizer*) there. Everything
   below is arithmetic in explicit function fields like F_q(E′)(u).
@@ -109,20 +108,22 @@ Theorem 6, adapted to these parameters and to sign-freeness.
 
 ## 1. The branch covers
 
-For ta ≠ 0 the simplified SWU abscissae are
+For ta ≠ 0 the simplified SWU abscissae are (`x1`, `x2`)
 
     x₁(u) = B·(ta + 1) / (A·(−ta)),        x₂(u) = t·x₁(u),
 
 and exactly one of g(x₁(u)), g(x₂(u)) is a square, by the identity
-g(x₂) = t³·g(x₁) with t = Z·u² in the square class of Z. The mapping
-outputs the point with the square candidate, with its ordinate's sign
-set by `sgn0`; the zero-repaired form sets f(0) = 𝒪, which makes f odd:
-f(−u) = −f(u) for all u.
+g(x₂) = t³·g(x₁) with t = Z·u² in the square class of Z (in cleared
+form, `g_x2_eq`). The mapping outputs the point with the square
+candidate, with its ordinate's sign set by `sgn0`; the zero-repaired
+form sets f(0) = 𝒪, which makes f odd: f(−u) = −f(u) for all u (`map_neg`
+away from 0; on each deployed curve, `isOdd_zeroRepaired_mapToCurve`).
 
 Since q ≡ 1 (mod 4), −1 is a square, so −1/Z is a nonsquare and t = −1
-has no solutions: **ta vanishes only at u = 0**, and the exceptional
-input set is exactly {0}. (This is where the deployed setting is simpler
-than FFSTV's q ≡ 3 (mod 4), whose t = −1 fibre is inhabited.)
+has no solutions (`Zuu_add_one_ne_zero`): **ta vanishes only at u = 0**
+(`ta_ne_zero_of_u_ne_zero`), and the exceptional input set is exactly
+{0}. (This is where the deployed setting is simpler than FFSTV's
+q ≡ 3 (mod 4), whose t = −1 fibre is inhabited.)
 
 Rearranging x = x_j(u) gives the covers of E′ as quartics in u over the
 function field F_q(E′), writing w = A·x + B:
@@ -144,20 +145,21 @@ y² = g(x_j(u)). Direct computation (verified symbolically) factors both:
     g(x₂(u)) = −B·Φ(u) / (A³·(Z·u²+1)³),
 
 with the **shared degree-12 core** (`phiPoly`, matching the pointwise
-core by `eval_phiPoly`)
+`phiCore` by `eval_phiPoly`)
 
     Φ(u) = B²·(ta + 1)³ + A³·ta².
 
 Using ta = Z·u²·(Z·u²+1) and clearing squares, the two curves have
 hyperelliptic models (`model1Poly`, `model2Poly`, evaluating to the
-pointwise `model1`, `model2` by `eval_model1Poly`, `eval_model2Poly`)
+pointwise `model1`, `model2` by `eval_model1Poly`, `eval_model2Poly`;
+their relation to the curve equation at x_j is `model1_eq`, `model2_eq`)
 
     C₁ :  W² = d₁·(Z·u²+1)·Φ(u),     d₁ = −A³·B·Z³ ≡ −A·B·Z (mod squares),
     C₂ :  W² = d₂·(Z·u²+1)·Φ(u),     d₂ = −A³·B    ≡ −A·B   (mod squares).
 
-So C₁ and C₂ are **quadratic twists of one another by Z** — one
-geometric curve, two F_q-forms; the twist is the branch dichotomy
-itself.
+So C₁ and C₂ are **quadratic twists of one another by Z** (`twist1`,
+`twist2`, differing by Z³ = Z times a square) — one geometric curve,
+two F_q-forms; the twist is the branch dichotomy itself.
 
 **Genus.** Φ(0) = B² and Φ = B² at t = −1, so Φ is coprime to u and to
 Z·u²+1 (`phiPoly_coeff_zero`, `phiPoly_isCoprime_tPoly_add_one`, with the
@@ -181,15 +183,14 @@ repeated root of φ; but
 since A·B ≠ 0 and 4·A³ + 27·B² ≠ 0 is exactly the ellipticity of E′.
 (The formal counterpart avoids the discriminant: `phiCubic_separable`
 witnesses coprimality of φ and φ′ directly, by a Bézout identity with
-constant A³·B²·(4·A³ + 27·B²), through the generic
-`isCoprime_of_bezout`.) Otherwise
-ta′(u₀) = 2·Z·u₀·(2·Z·u₀² + 1) = 0 (char ≠ 2; `taPoly_derivative`), so
-either u₀ = 0, where φ(ta(0)) = φ(0) = B² ≠ 0 (`phiPoly_coeff_zero`,
-via `isCoprime_X_of_coeff_zero`), or Z·u₀² = −1/2, where ta(u₀) = −1/4
-and 64·φ(−1/4) = 4·A³ + 27·B² ≠ 0 — again ellipticity (formally: the
-re-expansion 64·Φ = Ψ(2·Z·u² + 1), `psiPoly`, `phiPoly_64_eq`, has
-constant term the ellipticity, `psiPoly_coeff_zero`, giving
-`phiPoly_isCoprime_snd`). Either way Φ(u₀) ≠ 0, a contradiction. ∎
+constant A³·B²·(4·A³ + 27·B²), through the generic `isCoprime_of_bezout`.)
+Otherwise ta′(u₀) = 2·Z·u₀·(2·Z·u₀² + 1) = 0 (char ≠ 2;
+`taPoly_derivative`), so either u₀ = 0, where φ(ta(0)) = φ(0) = B² ≠ 0
+(`phiPoly_coeff_zero`, via `isCoprime_X_of_coeff_zero`), or Z·u₀² = −1/2,
+where ta(u₀) = −1/4 and 64·φ(−1/4) = 4·A³ + 27·B² ≠ 0 — again ellipticity.
+(Formally: the re-expansion 64·Φ = Ψ(2·Z·u² + 1), `psiPoly`,
+`phiPoly_64_eq`, has constant term the ellipticity, `psiPoly_coeff_zero`,
+giving `phiPoly_isCoprime_snd`.) Either way Φ(u₀) ≠ 0, a contradiction. ∎
 
 The lemma is `phiPoly_squarefree` in `Hashing/WeilSupport.lean`
 (separability `phiPoly_separable`, assembled with the generic
@@ -253,6 +254,10 @@ By Theorem 3(6), for every nontrivial character χ of E′(F_q):
 
     |S_{C_j}(χ)| := |Σ_{P ∈ C_j(F_q)} χ(h_j(P))| ≤ (2·6 − 2)·√q = 10·√q.
 
+(This is the cited Weil input. It enters the formal development squared
+and over the model point sets, as the two `CharSumBounded` hypotheses
+at bound 100·q.)
+
 FFSTV additionally needed the sign of the ordinate as an Artin
 character (their conductor term deg y = 12), because their sum selects
 one point per input. Oddness makes that unnecessary: substituting
@@ -262,7 +267,8 @@ u → −u shows S_f(χ) is real, so
 
 and (χ + χ̄)(f(u)) = χ(P) + χ(−P) depends only on the ±-class of f(u) —
 which the sign rule never influences. This is the same reduction that
-`CharacterSum.lean` formalizes as the ±-class multiplicity form.
+`CharacterSum.lean` formalizes as the ±-class multiplicity form
+(`charSum_eq`, with the symmetry from `IsOdd.mult_neg`).
 
 **The correspondence.** All counting happens on the smooth model
 W² = H_j(u), with H_j = d_j·(Z·u²+1)·Φ squarefree of degree 14 by the
@@ -272,19 +278,25 @@ singular point would need W = 0 at a repeated root of H_j. Over each
 u₀ there are two rational points when H_j(u₀) is a nonzero square, one
 when H_j(u₀) = 0, and none when H_j(u₀) is a nonsquare. Since the
 degree 14 is even, there are two more points at infinity, rational
-exactly when the leading coefficient of H_j is a square.
+exactly when the leading coefficient of H_j is a square. This reading
+is what the point sets `modelPoints1`, `modelPoints2` encode: the
+affine solutions of W² = H_j(u), plus the pair at infinity exactly
+when the leading square class d_j·Z is a square.
 
 The model coordinate is W = y·s_j(u), with s₁ = A³·Z³·u³·(Z·u²+1)² and
-s₂ = A³·(Z·u²+1)²; the identities g(x_j(u))·s_j(u)² = H_j(u) are
-checked symbolically. Since Z·u²+1 has no rational roots (−1/Z is a
-nonsquare), s_j(u₀) ≠ 0 for every input u₀ ∉ {0}. Over such a u₀, then,
+s₂ = A³·(Z·u²+1)² (`scale1`, `scale2`); the identities
+g(x_j(u))·s_j(u)² = H_j(u) are checked symbolically and proven as
+`model1_eq`, `model2_eq`. Since Z·u²+1 has no rational roots (−1/Z is
+a nonsquare; `Zuu_add_one_ne_zero`), s_j(u₀) ≠ 0 for every input
+u₀ ∉ {0} (`scale1_ne_zero`, `scale2_ne_zero`). Over such a u₀, then,
 y ↦ W = y·s_j(u₀) is a bijection between the rational points of
 y² = g(x_j(u)) and those of the model, and H_j(u₀) is a square exactly
 when g(x_j(u₀)) is. So on the branch j with g(x_j(u₀)) a square, the
 fibre of C_j over u₀ consists of the two ordinate-conjugate points,
 which map under h_j to f(u₀) and −f(u₀), contributing exactly
-(χ + χ̄)(f(u₀)); the other branch's fibre has no rational points. Three
-boundary cases:
+(χ + χ̄)(f(u₀)); the other branch's fibre has no rational points. The
+last two sentences are `fibre_sum`, with h_j in model coordinates as
+`cover1Map`, `cover2Map`. Three boundary cases:
 
 - **W = 0** would merge the two points. It happens only at rational
   roots of (Z·u²+1)·Φ, hence only at rational roots of Φ; and a
@@ -292,7 +304,8 @@ boundary cases:
   rational 2-torsion point of E′. Since #E′(F_q) is an odd prime, E′
   has no rational 2-torsion, so Φ has no rational roots and this case
   is empty.
-- **u = 0**: H_j(0) = d_j·B², in the square class of d_j.
+- **u = 0**: H_j(0) = d_j·B², in the square class of d_j
+  (`model1_zero`, `model2_zero`).
 - **u = ∞**: the leading coefficient of H_j is d_j·B²·Z⁷, in the
   square class of d_j·Z.
 
@@ -304,13 +317,18 @@ abscissa functions (checked symbolically): x₁ has a pole at u = 0 and
 tends to −B/A at u = ∞, while x₂(0) = −B/A and x₂ has a pole at
 u = ∞. A pole of x_j at the place means the point maps to 𝒪. At the
 deployed parameters −A·B is a nonsquare (the script's empty w = 0
-fibre), so the rational pairs are C₁'s over u = 0 and C₂'s at
+fibre; the Euler certificates `neg_AB_not_isSquare`, one per
+iso-curve), so the rational pairs are C₁'s over u = 0 and C₂'s at
 infinity —both pole loci— and all four extra points map to 𝒪.
 
 Summing, with f(0) = 𝒪 and χ(𝒪) = 1:
 
     S_{C₁}(χ) + S_{C₂}(χ) = Σ_{u ≠ 0} (χ + χ̄)(f(u)) + 4
                           = 2·S_f(χ) − 2·χ(𝒪) + 4 = 2·S_f(χ) + 2.
+
+The first equality is `modelPoints_sum`, stated for any
+commutative-monoid-valued φ with the boundary contributing 4·φ(𝒪);
+the character form through to the + 2 is `cover_charSum`.
 
 (If −A·B were a square, the rational pairs would swap to the −B/A
 loci: all four extra points would map to the two rational points of E′
@@ -325,18 +343,24 @@ case, so this variant is not needed for them.)
 
 so |S_f(χ)| ≤ 10·√q + 1 for every nontrivial χ, on both deployed
 iso-curves. (For a valid parameter set with −A·B square, §4's variant
-gives 10·√q + 3.) The comparison with FFSTV's Theorem 6 (52·√q + 151
-for Z = −1, q ≡ 3 (mod 4), residue-status sign rule): sign-freeness
-removes their conductor term and the per-branch double-count, and the
-deployed covers have genus 6 against their 8.
+gives 10·√q + 3.) The square-root-free formal counterpart is
+`weilBounded_zeroRepaired`: two `CharSumBounded` inputs at c²·#F yield
+`WeilBounded` at c + 1/2, parametrically in the per-cover constant c;
+the deployed c = 10 gives the recorded 21/2. The comparison with
+FFSTV's Theorem 6 (52·√q + 151 for Z = −1, q ≡ 3 (mod 4),
+residue-status sign rule): sign-freeness removes their conductor term
+and the per-branch double-count, and the deployed covers have genus 6
+against their 8.
 
 The composition through the deployed 3-isogeny costs nothing: the
 isogeny is bijective on rational points, so χ ∘ iso ranges over the
 nontrivial characters of the iso-curve as χ does, and the bound
-transfers to the full `mapToCurve` verbatim.
+transfers to the full `mapToCurve` verbatim (`WeilBounded.comp`; per
+curve, `weilBounded_zeroRepaired_mapToCurve`).
 
 For `WeilBounded` (squared form): C = 21/2 satisfies
-(10·√q + 1)² ≤ C²·q at the deployed sizes with margin ≈ 2¹²⁷. The
-downstream regularity distance ε ≈ C²·√(#G)/#F comes to about 2⁻¹²⁰,
-improving the ≈ 2⁻¹¹⁶ previously quoted from the FFSTV-sized constant.
-
+(10·√q + 1)² ≤ C²·q at the deployed sizes with margin ≈ 2^{127}. The
+downstream regularity distance ε ≈ C²·√(#G)/#F (the budget shape of
+`sum_abs_prob_dev_le`, carried to the deployed mapping by
+`sum_abs_prob_dev_transport_le`) comes to about 2^{-120}, improving
+the ≈ 2^{-116} previously quoted from the FFSTV-sized constant.
