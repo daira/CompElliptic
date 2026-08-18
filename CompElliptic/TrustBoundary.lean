@@ -5,6 +5,7 @@ as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
 import CompElliptic.Curves.PastaOrder
+import CompElliptic.CurveCycle
 import CompElliptic.Hashing.PastaSSWU
 import CompElliptic.Curves.Pasta.Fast.Projective
 import CompElliptic.Curves.Pasta.Fast.Msm
@@ -48,6 +49,11 @@ open CompElliptic.Meta
 assert_axioms CompElliptic.CurveOrder.card_fibre_le_two
 assert_axioms CompElliptic.CurveOrder.card_eq_of_prime_witness_of_card_lt_two_mul
 assert_axioms CompElliptic.CurveOrder.card_eq_of_prime_witness_of_card_lt_three_mul
+assert_axioms CompElliptic.CurveCycle.trace_add_trace
+assert_axioms CompElliptic.CurveCycle.frobDisc_eq
+assert_axioms CompElliptic.CurveCycle.hasCMDiscriminant_congr
+assert_axioms CompElliptic.CurveCycle.frobeniusElt_charEq
+assert_axioms CompElliptic.CurveCycle.frobeniusOrderEquiv
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_mul_self
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_isSome_of_isSquare
 
@@ -89,6 +95,19 @@ assert_axioms CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt +native(
 assert_axioms CompElliptic.Curves.Pasta.Pallas.card_eq +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
 assert_axioms CompElliptic.Curves.Pasta.Vesta.card_eq +native(
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms CompElliptic.CurveCycle.Pasta.isCycle₂ +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms CompElliptic.CurveCycle.Pasta.frobDisc_pallas +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms CompElliptic.CurveCycle.Pasta.hasCMDiscriminant_pallas +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt)
+assert_axioms CompElliptic.CurveCycle.Pasta.hasCMDiscriminant_vesta +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
+assert_axioms CompElliptic.CurveCycle.Pasta.frobeniusOrderEquiv +native(
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
   CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt)
 assert_axioms CompElliptic.Curves.Pasta.Pallas.q_nsmul_isoGpt +native(
   CompElliptic.Curves.Pasta.Pallas.q_nsmul_isoGpt)

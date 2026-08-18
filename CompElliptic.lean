@@ -15,6 +15,7 @@ import CompElliptic.Fields.Residue
 import CompElliptic.Fields.Sqrt
 import CompElliptic.CurveForms.ShortWeierstrass
 import CompElliptic.CurveOrder
+import CompElliptic.CurveCycle
 import CompElliptic.Isogenies.ThreeIsogeny
 import CompElliptic.Curves.Pasta
 import CompElliptic.Curves.IsoPasta
