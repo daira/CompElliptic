@@ -109,10 +109,11 @@ is the elementary, orthogonality-only content of `CharacterSum.lean`.
   the deployed sizes with margin `≈ 2^{127}`. The bound is proven in
   `design/weil-constant-derivation.md`, modulo results cited there as
   established mathematics (Weil's theorem in the form of FFSTV's Lemma 1
-  and Theorem 3, and standard hyperelliptic point bookkeeping);
-  formalizing the calculation in Lean is what remains of
-  <https://github.com/daira/CompElliptic/issues/28>. Separately,
-  `WeilBounded` itself is an external input to the formalization.
+  and Theorem 3, and standard hyperelliptic point bookkeeping). The
+  calculation and the paper proof's supporting facts are formalized
+  (`Hashing/BranchCovers.lean`, `Hashing/WeilInstance.lean`,
+  `Hashing/WeilSupport.lean`). Separately, `WeilBounded` itself is an
+  external input to the formalization.
 -/
 
 namespace CompElliptic.Hashing

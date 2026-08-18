@@ -27,8 +27,7 @@ form: `g (x₂ u) = (Z·u²)³ · g (x₁ u)`.
 
 The notation follows `design/weil-constant-derivation.md` §2, which derives
 the Weil character-sum bound for the deployed mappings from these models;
-formal consumption of that bound is tracked at
-<https://github.com/daira/CompElliptic/issues/28>.
+`WeilInstance.lean` assembles the formal consumption.
 
 On a field where `-1` is a square (both Pasta base fields), `Z·u² + 1` never
 vanishes (`Zuu_add_one_ne_zero`), so the scalings vanish only at `u = 0` and

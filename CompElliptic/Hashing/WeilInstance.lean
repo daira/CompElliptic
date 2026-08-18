@@ -22,11 +22,8 @@ not factor through a nontrivial unramified subcover. The branch covers have
 genus 6, and their total ramification over `A·x + B = 0` rules every
 unramified subcover out; both derivations are cited from
 `design/weil-constant-derivation.md` §2–3. Mathlib does not yet have the
-vocabulary to state them (genus, places, covers of curves), and that
-vocabulary is out of scope for
-<https://github.com/daira/CompElliptic/issues/28>, which covers
-formalizing the computation and the paper proof's supporting facts; the
-vocabulary itself, on the Riemann's-inequality route, is
+vocabulary to state them (genus, places, covers of curves); the
+vocabulary, on the Riemann's-inequality route, is tracked at
 <https://github.com/daira/CompElliptic/issues/30>.
 
 The derivation is parametric in the per-cover constant `c`: inputs at
