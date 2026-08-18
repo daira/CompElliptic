@@ -261,12 +261,14 @@ at bound 100·q.)
 FFSTV additionally needed the sign of the ordinate as an Artin
 character (their conductor term deg y = 12), because their sum selects
 one point per input. Oddness makes that unnecessary: substituting
-u → −u shows S_f(χ) is real, so
+u → −u shows S_f(χ) is real (`IsOdd.conj_charSum`), so
 
     2·S_f(χ) = Σ_{u} (χ + χ̄)(f(u)),
 
-and (χ + χ̄)(f(u)) = χ(P) + χ(−P) depends only on the ±-class of f(u) —
-which the sign rule never influences. This is the same reduction that
+(`IsOdd.two_mul_charSum`), and (χ + χ̄)(f(u)) = χ(P) + χ(−P) depends
+only on the ±-class of f(u) — which the sign rule never influences
+(the identity χ(−P) = χ̄(P) behind the pairing is
+`addChar_map_neg_eq_conj`). This is the same reduction that
 `CharacterSum.lean` formalizes as the ±-class multiplicity form
 (`charSum_eq`, with the symmetry from `IsOdd.mult_neg`).
 

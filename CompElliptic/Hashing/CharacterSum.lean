@@ -24,10 +24,13 @@ the uniform distribution on `G`.
 The mappings used to hash to elliptic curves (simplified SWU and its relatives)
 choose the sign of the `y`-coordinate from the sign of the input. That sign rule
 makes the mapping **odd**: `f (-u) = -f u`. This file proves that oddness alone
-forces two facts:
+forces these facts:
 
-* the value multiplicity is symmetric under negation (`IsOdd.mult_neg`); and
-* `f` sends `0` to `0` when `G` has odd order (`IsOdd.map_zero`).
+* the value multiplicity is symmetric under negation (`IsOdd.mult_neg`);
+* `f` sends `0` to `0` when `G` has odd order (`IsOdd.map_zero`);
+* the character sum is real (`IsOdd.conj_charSum`), and twice the sum is the
+  sum of the conjugation-symmetric terms `ψ (f u) + conj (ψ (f u))`
+  (`IsOdd.two_mul_charSum`).
 
 The main identity (`charSum_eq`) rewrites `∑ u, ψ (f u)` as the character transform
 of `fun Q => mult f Q - 1`, the deviation of the value multiplicity from a perfect
@@ -116,5 +119,46 @@ theorem charSum_eq {ψ : AddChar G ℂ} (hψ : ψ ≠ 1) :
     rw [← Finset.sum_sub_distrib]
     exact Finset.sum_congr rfl fun Q _ => by ring
   rw [hsplit, hzero, sub_zero]
+
+omit [DecidableEq G] in
+/-- Negating the argument of a complex character conjugates its value: on a
+finite group every character value is a root of unity, hence of unit norm,
+and `ψ (-P) = (ψ P)⁻¹`. -/
+theorem addChar_map_neg_eq_conj (ψ : AddChar G ℂ) (P : G) :
+    ψ (-P) = (starRingEnd ℂ) (ψ P) := by
+  have hpow : ψ P ^ Fintype.card G = 1 := by
+    rw [← AddChar.map_nsmul_eq_pow, card_nsmul_eq_zero, AddChar.map_zero_eq_one]
+  rw [AddChar.map_neg_eq_inv,
+    Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one hpow
+      Fintype.card_ne_zero)]
+
+omit [DecidableEq F] [DecidableEq G] in
+/-- **Realness** (design doc §4): the character sum of an odd mapping is fixed
+by complex conjugation. Conjugating a term negates the output
+(`addChar_map_neg_eq_conj`), which oddness trades for negating the input, and
+input negation permutes the domain. -/
+theorem IsOdd.conj_charSum (hf : IsOdd f) (ψ : AddChar G ℂ) :
+    (starRingEnd ℂ) (∑ u, ψ (f u)) = ∑ u, ψ (f u) := by
+  rw [map_sum]
+  calc ∑ u, (starRingEnd ℂ) (ψ (f u))
+      = ∑ u, ψ (f (-u)) := by
+        refine Finset.sum_congr rfl fun u _ => ?_
+        rw [hf u, addChar_map_neg_eq_conj]
+    _ = ∑ u, ψ (f u) :=
+        Fintype.sum_equiv (Equiv.neg F) _ _ fun u => rfl
+
+omit [DecidableEq F] [DecidableEq G] in
+/-- **The doubled character sum, sign-free** (design doc §4): twice the
+character sum of an odd mapping is the sum of `ψ (f u) + conj (ψ (f u))` over
+inputs. Each term equals `ψ P + ψ (-P)` at `P = f u`
+(`addChar_map_neg_eq_conj`), so it is unchanged by negating `f u`: the sign
+convention has no influence on it. -/
+theorem IsOdd.two_mul_charSum (hf : IsOdd f) (ψ : AddChar G ℂ) :
+    2 * ∑ u, ψ (f u) = ∑ u, (ψ (f u) + (starRingEnd ℂ) (ψ (f u))) := by
+  have h : ∑ u, (starRingEnd ℂ) (ψ (f u)) = ∑ u, ψ (f u) := by
+    rw [← map_sum (starRingEnd ℂ) (fun u => ψ (f u)) Finset.univ]
+    exact hf.conj_charSum ψ
+  rw [Finset.sum_add_distrib, h]
+  ring
 
 end CompElliptic.Hashing
