@@ -21,11 +21,27 @@ covering of an elliptic curve by `(2·g̃ - 2)·√q`, provided the covering doe
 not factor through a nontrivial unramified subcover. The branch covers have
 genus 6, and their total ramification over `A·x + B = 0` rules every
 unramified subcover out; both derivations are cited from
-`design/weil-constant-derivation.md` §2–3, because even their statements
-need machinery absent from Mathlib (genus, places, covers). So the intended
-instantiations take `B = 100·#F`, the squared form of `10·√q` with
-`10 = 2·6 - 2`; this hypothesis is the cited boundary. Progress is tracked
-at <https://github.com/daira/CompElliptic/issues/28>.
+`design/weil-constant-derivation.md` §2–3. Mathlib does not yet have the
+vocabulary to state them (genus, places, covers of curves), and that
+vocabulary is out of scope for
+<https://github.com/daira/CompElliptic/issues/28>, which covers
+formalizing the computation and the paper proof's supporting facts; the
+vocabulary itself, on the Riemann's-inequality route, is
+<https://github.com/daira/CompElliptic/issues/30>.
+
+The derivation is parametric in the per-cover constant `c`: inputs at
+`c²·#F`, conclusion at `c + 1/2`. The parameter exists because the cited
+constant depends on which genus fact the citation uses, and the two
+candidates differ in formalization cost, not just in value. The deployed
+citation takes `c = 10 = 2·6 - 2` from the exact genus. Riemann's
+inequality (Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed.,
+§3.11) bounds the genus by `(2 - 1)·(14 - 1) = 13`, from the two field
+generators alone. That is elementary divisor counting, far below the
+Riemann–Hurwitz tier that exact genus 6 needs. The corresponding constant
+is `c = 24`; the regularity distance scales with the square of the
+consumed constant `c + 1/2`, so the cost is `(24.5/10.5)² ≈ 2^{2.44}`.
+Parameterizing keeps every consumer unchanged if the cited constant
+moves.
 
 `cover_charSum` is the sign-free assembly (design doc §4): for every
 character `ψ`,
@@ -36,11 +52,12 @@ where `S_j` sums `ψ` over cover `j`'s images and `S` sums it over the
 zero-repaired mapping's outputs. `weilBounded_zeroRepaired` combines the
 assembly with the two cover bounds and exact square-free arithmetic:
 
-`‖S(ψ)‖² ≤ (21/2)²·#F`   for every nontrivial `ψ`,
+`‖S(ψ)‖² ≤ (c + 1/2)²·#F`   for every nontrivial `ψ`,
 
-that is, `WeilBounded (zeroRepaired G.map) (21/2)`, on any field with
-`#F ≥ 44` where `-1` is a square, `-A·B` is a nonsquare, the curve has no
-2-torsion, and the sign function is genuine.
+that is, `WeilBounded (zeroRepaired G.map) (c + 1/2)`, on any field with
+`#F ≥ 4·c + 4` where `-1` is a square, `-A·B` is a nonsquare, the curve
+has no 2-torsion, and the sign function is genuine. The deployed
+instantiations take `c = 10`, so `21/2` and `#F ≥ 44`.
 -/
 
 namespace CompElliptic.Hashing
@@ -95,24 +112,25 @@ theorem cover_charSum (hsq : IsSquare (-1 : F))
   rw [hneg, hfull, AddChar.map_zero_eq_one]
   ring
 
-/-- **`WeilBounded` from the two cover bounds.** Weil's theorem at the two
-branch covers —`CharSumBounded` at `100·#F`, the squared `(2·6 - 2)·√q` of
-the genus-6 coverings— yields the deployed Weil bound
-
-`‖S(ψ)‖² ≤ (21/2)²·#F`
-
-for the zero-repaired mapping. The margin between the additive-constant
-sharp `10·√q + 1` and the recorded `(21/2)·√q` absorbs the boundary terms
-once `#F ≥ 44`; the arithmetic stays square-root-free throughout. -/
+/-- **`WeilBounded` from the two cover bounds, parametrically in the
+constant.** For a per-cover constant `c > 0`: if both covers' character
+sums are bounded by `c²·#F` in squared norm, the zero-repaired mapping is
+Weil-bounded at `c + 1/2`, on any field with `#F ≥ 4·c + 4`. The extra
+half absorbs the assembly's boundary terms, square-root-free; its size is
+conventional, not forced — the sharp bound is `c·√#F + 1`, so any positive
+slack would do at a matching field-size threshold. A half is a round
+choice whose cost is invisible at the deployed sizes; the recorded
+deployed constant `21/2` is the same convention at `c = 10`. The module
+docstring records why `c` is a parameter. -/
 theorem weilBounded_zeroRepaired (hsq : IsSquare (-1 : F))
     (hy0 : ∀ x : F, ¬ OnCurve G.E.A G.E.B (x, 0))
     (hAB : ¬ IsSquare (-(G.E.A * G.E.B))) (hsgn : IsSignFunction G.sgn)
-    (hq : (44 : ℕ) ≤ Fintype.card F)
+    {c : ℝ} (hc : 0 < c) (hq : 4*c + 4 ≤ (Fintype.card F : ℝ))
     (h1 : CharSumBounded G.modelPoints1 (G.cover1Map hsq)
-      (100 * (Fintype.card F : ℝ)))
+      (c^2 * (Fintype.card F : ℝ)))
     (h2 : CharSumBounded G.modelPoints2 (G.cover2Map hsq)
-      (100 * (Fintype.card F : ℝ))) :
-    WeilBounded (zeroRepaired G.map) (21/2) := by
+      (c^2 * (Fintype.card F : ℝ))) :
+    WeilBounded (zeroRepaired G.map) (c + 1/2) := by
   intro ψ hψ
   have hid := G.cover_charSum hsq hy0 hAB hsgn ψ
   have ha := h1 ψ hψ
@@ -130,11 +148,16 @@ theorem weilBounded_zeroRepaired (hsq : IsSquare (-1 : F))
           rw [RCLike.norm_ofNat]
           gcongr
           exact norm_add_le _ _
-  have hq' : (44 : ℝ) ≤ (Fintype.card F : ℝ) := by exact_mod_cast hq
   have h4 : 4 * ‖S‖^2 ≤ (‖S₁‖ + ‖S₂‖ + 2)^2 := by
     nlinarith [hnorm, norm_nonneg S, norm_nonneg S₁, norm_nonneg S₂]
-  nlinarith [h4, ha, hb, hq', norm_nonneg S₁, norm_nonneg S₂,
-    sq_nonneg (‖S₁‖ - ‖S₂‖), sq_nonneg (‖S₁‖ + ‖S₂‖ - 20)]
+  -- The linear term: `4·(‖S₁‖ + ‖S₂‖) + 4 ≤ (4·c + 1)·#F`.
+  have hlin : 4 * (‖S₁‖ + ‖S₂‖) + 4 ≤ (4*c + 1) * (Fintype.card F : ℝ) := by
+    nlinarith [ha, hb, hc, sq_nonneg (‖S₁‖ - ‖S₂‖),
+      sq_nonneg (‖S₁‖ + ‖S₂‖ - 2*c),
+      mul_nonneg hc.le (sub_nonneg.mpr hq),
+      norm_nonneg S₁, norm_nonneg S₂]
+  nlinarith [h4, hlin, ha, hb, sq_nonneg (‖S₁‖ - ‖S₂‖), norm_nonneg S₁,
+    norm_nonneg S₂]
 
 end SSWUParams
 

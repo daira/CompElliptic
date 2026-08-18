@@ -213,9 +213,19 @@ theorem weilBounded_zeroRepaired_mapToCurve
     (h2 : CharSumBounded sswu.modelPoints2 (sswu.cover2Map isSquare_neg_one)
       (100 * (Fintype.card PallasBaseField : ℝ))) :
     WeilBounded (zeroRepaired mapToCurve) (21/2) := by
+  rw [show (21/2 : ℝ) = 10 + 1/2 from by norm_num]
+  have h1' : CharSumBounded sswu.modelPoints1 (sswu.cover1Map isSquare_neg_one)
+      ((10 : ℝ)^2 * (Fintype.card PallasBaseField : ℝ)) := by
+    rw [show ((10 : ℝ)^2) = 100 from by norm_num]
+    exact h1
+  have h2' : CharSumBounded sswu.modelPoints2 (sswu.cover2Map isSquare_neg_one)
+      ((10 : ℝ)^2 * (Fintype.card PallasBaseField : ℝ)) := by
+    rw [show ((10 : ℝ)^2) = 100 from by norm_num]
+    exact h2
   have hbase := sswu.weilBounded_zeroRepaired isSquare_neg_one
     iso_no_onCurve_y_zero neg_AB_not_isSquare isSignFunction_sgn0
-    (by rw [ZMod.card]; decide) h1 h2
+    (by norm_num : (0 : ℝ) < 10)
+    (by rw [ZMod.card]; norm_num) h1' h2'
   have hcomp := hbase.comp (AddMonoidHom.mk' iso.map iso_map_add)
     iso_map_bijective
   have hfun : (fun u => (AddMonoidHom.mk' iso.map iso_map_add)
@@ -443,9 +453,19 @@ theorem weilBounded_zeroRepaired_mapToCurve
     (h2 : CharSumBounded sswu.modelPoints2 (sswu.cover2Map isSquare_neg_one)
       (100 * (Fintype.card VestaBaseField : ℝ))) :
     WeilBounded (zeroRepaired mapToCurve) (21/2) := by
+  rw [show (21/2 : ℝ) = 10 + 1/2 from by norm_num]
+  have h1' : CharSumBounded sswu.modelPoints1 (sswu.cover1Map isSquare_neg_one)
+      ((10 : ℝ)^2 * (Fintype.card VestaBaseField : ℝ)) := by
+    rw [show ((10 : ℝ)^2) = 100 from by norm_num]
+    exact h1
+  have h2' : CharSumBounded sswu.modelPoints2 (sswu.cover2Map isSquare_neg_one)
+      ((10 : ℝ)^2 * (Fintype.card VestaBaseField : ℝ)) := by
+    rw [show ((10 : ℝ)^2) = 100 from by norm_num]
+    exact h2
   have hbase := sswu.weilBounded_zeroRepaired isSquare_neg_one
     iso_no_onCurve_y_zero neg_AB_not_isSquare isSignFunction_sgn0
-    (by rw [ZMod.card]; decide) h1 h2
+    (by norm_num : (0 : ℝ) < 10)
+    (by rw [ZMod.card]; norm_num) h1' h2'
   have hcomp := hbase.comp (AddMonoidHom.mk' iso.map iso_map_add)
     iso_map_bijective
   have hfun : (fun u => (AddMonoidHom.mk' iso.map iso_map_add)
