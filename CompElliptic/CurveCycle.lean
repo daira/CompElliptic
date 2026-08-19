@@ -162,13 +162,6 @@ abbrev frobeniusOrder (E : SWCurve F) : Type := AdjoinRoot (frobCharPoly E)
 noncomputable def frobeniusElt (E : SWCurve F) : frobeniusOrder E :=
   AdjoinRoot.root (frobCharPoly E)
 
-/-- The definitional unfolding, stated as an equation so `simp` can *fold* an `AdjoinRoot.root`
-back into `frobeniusElt` with `← frobeniusElt_def`; `simp` cannot refold a definition by name.
-Used in the round-trip proofs of `frobeniusOrderEquiv`, where the `ext` lemma leaves the goal in
-terms of `root`. -/
-theorem frobeniusElt_def (E : SWCurve F) :
-    frobeniusElt E = AdjoinRoot.root (frobCharPoly E) := rfl
-
 /-- **The characteristic equation**, `π² - t·π + #F = 0`, holding in `ℤ[π]` by construction. -/
 theorem frobeniusElt_charEq (E : SWCurve F) :
     frobeniusElt E ^ 2 - (trace E : frobeniusOrder E) * frobeniusElt E
@@ -277,7 +270,7 @@ noncomputable def frobeniusOrderEquiv (h : IsCycle₂ E₁ E₂) :
       have h2 : ((trace E₁ : frobeniusOrder E₂)) + (trace E₂ : frobeniusOrder E₂) = 2 := by
         exact_mod_cast congrArg (fun n : ℤ => (n : frobeniusOrder E₂)) (trace_add_trace h)
       ext
-      simp only [AlgHom.comp_apply, AlgHom.coe_id, id_eq, ← frobeniusElt_def,
+      simp only [AlgHom.comp_apply, AlgHom.coe_id, id_eq, ← frobeniusElt.eq_def,
         frobeniusOrderHom_frobeniusElt, map_add, map_intCast]
       push_cast
       linear_combination h2)
@@ -285,7 +278,7 @@ noncomputable def frobeniusOrderEquiv (h : IsCycle₂ E₁ E₂) :
       have h2 : ((trace E₁ : frobeniusOrder E₁)) + (trace E₂ : frobeniusOrder E₁) = 2 := by
         exact_mod_cast congrArg (fun n : ℤ => (n : frobeniusOrder E₁)) (trace_add_trace h)
       ext
-      simp only [AlgHom.comp_apply, AlgHom.coe_id, id_eq, ← frobeniusElt_def,
+      simp only [AlgHom.comp_apply, AlgHom.coe_id, id_eq, ← frobeniusElt.eq_def,
         frobeniusOrderHom_frobeniusElt, map_add, map_intCast]
       push_cast
       linear_combination h2)
