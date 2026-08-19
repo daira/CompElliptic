@@ -50,28 +50,13 @@ and it is what "the same order" actually means.
 
 ## What is and is not assumed
 
-No arithmetic geometry enters, and in particular neither Hasse's theorem (which Mathlib lacks
-for `WeierstrassCurve`) nor any theorem about endomorphism rings. The identity is an integer
-computation over the two point counts, so it holds for *any* pair of curves satisfying the
-cycle equations, ordinary or not.
+The proof is counting plus integer algebra: no theorem about endomorphism rings, and no
+arithmetic geometry. It therefore holds for *any* pair of curves satisfying the cycle
+equations.
 
-What ordinariness buys is only the *reading* of the shared integer, never the identity. In all
-cases `t² - 4·#F` is the discriminant of `ℤ[π]` (see `frobDisc`). A curve is **ordinary** when
-the characteristic `p` does not divide `t` and **supersingular** when it does; over a prime
-field with `p > 3` supersingular means exactly `t = 0`. Then:
-
-* ordinary: `End E` is an order in the imaginary quadratic field `ℚ(√(t² - 4·#F))`, so the
-  integer is a discriminant *in the right field*, but not necessarily `End E`'s own, because
-  `ℤ[π] ⊆ End E` can be strict. Pasta is such a case: `disc ℤ[π] = -3·V²` while
-  `End = ℤ[ζ₃]` has discriminant `-3`.
-* supersingular: the geometric endomorphism ring is a maximal order in a quaternion algebra,
-  noncommutative and of rank `4`, so it has no quadratic discriminant to compare with. The
-  `F`-rational endomorphisms can still form a quadratic order (over `𝔽_p` an order in
-  `ℚ(√-p)`, by Waterhouse's classification), and over `𝔽_(p²)` with `t = ±2p` the integer
-  degenerates to `0` because `π = ±p` is already an integer.
-
-The statement proved here is deliberately the count-level one, which is the part the cycle
-forces.
+Ordinariness is a hypothesis nowhere below. It governs only whether the shared integer may be
+*called* a CM discriminant, which needs `End E` to be a quadratic order; the statement proved
+here is the count-level one, which is the part the cycle forces.
 
 ## Provenance
 
