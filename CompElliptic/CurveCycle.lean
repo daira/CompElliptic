@@ -165,6 +165,11 @@ variable {F : Type*} [Field F] [Fintype F]
 noncomputable def frobCharPoly (E : SWCurve F) : ℤ[X] :=
   X ^ 2 - C (trace E) * X + C (Fintype.card F : ℤ)
 
+/-- Monic, hence `ℤ[X]/(frobCharPoly E)` is `ℤ`-free on the power basis `{1, π}` rather than an
+arbitrary quotient: that is what makes `frobeniusOrder` an *order* (a rank-2 lattice) and not
+merely a ring. Nothing below consumes it yet; it is the standing hypothesis of the Mathlib
+`AdjoinRoot` lemmas any later structural work needs, starting with a basis and the discriminant
+computation `disc ℤ[π] = t² - 4·#F`. -/
 theorem frobCharPoly_monic (E : SWCurve F) : (frobCharPoly E).Monic := by
   unfold frobCharPoly
   monicity!
@@ -187,6 +192,10 @@ abbrev frobeniusOrder (E : SWCurve F) : Type := AdjoinRoot (frobCharPoly E)
 /-- The formal Frobenius: the image of `X` in `ℤ[X]/(X² - t·X + #F)`. -/
 noncomputable def frobeniusElt (E : SWCurve F) : frobeniusOrder E := AdjoinRoot.root _
 
+/-- The definitional unfolding, stated as an equation so `simp` can *fold* an `AdjoinRoot.root`
+back into `frobeniusElt` with `← frobeniusElt_def`; `simp` cannot refold a definition by name.
+Used in the round-trip proofs of `frobeniusOrderEquiv`, where the `ext` lemma leaves the goal in
+terms of `root`. -/
 theorem frobeniusElt_def (E : SWCurve F) :
     frobeniusElt E = AdjoinRoot.root (frobCharPoly E) := rfl
 
@@ -278,6 +287,9 @@ noncomputable def frobeniusOrderHom (h : IsCycle₂ E₁ E₂) :
     (frobeniusElt E₂ + ((trace E₁ - 1 : ℤ) : frobeniusOrder E₂))
     (aeval_frobCharPoly_shift h)
 
+/-- What the comparison map does to the generator, which is the only fact about it any proof
+here needs: `AdjoinRoot.algHom_ext` reduces every identity between maps out of `ℤ[π₁]` to their
+value on `π₁`, so this is the simp lemma the round trip in `frobeniusOrderEquiv` runs on. -/
 @[simp]
 theorem frobeniusOrderHom_frobeniusElt (h : IsCycle₂ E₁ E₂) :
     frobeniusOrderHom h (frobeniusElt E₁)
