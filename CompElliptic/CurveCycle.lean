@@ -8,7 +8,6 @@ import CompElliptic.Curves.PastaOrder
 import Mathlib.Algebra.Squarefree.Basic
 import Mathlib.RingTheory.Int.Basic
 import Mathlib.RingTheory.AdjoinRoot
-import Mathlib.Algebra.QuadraticDiscriminant
 
 /-!
 # A 2-cycle of curves shares its CM discriminant
@@ -37,7 +36,7 @@ and let `frobDisc E = t(E)² - 4·#F`. If `E₁/F₁` and `E₂/F₂` form a 2-c
 which is `frobDisc_eq`: the two Frobenius discriminants are equal *as integers*, not merely up
 to squares. Every invariant read off that integer therefore agrees, in particular the CM field
 `ℚ(√(t² - 4·#F))`, its fundamental discriminant, and the conductor of the Frobenius order
-(`cm_invariant_eq`, `hasCMDiscriminant_congr`).
+(`hasCMDiscriminant_congr`).
 
 ## The order `ℤ[π]`, as a definition
 
@@ -164,21 +163,6 @@ variable {F : Type*} [Field F] [Fintype F]
 /-- The **characteristic polynomial of Frobenius**, `X² - t·X + #F`, over `ℤ`. -/
 noncomputable def frobCharPoly (E : SWCurve F) : ℤ[X] :=
   X ^ 2 - C (trace E) * X + C (Fintype.card F : ℤ)
-
-/-- Monic, hence `ℤ[X]/(frobCharPoly E)` is `ℤ`-free on the power basis `{1, π}` rather than an
-arbitrary quotient: that is what makes `frobeniusOrder` an *order* (a rank-2 lattice) and not
-merely a ring. Nothing below consumes it yet; it is the standing hypothesis of the Mathlib
-`AdjoinRoot` lemmas any later structural work needs, starting with a basis and the discriminant
-computation `disc ℤ[π] = t² - 4·#F`. -/
-theorem frobCharPoly_monic (E : SWCurve F) : (frobCharPoly E).Monic := by
-  unfold frobCharPoly
-  monicity!
-
-/-- `frobDisc` is the discriminant of that quadratic, in Mathlib's `discrim` sense. -/
-theorem frobDisc_eq_discrim (E : SWCurve F) :
-    frobDisc E = discrim 1 (-trace E) (Fintype.card F : ℤ) := by
-  simp only [frobDisc, discrim]
-  ring
 
 /-- The **Frobenius order** `ℤ[π] = ℤ[X]/(X² - t·X + #F)` of `E`.
 
@@ -318,14 +302,6 @@ noncomputable def frobeniusOrderEquiv (h : IsCycle₂ E₁ E₂) :
         frobeniusOrderHom_frobeniusElt, map_add, map_intCast]
       push_cast
       linear_combination h2)
-
-/-- Every invariant computed from the Frobenius discriminant agrees across a 2-cycle: the CM
-field, the fundamental discriminant, the squarefree part, the conductor of `ℤ[π]`. The integers
-themselves coincide (`frobDisc_eq`), so this is a congruence; it is recorded because the
-literature states the shared quantity as one of these derived invariants. -/
-theorem cm_invariant_eq {α : Type*} (f : ℤ → α) (h : IsCycle₂ E₁ E₂) :
-    f (frobDisc E₁) = f (frobDisc E₂) :=
-  congrArg f (frobDisc_eq h)
 
 /-- **The CM discriminant is shared**: a squarefree `D` is a CM discriminant of one curve of a
 2-cycle exactly when it is one of the other. No uniqueness of squarefree parts is needed, since
