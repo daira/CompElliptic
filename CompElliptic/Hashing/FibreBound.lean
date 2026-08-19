@@ -111,6 +111,8 @@ theorem fibrePoly_fst_ne_zero (G : SSWUParams F) (x : F) :
 theorem fibrePoly_ne_zero (G : SSWUParams F) (x : F) : G.fibrePoly x ≠ 0 :=
   mul_ne_zero (G.fibrePoly_fst_ne_zero x) (G.fibrePoly_snd_ne_zero x)
 
+/-- `Φ_x` has degree at most 10: its first factor has degree at most 4,
+and its second exactly 6 (`fibrePoly_snd_natDegree`). -/
 theorem fibrePoly_natDegree_le (G : SSWUParams F) (x : F) :
     (G.fibrePoly x).natDegree ≤ 10 := by
   refine natDegree_mul_le.trans ?_

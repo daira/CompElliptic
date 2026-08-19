@@ -88,8 +88,12 @@ end CompElliptic.Fields.Pasta
 if __name__ == "__main__":
     out = HEADER
     out += field_block("PALLAS_BASE", P, "PallasBaseField",
-                       "Pallas base field p (= Vesta scalar field).")
+                       "The order `p` of the Pallas base field (= the Vesta scalar field).",
+                       "The Pallas base field `F_p` (= the Vesta scalar field).",
+                       "`p` is prime, by a Pratt certificate.")
     out += field_block("PALLAS_SCALAR", Q, "PallasScalarField",
-                       "Pallas scalar field q (= Vesta base field).")
+                       "The order `q` of the Pallas scalar field (= the Vesta base field).",
+                       "The Pallas scalar field `F_q` (= the Vesta base field).",
+                       "`q` is prime, by a Pratt certificate.")
     out += FOOTER
     print(out, end="")

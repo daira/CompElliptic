@@ -19,11 +19,13 @@ factorizations of `p-1` and `q-1` (PARI/GP); see also https://github.com/zcash/p
 
 namespace CompElliptic.Fields.Pasta
 
--- Pallas base field p (= Vesta scalar field).
+/-- The order `p` of the Pallas base field (= the Vesta scalar field). -/
 @[reducible] def PALLAS_BASE_CARD : Nat := 0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001
 
+/-- The Pallas base field `F_p` (= the Vesta scalar field). -/
 abbrev PallasBaseField := ZMod PALLAS_BASE_CARD
 
+/-- `p` is prime, by a Pratt certificate. -/
 theorem PALLAS_BASE_is_prime : Nat.Prime PALLAS_BASE_CARD := by
   unfold PALLAS_BASE_CARD
   refine PrattCertificate'.out (p := 28948022309329048855892746252171976963363056481941560715954676764349967630337) ⟨5, (by reduce_mod_char), ?_⟩
@@ -90,11 +92,13 @@ theorem PALLAS_BASE_is_prime : Nat.Prime PALLAS_BASE_CARD := by
 instance : Fact (Nat.Prime PALLAS_BASE_CARD) := ⟨PALLAS_BASE_is_prime⟩
 instance : Field PallasBaseField := ZMod.instField PALLAS_BASE_CARD
 
--- Pallas scalar field q (= Vesta base field).
+/-- The order `q` of the Pallas scalar field (= the Vesta base field). -/
 @[reducible] def PALLAS_SCALAR_CARD : Nat := 0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001
 
+/-- The Pallas scalar field `F_q` (= the Vesta base field). -/
 abbrev PallasScalarField := ZMod PALLAS_SCALAR_CARD
 
+/-- `q` is prime, by a Pratt certificate. -/
 theorem PALLAS_SCALAR_is_prime : Nat.Prime PALLAS_SCALAR_CARD := by
   unfold PALLAS_SCALAR_CARD
   refine PrattCertificate'.out (p := 28948022309329048855892746252171976963363056481941647379679742748393362948097) ⟨5, (by reduce_mod_char), ?_⟩
