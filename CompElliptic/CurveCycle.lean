@@ -326,13 +326,32 @@ theorem trace_vesta : trace Vesta.curve = 86663725065984043395317761 := by
   decide
 
 /-- **The Pasta cycle's shared Frobenius discriminant is `-3 · V²`** with
-`V = 0x93cd3a2c8198e2690c7c095a00000001`, so the CM field is `ℚ(√-3)`. Equivalently
-`4p = t² + 3V²`, the CM norm equation at `|D| = 3` that the Pasta search solved.
+`V = 0x93cd3a2c8198e2690c7c095a00000001`, so the CM field is `ℚ(√-3)`.
+
+`V` is not an arbitrary constant, and it is worth knowing what it is, because the same integer
+answers two questions. Over `K = ℚ(√-3)` with `𝒪_K = ℤ[ζ₃]` the Eisenstein integers, Frobenius
+is an element of `𝒪_K` of norm `p`, and `(t, V)` are its coordinates:
+
+`π = (t + V√-3)/2`,  `N π = (t² + 3V²)/4 = p`,
+
+so the statement below is exactly `N π = p` rewritten, and it is the CM norm equation the Pasta
+search solved. Second, comparing `disc ℤ[π] = -3V²` with `disc 𝒪_K = -3` in `disc = D·f²` makes
+
+`V = [𝒪_K : ℤ[π]]`,
+
+the conductor: `V` measures how far Frobenius is from generating the whole Eisenstein ring.
+
+That also explains the shape of the search. The units of `𝒪_K` are `μ₆`, so `u·π` for the six
+units gives the six sextic twists, with traces `±t` and `±(t ± 3V)/2`: six candidate orders per
+prime instead of one, which is what `|D| = 3` buys. For Pasta exactly one of the six is prime,
+and it is `q`. The congruences `t ≡ V ≡ 1 (mod 2³²)` then force `2³² ∣ p - 1` and
+`2³² ∣ p - t = q - 1` at once, which is how one choice of `(t, V)` fixes the 2-adicity of both
+fields; searching over `p` directly would give no handle on `q`.
 
 Sharing the field is not by itself `j = 0`: an order of conductor `f > 1` in `ℚ(√-3)` has other
-`j`-invariants. What a cycle forces is the field; what the search additionally fixed, by taking
-`|D| = 3` and reading off the six twists per prime, is the *maximal* order `ℤ[ζ₃]`, whose extra
-automorphisms are the `j = 0` ones. Pallas and Vesta are `y² = x³ + 5`, so they do realise it. -/
+`j`-invariants, and here `f = V > 1`. What a cycle forces is the field; what the search
+additionally fixed is the *maximal* order `ℤ[ζ₃]` as `End`, whose extra automorphisms are the
+`j = 0` ones. Pallas and Vesta are `y² = x³ + 5`, so they do realise it. -/
 theorem frobDisc_pallas :
     frobDisc Pallas.curve = -3 * 196462116142286827589391630752301449217 ^ 2 := by
   simp only [frobDisc, trace_pallas, card_pallasBaseField]
