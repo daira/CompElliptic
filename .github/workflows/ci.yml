@@ -137,3 +137,13 @@ jobs:
           persist-credentials: false
       - name: Check the lakefile targets cover the module tree
         run: scripts/check_build_coverage.sh
+
+  umbrella-imports:
+    name: no Mathlib umbrella imports
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - name: Check no file imports Mathlib or Mathlib.Tactic wholesale
+        run: scripts/check_no_umbrella_imports.sh
