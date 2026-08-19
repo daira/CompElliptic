@@ -68,14 +68,9 @@ multiplication in the frequency domain:
   nontrivial frequencies contributes at most `(C²·#F)²`.
 * `sq_sum_abs_dev_le` and `sq_sum_abs_prob_dev_le`: Cauchy–Schwarz converts the
   squared-deviation bound into (the square of) the L¹ deviation — twice the
-  statistical distance. At the deployed sizes (`#G ≈ #F ≈ 2^{254}`), a constant
-  of the order FFSTV obtain for a sibling encoding (`C = 52`) would put the
-  statistical distance near `2^{-116}`. No constant has been derived for the
-  deployed mappings themselves: FFSTV's Theorem 6 treats simplified SWU with
-  `Z = -1` over fields of size `≡ 3 (mod 4)` under a quadratic-residue sign
-  rule, and the deployed variant differs in all three respects, so the genus
-  computation behind the constant remains to be redone for its branch curves
-  (see `WellDistributed.lean`).
+  statistical distance. At the deployed sizes (`#G ≈ #F ≈ 2^{254}`), the
+  derived constant `C = 21/2` puts the statistical distance near `2^{-120}`
+  (`design/weil-constant-derivation.md`; see `WellDistributed.lean`).
 
 Everything here is stated for an arbitrary function `f : F → G` from a finite
 type into a finite abelian group; oddness of the mapping and the elliptic curve
@@ -341,12 +336,11 @@ theorem sq_sum_abs_dev_le (f : F → G) {C : ℝ} (h : WeilBounded f C) :
 form, `pairCount f Q / (#F)²` is the chance the two-term hash outputs `Q`, and
 `1/#G` is the uniform chance, so the total variation distance is half of
 `∑ Q, |probability - uniform|`. This theorem bounds that sum's square by
-`(#G - 1)·C⁴/(#F)²`. At the deployed sizes (`#G ≈ #F ≈ 2^{254}`), a constant
-of the order FFSTV obtain for a sibling encoding (`C = 52`) would make the
-statistical distance about `2^{-116}`; no constant has been derived for the
-deployed mappings (see `WellDistributed.lean`). The two-term hash output is
-therefore indistinguishable from a uniformly random group element up to that
-error, which is the quantitative content of "the construction repairs the
+`(#G - 1)·C⁴/(#F)²`. At the deployed sizes (`#G ≈ #F ≈ 2^{254}`), the derived
+constant `C = 21/2` makes the statistical distance about `2^{-120}` (see
+`WellDistributed.lean`). The two-term hash output is therefore
+indistinguishable from a uniformly random group element up to that error,
+which is the quantitative content of "the construction repairs the
 non-uniformity of a single evaluation of `f`". -/
 theorem sq_sum_abs_prob_dev_le [Nonempty F] (f : F → G) {C : ℝ}
     (h : WeilBounded f C) :
