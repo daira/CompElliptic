@@ -79,10 +79,10 @@ exhibits the shared discriminant explicitly:
 
 `t² - 4p = -3 · V²`, with `V = 0x93cd3a2c8198e2690c7c095a00000001`,
 
-so the fundamental discriminant is `D = -3` and the CM field is `ℚ(√-3)`. That is exactly the
-`j = 0` case, which is why both curves have the form `y² = x³ + b` and why Simplified SWU
-(needing `a ≠ 0`) has to detour through an isogenous curve. Note also that `V ≡ 1 (mod 2³²)`,
-the 2-adicity that the search was steering for.
+so the fundamental discriminant is `D = -3` and the CM field is `ℚ(√-3)`;
+`Pasta.frobDisc_pallas` records what that does and does not imply about `j`. The constant `V`
+is a search parameter rather than a derived quantity: the Pasta primes were produced from the
+CM norm equation `4p = t² + 3V²`, with `V ≡ 1 (mod 2³²)` chosen for 2-adicity.
 -/
 
 namespace CompElliptic.CurveCycle
