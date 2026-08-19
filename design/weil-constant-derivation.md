@@ -387,7 +387,7 @@ transfers to the full `mapToCurve` verbatim (`WeilBounded.comp`; per
 curve, `weilBounded_zeroRepaired_mapToCurve`).
 
 For `WeilBounded` (squared form): C = 21/2 satisfies
-(10·√q + 1)² ≤ C²·q at the deployed sizes with margin ≈ 2^{127}. The
+(10·√q + 1)² ≤ C²·q at the deployed sizes with margin ≈ 2^{126}. The
 downstream regularity distance ε ≈ C²·√(#G)/#F (the budget shape of
 `sum_abs_prob_dev_le`, carried to the deployed mapping by
 `sum_abs_prob_dev_transport_le`) comes to about 2^{-120}, improving

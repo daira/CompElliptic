@@ -106,7 +106,7 @@ is the elementary, orthogonality-only content of `CharacterSum.lean`.
   `-1/Z` is a nonsquare whenever `Z` is, so the `t = -1` fibre is empty). The
   result, for both iso-curves, is `|S_f(χ)| ≤ 10·√q + 1` (the script's
   coarser audit gives `+ 3`), and `C = 21/2` absorbs the additive term at
-  the deployed sizes with margin `≈ 2^{127}`. The bound is proven in
+  the deployed sizes with margin `≈ 2^{126}`. The bound is proven in
   `design/weil-constant-derivation.md`, modulo results cited there as
   established mathematics (Weil's theorem in the form of FFSTV's Lemma 1
   and Theorem 3, and standard hyperelliptic point bookkeeping). The
