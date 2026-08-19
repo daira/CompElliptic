@@ -227,7 +227,11 @@ its mirror image is its inverse. This is the statement to reuse: it is strictly 
 equality of discriminants, and it needs no square roots to state. -/
 
 /-- `π₂ + (t₁ - 1)` is a root of `E₁`'s characteristic polynomial, which is what makes
-`frobeniusOrderHom` well defined. -/
+`frobeniusOrderHom` well defined: a map out of `ℤ[π₁] = ℤ[X]/(frobCharPoly E₁)` is a map out of
+`ℤ[X]` that kills the ideal, and that ideal is principal, so killing its generator is the whole
+obligation. (`aeval x` is the map out of the free algebra with `X ↦ x`; it is `eval₂` at the
+canonical `algebraMap`, which is the shape `AdjoinRoot.liftAlgHom` asks for.) The shift is an
+integer at all only because `t₁ + t₂ = 2`, which is the sole use of the cycle here. -/
 theorem aeval_frobCharPoly_shift (h : IsCycle₂ E₁ E₂) :
     aeval (frobeniusElt E₂ + ((trace E₁ - 1 : ℤ) : frobeniusOrder E₂)) (frobCharPoly E₁) = 0 := by
   have ht₁ : trace E₁ = (Fintype.card F₁ : ℤ) + 1 - (Fintype.card F₂ : ℤ) := by
