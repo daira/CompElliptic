@@ -159,7 +159,8 @@ For an ordinary curve the ring below is genuinely `ℤ[π] ⊆ End E`, by the ch
 abbrev frobeniusOrder (E : SWCurve F) : Type := AdjoinRoot (frobCharPoly E)
 
 /-- The formal Frobenius: the image of `X` in `ℤ[X]/(X² - t·X + #F)`. -/
-noncomputable def frobeniusElt (E : SWCurve F) : frobeniusOrder E := AdjoinRoot.root _
+noncomputable def frobeniusElt (E : SWCurve F) : frobeniusOrder E :=
+  AdjoinRoot.root (frobCharPoly E)
 
 /-- The definitional unfolding, stated as an equation so `simp` can *fold* an `AdjoinRoot.root`
 back into `frobeniusElt` with `← frobeniusElt_def`; `simp` cannot refold a definition by name.
@@ -252,7 +253,7 @@ theorem aeval_frobCharPoly_shift (h : IsCycle₂ E₁ E₂) :
 /-- **`π₁ ↦ π₂ + (t₁ - 1)`**, the comparison map between the two Frobenius orders of a 2-cycle. -/
 noncomputable def frobeniusOrderHom (h : IsCycle₂ E₁ E₂) :
     frobeniusOrder E₁ →ₐ[ℤ] frobeniusOrder E₂ :=
-  AdjoinRoot.liftAlgHom _ (Algebra.ofId ℤ (frobeniusOrder E₂))
+  AdjoinRoot.liftAlgHom (frobCharPoly E₁) (Algebra.ofId ℤ (frobeniusOrder E₂))
     (frobeniusElt E₂ + ((trace E₁ - 1 : ℤ) : frobeniusOrder E₂))
     (aeval_frobCharPoly_shift h)
 
@@ -263,7 +264,8 @@ value on `π₁`, so this is the simp lemma the round trip in `frobeniusOrderEqu
 theorem frobeniusOrderHom_frobeniusElt (h : IsCycle₂ E₁ E₂) :
     frobeniusOrderHom h (frobeniusElt E₁)
       = frobeniusElt E₂ + ((trace E₁ - 1 : ℤ) : frobeniusOrder E₂) :=
-  AdjoinRoot.liftAlgHom_root _ _ _ _
+  AdjoinRoot.liftAlgHom_root (frobCharPoly E₁) (Algebra.ofId ℤ (frobeniusOrder E₂))
+    (frobeniusElt E₂ + ((trace E₁ - 1 : ℤ) : frobeniusOrder E₂)) (aeval_frobCharPoly_shift h)
 
 /-- **The two curves of a 2-cycle have isomorphic Frobenius orders**, `ℤ[π₁] ≃ ℤ[π₂]`, by the
 generator shift above in both directions: the round trip moves the generator by
