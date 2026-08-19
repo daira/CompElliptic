@@ -8,8 +8,15 @@ cd "$(dirname "$0")/.."
 
 # The lane, parsed from lakefile.toml's precompileModules libraries (the single
 # source of truth) via check_native_optin.py; module names become file paths.
+# Command substitution (unlike process substitution) propagates the
+# script's failure through `set -e`, even if it dies after partial output.
+LANE_OUTPUT="$(python3 scripts/check_native_optin.py --print-lane)"
+if [[ -z "$LANE_OUTPUT" ]]; then
+  echo "ERROR: check_native_optin.py --print-lane printed no lane modules" >&2
+  exit 1
+fi
 LANE_MODULES=()
-mapfile -t LANE_MODULES < <(python3 scripts/check_native_optin.py --print-lane)
+mapfile -t LANE_MODULES <<< "$LANE_OUTPUT"
 LANE=()
 for mod in "${LANE_MODULES[@]}"; do LANE+=("${mod//.//}.lean"); done
 
