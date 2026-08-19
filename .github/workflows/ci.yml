@@ -102,6 +102,9 @@ jobs:
       - name: Check the design doc's symbolic identities and certificates
         shell: bash -el {0}
         run: sage scripts/weil-derivation-checks.sage
+      - name: Confirm the branch statistics on small curves
+        shell: bash -el {0}
+        run: sage scripts/check_sswu_small_curves.sage
 
   native-lane:
     name: FastFieldNative lane is core-only
