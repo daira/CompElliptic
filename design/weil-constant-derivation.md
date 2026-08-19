@@ -17,7 +17,7 @@ Status: this document is a proof of the bound, modulo results cited as
 established mathematics: Weil's theorem in the form of FFSTV's Lemma 1
 and Theorem 3, and the standard point bookkeeping for hyperelliptic
 models [Galbraith, ch. 10]. The symbolic identities it relies on are
-checked by `scripts/weil-derivation-checks.sage`; the per-instance
+checked by `scripts/check_weil_derivations.sage`; the per-instance
 facts (the empty w = 0 fibre, the Frobenius statistics, the
 square-class witnesses) by `weilbound.sage`. The calculation from the
 per-cover Weil inputs to the deployed constants is machine-checked
@@ -199,7 +199,7 @@ The lemma is `phiPoly_squarefree` in `Hashing/WeilSupport.lean`
 degree exactly 14 (`model1Poly_natDegree`, `model2Poly_natDegree`).
 
 The discriminant factorization and both critical values are checked
-symbolically in `scripts/weil-derivation-checks.sage`. So each C_j is
+symbolically in `scripts/check_weil_derivations.sage`. So each C_j is
 hyperelliptic of genus ⌊(14 − 1)/2⌋ = 6, for **every** valid parameter
 set — the pleasant surprise being that the two quantities the argument
 needs to be nonzero are the curve discriminant and A·B, both already
@@ -242,7 +242,7 @@ V₄ (three intermediate quadratics) only if the normalized constant
 term is a square in F_q(E′), and to C₄ only if q·(p² − 4q) is. For
 both quartics, these reduce to the same two classes: B·(A·x + B) and
 B·(A·x − 3·B) being squares in F_q(E′). (The reductions are checked
-symbolically in `scripts/weil-derivation-checks.sage`.) Both fail by
+symbolically in `scripts/check_weil_derivations.sage`.) Both fail by
 divisor parity: each class has two simple zeros and a double pole, so
 its divisor is not twice a divisor. So the monodromy is full D₄, and
 the v = u² subcover is the unique intermediate. This is consistent

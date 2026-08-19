@@ -101,7 +101,7 @@ jobs:
         run: git diff --exit-code CompElliptic/Isogenies/VeluCertificates.lean
       - name: Check the design doc's symbolic identities and certificates
         shell: bash -el {0}
-        run: sage scripts/weil-derivation-checks.sage
+        run: sage scripts/check_weil_derivations.sage
       - name: Confirm the branch statistics on small curves
         shell: bash -el {0}
         run: sage scripts/check_sswu_small_curves.sage

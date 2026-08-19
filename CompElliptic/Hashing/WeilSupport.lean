@@ -166,7 +166,7 @@ theorem tPoly_add_one_separable : (G.tPoly + 1).Separable := by
 
 /-! ## Separability of the cubic, by Bézout certificate
 
-The cofactors were computed by `xgcd` in `scripts/weil-derivation-checks.sage`;
+The cofactors were computed by `xgcd` in `scripts/check_weil_derivations.sage`;
 the identity's constant is `A³·B²·(4·A³ + 27·B²)`, nonzero exactly from the
 standing assumptions plus ellipticity. -/
 
@@ -189,7 +189,7 @@ theorem phiCubic_derivative :
 
 /-- **The cubic `φ` is separable**, by the Bézout certificate
 `s·φ + t·φ′ = A³·B²·(4·A³ + 27·B²)` computed in
-`scripts/weil-derivation-checks.sage`: the identity's constant is a product
+`scripts/check_weil_derivations.sage`: the identity's constant is a product
 of exactly the standing nonzero quantities. -/
 theorem phiCubic_separable (hdisc : 4*G.E.A^3 + 27*G.E.B^2 ≠ 0) :
     G.phiCubic.Separable := by
@@ -246,7 +246,7 @@ theorem psiPoly_coeff_zero :
   simp [psiPoly]
 
 /-- The re-expansion `64·Φ = Ψ(2·Z·X² + 1)`, checked symbolically in
-`scripts/weil-derivation-checks.sage`. -/
+`scripts/check_weil_derivations.sage`. -/
 theorem phiPoly_64_eq :
     64 * G.phiPoly = G.psiPoly.comp (2 * C G.Z * X^2 + 1) := by
   simp only [psiPoly, phiPoly, taPoly, tPoly, add_comp, mul_comp, pow_comp,
@@ -503,7 +503,7 @@ the quadratic algebra `K[Y]/(Y² - ĝ)` over `K = F_q(x)`:
   divisor parity.
 
 The Kappe–Warren reduction to the two square classes stays cited; it is
-checked symbolically in `scripts/weil-derivation-checks.sage`, along
+checked symbolically in `scripts/check_weil_derivations.sage`, along
 with the Bézout certificates used below. -/
 
 /-- A rational square root of a polynomial is a polynomial: `F[X]` is
@@ -625,7 +625,7 @@ noncomputable def gPoly : Polynomial F := X^3 + C G.E.A * X + C G.E.B
 
 /-- `g` is separable, by the Bézout certificate
 `(27·B - 18·A·X)·g + (6·A·X² - 9·B·X + 4·A²)·g′ = 4·A³ + 27·B²`
-(checked in `scripts/weil-derivation-checks.sage`): the constant is
+(checked in `scripts/check_weil_derivations.sage`): the constant is
 nonzero exactly by ellipticity. -/
 theorem gPoly_separable (hdisc : 4*G.E.A^3 + 27*G.E.B^2 ≠ 0) :
     G.gPoly.Separable := by
@@ -728,7 +728,7 @@ noncomputable def c4TestPoly : Polynomial F :=
 /-- **The V₄ exclusion** (design doc §3): `B·(A·x + B)` is not a square
 in the function field. The coprimality certificate is
 `(A²·X² - A·B·X + (B² + A³))·(A·X + B) - A³·g = B³` (checked in
-`scripts/weil-derivation-checks.sage`). -/
+`scripts/check_weil_derivations.sage`). -/
 theorem v4TestPoly_not_isSquare (hdisc : 4*G.E.A^3 + 27*G.E.B^2 ≠ 0) :
     ¬ IsSquare (AdjoinRoot.of
       (X^2 - C (algebraMap (Polynomial F) (RatFunc F) G.gPoly))
@@ -751,7 +751,7 @@ theorem v4TestPoly_not_isSquare (hdisc : 4*G.E.A^3 + 27*G.E.B^2 ≠ 0) :
 /-- **The C₄ exclusion** (design doc §3): `B·(A·x - 3·B)` is not a square
 in the function field. The coprimality certificate is
 `A³·g - (A²·X² + 3·A·B·X + (9·B² + A³))·(A·X - 3·B) = B·(4·A³ + 27·B²)`
-(checked in `scripts/weil-derivation-checks.sage`); its constant is again
+(checked in `scripts/check_weil_derivations.sage`); its constant is again
 a product of the standing nonzero quantities. -/
 theorem c4TestPoly_not_isSquare (hdisc : 4*G.E.A^3 + 27*G.E.B^2 ≠ 0) :
     ¬ IsSquare (AdjoinRoot.of
