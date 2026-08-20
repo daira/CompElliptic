@@ -123,7 +123,7 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false
-      - name: Check the supporting-facts listing against WeilSupport.lean
+      - name: Check the doc's references against WeilSupport.lean and the census
         run: scripts/check_weil_support_refs.py
 
   csimp-census:

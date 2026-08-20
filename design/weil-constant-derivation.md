@@ -27,8 +27,12 @@ deployed constants is machine-checked (CompElliptic's
 `Hashing/PastaSSWU.lean`), and so are the checkable inputs of the two
 cited steps (`Hashing/WeilSupport.lean`, whose facts are referenced at
 their points of use below; CI checks that this document references all
-of that file's declarations). The cited steps themselves and Weil's
-theorem stay on paper — the vocabulary they need is tracked at #30.
+of that file's declarations). Every declaration cited here is also
+pinned in the axiom census (`CompElliptic/TrustBoundary.lean`), and CI
+checks that too: a reader of this proof relies on everything it cites,
+so an unpinned citation would be a gap in axiom-checking. The cited
+steps themselves and Weil's theorem stay on paper — the vocabulary they
+need is tracked at #30.
 
 ## Background
 
