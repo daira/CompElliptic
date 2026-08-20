@@ -80,7 +80,7 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false
-      # One environment for both sage steps. Sage is pinned to the version that
+      # One environment for all sage steps. Sage is pinned to the version that
       # generated the committed certificates: Singular's `lift` output (the
       # emitted cofactors) can differ between versions, so byte-reproducibility
       # needs the same engine as the local regeneration. (The Weil-derivation
