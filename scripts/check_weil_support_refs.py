@@ -3,13 +3,14 @@
 directions: every declaration of CompElliptic/Hashing/WeilSupport.lean
 must be referenced (backticked) somewhere in
 design/weil-constant-derivation.md; every backticked identifier in the
-doc (dot-qualified ones included) must resolve to a declaration
-somewhere in CompElliptic or be a known non-Lean term; and every
-referenced declaration must be named directly in an `assert_axioms` or
-`assert_computable` entry of CompElliptic/TrustBoundary.lean. The doc is
-a pencil-and-paper proof whose reader relies on everything it cites, so
-an unpinned citation would be a gap in axiom-checking. Run from the
-repository root; exits non-zero on violation."""
+doc (dot-qualified ones included) must be a dot-path suffix of the
+fully qualified name of a declaration somewhere in CompElliptic, or be
+a known non-Lean term; and every referenced declaration must be named
+directly in an `assert_axioms` or `assert_computable` entry of
+CompElliptic/TrustBoundary.lean. The doc is a pencil-and-paper proof
+whose reader relies on everything it cites, so an unpinned citation
+would be a gap in axiom-checking. Run from the repository root; exits
+non-zero on violation."""
 import pathlib
 import re
 import sys
@@ -21,16 +22,52 @@ ALLOWED_NON_LEAN = {
 }
 
 DECL_RE = re.compile(
-    r'^(?:noncomputable )?(?:def|theorem|abbrev|structure) '
-    r'(?:_root_\.)?([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)',
-    re.M)
+    r'^(private +|protected +)?(?:noncomputable +|partial +|unsafe +)?'
+    r'(?:theorem|lemma|def|abbrev|instance|axiom|opaque|inductive'
+    r'|structure|class) '
+    r"(_root_\.)?([A-Za-z_][A-Za-z0-9_']*(?:\.[A-Za-z_][A-Za-z0-9_']*)*)")
+NS_RE = re.compile(r"^namespace +([A-Za-z_][A-Za-z0-9_.']*)")
+END_RE = re.compile(r"^end +([A-Za-z_][A-Za-z0-9_.']*)")
+
+
+def declared_names(path: pathlib.Path) -> set:
+    """The fully qualified names declared in a Lean file. The enclosing
+    namespace is reconstructed from the `namespace`/`end` pairs above each
+    declaration — `end <id>` pops only a matching innermost `namespace`, so
+    a named `section ... end` cannot corrupt the stack — the same
+    reconstruction as ironwood's `scripts/check_endpoint_census.sh`. A
+    `_root_.` prefix ignores the enclosing namespace; a `private`
+    declaration is not citable, so it is not collected."""
+    names = set()
+    stack = []
+    for line in path.read_text().splitlines():
+        m = NS_RE.match(line)
+        if m:
+            stack.append(m.group(1))
+            continue
+        m = END_RE.match(line)
+        if m:
+            if stack and stack[-1] == m.group(1):
+                stack.pop()
+            continue
+        m = DECL_RE.match(line)
+        if m and not (m.group(1) or '').startswith('private'):
+            names.add(m.group(3) if m.group(2) or not stack
+                      else '.'.join(stack) + '.' + m.group(3))
+    return names
+
+
+def is_path_suffix(name: str, full: str) -> bool:
+    """Whether `name` is a dot-path suffix of `full`, on segment
+    boundaries."""
+    return full == name or full.endswith('.' + name)
+
 
 root = pathlib.Path(__file__).resolve().parent.parent
-support = set(DECL_RE.findall(
-    (root / 'CompElliptic/Hashing/WeilSupport.lean').read_text()))
+support = declared_names(root / 'CompElliptic/Hashing/WeilSupport.lean')
 everywhere = set()
 for f in (root / 'CompElliptic').rglob('*.lean'):
-    everywhere |= set(DECL_RE.findall(f.read_text()))
+    everywhere |= declared_names(f)
 
 doc = (root / 'design/weil-constant-derivation.md').read_text()
 listed = set(re.findall(
@@ -40,20 +77,14 @@ listed = set(re.findall(
 listed = {name for name in listed
           if not re.search(r'\.(lean|sage|py|md|toml|yml|sh)$', name)}
 
-
-def last(name: str) -> str:
-    """The final dot-separated segment of a (possibly qualified) name."""
-    return name.rsplit('.', 1)[-1]
-
-
-# Declarations are spelled bare inside namespace blocks or dot-qualified at
-# top level; references may use either form. Compare by final segment.
-declared_last = {last(name) for name in everywhere}
-missing = sorted({last(name) for name in support}
-                 - {last(name) for name in listed})
+# A citation resolves when it is a dot-path suffix of some declaration's
+# fully qualified name. Final-segment matching alone would let a bogus
+# `junk.last` resolve against any declaration ending in `last`.
+missing = sorted(full for full in support
+                 if not any(is_path_suffix(name, full) for name in listed))
 unknown = sorted(name for name in listed
-                 if last(name) not in declared_last
-                 and name not in ALLOWED_NON_LEAN)
+                 if name not in ALLOWED_NON_LEAN
+                 and not any(is_path_suffix(name, full) for full in everywhere))
 
 # Census entries are written fully qualified, so a reference is pinned when
 # some entry's name ends with it at a segment boundary. An ambiguous short
@@ -64,10 +95,8 @@ pins = set(re.findall(
     r'([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)',
     (root / 'CompElliptic/TrustBoundary.lean').read_text(), re.M))
 unpinned = sorted(name for name in listed
-                  if name not in ALLOWED_NON_LEAN
-                  and last(name) in declared_last
-                  and not any(p == name or p.endswith('.' + name)
-                              for p in pins))
+                  if name not in ALLOWED_NON_LEAN and name not in unknown
+                  and not any(is_path_suffix(name, p) for p in pins))
 if missing:
     print("declared in WeilSupport.lean but not referenced in the doc:",
           *missing, sep='\n  ')
