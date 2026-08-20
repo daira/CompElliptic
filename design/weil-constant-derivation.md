@@ -121,8 +121,9 @@ and exactly one of g(x₁(u)), g(x₂(u)) is a square, by the identity
 g(x₂) = t³·g(x₁) with t = Z·u² in the square class of Z (in cleared
 form, `g_x2_eq`). The mapping outputs the point with the square
 candidate, with its ordinate's sign set by `sgn0`; the zero-repaired
-form sets f(0) = 𝒪, which makes f odd: f(−u) = −f(u) for all u (`map_neg`
-away from 0; on each deployed curve, `isOdd_zeroRepaired_mapToCurve`).
+form sets f(0) = 𝒪, which makes f odd: f(−u) = −f(u) for all u away
+from 0 (`SSWUParams.map_neg`); on each deployed curve this is
+`isOdd_zeroRepaired_mapToCurve`.
 
 Since q ≡ 1 (mod 4), −1 is a square, so −1/Z is a nonsquare and t = −1
 has no solutions (`Zuu_add_one_ne_zero`): **ta vanishes only at u = 0**
