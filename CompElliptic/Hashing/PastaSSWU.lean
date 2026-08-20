@@ -9,6 +9,7 @@ import CompElliptic.Isogenies.Homomorphism
 import CompElliptic.Curves.PastaOrder
 import CompElliptic.Hashing.SimplifiedSWU
 import CompElliptic.Hashing.SignedLift
+import CompElliptic.Hashing.FibreBound
 import Mathlib.Tactic.ReduceModChar
 
 /-!
@@ -70,6 +71,12 @@ theorem neg_thirteen_not_isSquare : ¬ IsSquare (-13 : PallasBaseField) := by
   rw [ZMod.euler_criterion PALLAS_BASE_CARD (by decide : (-13 : PallasBaseField) ≠ 0)]
   reduce_mod_char
   decide
+
+/-- `-1` is a square in the Pallas base field (`q ≡ 1 (mod 4)`), by Euler's
+criterion with the power evaluated by fast modular exponentiation. -/
+theorem isSquare_neg_one : IsSquare (-1 : PallasBaseField) := by
+  rw [ZMod.euler_criterion PALLAS_BASE_CARD (by decide : (-1 : PallasBaseField) ≠ 0)]
+  reduce_mod_char
 
 /-- The precomputed resolvent root for RFC 9380's criterion 3 on iso-Pallas is not
 a cube, by `not_exists_pow_eq_of_pow_ne_one` with the power evaluated by fast
@@ -135,7 +142,7 @@ theorem isSignFunction_sgn0 : IsSignFunction (sgn0 (p := PALLAS_BASE_CARD)) :=
   CompElliptic.Hashing.isSignFunction_sgn0 (Nat.odd_iff.mpr (by decide))
 
 /-- The deployed `map_to_curve` for Pallas: simplified SWU onto iso-Pallas,
-then the 3-isogeny down to Pallas. -/
+then the 3-isogeny across to Pallas. -/
 def mapToCurve (u : PallasBaseField) : SWPoint curve :=
   iso.map (sswu.map u)
 
@@ -152,6 +159,15 @@ theorem mapToCurve_neg {u : PallasBaseField} (hu : u ≠ 0) :
 character-sum analysis consumes. -/
 theorem isOdd_zeroRepaired_mapToCurve : IsOdd (zeroRepaired mapToCurve) :=
   isOdd_zeroRepaired fun _ hu => mapToCurve_neg hu
+
+/-- **At most 10 nonzero preimages per point** under the deployed
+`mapToCurve`. The isogeny is injective on rational points, so the SSWU fibre
+bound carries over. This is the counting interface for the
+indifferentiability sampler (zcash/ironwood#198). -/
+theorem card_mapToCurve_fibre_le (P : SWPoint curve) :
+    (Finset.univ.filter fun u => u ≠ 0 ∧ mapToCurve u = P).card ≤ 10 :=
+  card_fibre_comp_le iso_map_bijective.injective
+    (fun Q => sswu.card_map_fibre_le isSquare_neg_one Q) P
 
 /-- The zero-repair transport, composed at the deployed mapping: for every
 character, the deployed and repaired character sums differ by exactly
@@ -173,7 +189,7 @@ add on the iso-curve, apply the isogeny once. -/
 def mapHashOutputsToCurve (u₀ u₁ : PallasBaseField) : SWPoint curve :=
   iso.mapHashOutputsToCurve sswu.map u₀ u₁
 
-/-- The construction agrees with mapping each point down and adding on
+/-- The construction agrees with mapping each point across and adding on
 Pallas — the order `zcash-test-vectors` and `pasta_curves` use — by the
 homomorphism. -/
 theorem mapHashOutputsToCurve_eq (u₀ u₁ : PallasBaseField) :
@@ -248,6 +264,12 @@ theorem neg_thirteen_not_isSquare : ¬ IsSquare (-13 : VestaBaseField) := by
   reduce_mod_char
   decide
 
+/-- `-1` is a square in the Vesta base field (`q ≡ 1 (mod 4)`), by Euler's
+criterion with the power evaluated by fast modular exponentiation. -/
+theorem isSquare_neg_one : IsSquare (-1 : VestaBaseField) := by
+  rw [ZMod.euler_criterion PALLAS_SCALAR_CARD (by decide : (-1 : VestaBaseField) ≠ 0)]
+  reduce_mod_char
+
 /-- The precomputed resolvent root for RFC 9380's criterion 3 on iso-Vesta is not
 a cube, by `not_exists_pow_eq_of_pow_ne_one` with the power evaluated by fast
 modular exponentiation, as for `neg_five_not_isCube`. -/
@@ -307,7 +329,7 @@ theorem isSignFunction_sgn0 : IsSignFunction (sgn0 (p := PALLAS_SCALAR_CARD)) :=
   CompElliptic.Hashing.isSignFunction_sgn0 (Nat.odd_iff.mpr (by decide))
 
 /-- The deployed `map_to_curve` for Vesta: simplified SWU onto iso-Vesta,
-then the 3-isogeny down to Vesta. -/
+then the 3-isogeny across to Vesta. -/
 def mapToCurve (u : VestaBaseField) : SWPoint curve :=
   iso.map (sswu.map u)
 
@@ -324,6 +346,15 @@ theorem mapToCurve_neg {u : VestaBaseField} (hu : u ≠ 0) :
 character-sum analysis consumes. -/
 theorem isOdd_zeroRepaired_mapToCurve : IsOdd (zeroRepaired mapToCurve) :=
   isOdd_zeroRepaired fun _ hu => mapToCurve_neg hu
+
+/-- **At most 10 nonzero preimages per point** under the deployed
+`mapToCurve`. The isogeny is injective on rational points, so the SSWU fibre
+bound carries over. This is the counting interface for the
+indifferentiability sampler (zcash/ironwood#198). -/
+theorem card_mapToCurve_fibre_le (P : SWPoint curve) :
+    (Finset.univ.filter fun u => u ≠ 0 ∧ mapToCurve u = P).card ≤ 10 :=
+  card_fibre_comp_le iso_map_bijective.injective
+    (fun Q => sswu.card_map_fibre_le isSquare_neg_one Q) P
 
 /-- The zero-repair transport, composed at the deployed mapping: for every
 character, the deployed and repaired character sums differ by exactly
@@ -345,7 +376,7 @@ add on the iso-curve, apply the isogeny once. -/
 def mapHashOutputsToCurve (u₀ u₁ : VestaBaseField) : SWPoint curve :=
   iso.mapHashOutputsToCurve sswu.map u₀ u₁
 
-/-- The construction agrees with mapping each point down and adding on
+/-- The construction agrees with mapping each point across and adding on
 Vesta — the order `zcash-test-vectors` and `pasta_curves` use — by the
 homomorphism. -/
 theorem mapHashOutputsToCurve_eq (u₀ u₁ : VestaBaseField) :

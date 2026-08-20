@@ -60,6 +60,18 @@ theorem not_onCurve_zero {a b : F} (hb : b ≠ 0) : ¬ OnCurve a b (0, 0) := by
   have h' : (0 : F) ^ 2 = (0 : F) ^ 3 + a * 0 + b := h
   simpa using h'.symm
 
+omit [DecidableEq F] in
+/-- Two points on the curve sharing an `x`-coordinate have `y`-coordinates equal up to sign,
+because their curve equations subtract to `(y₁ - y₂)·(y₁ + y₂) = 0`. -/
+theorem y_eq_pm_of_onCurve_x_eq {a b x y₁ y₂ : F}
+    (h₁ : OnCurve a b (x, y₁)) (h₂ : OnCurve a b (x, y₂)) : y₁ = y₂ ∨ y₁ = -y₂ := by
+  have h : (y₁ - y₂) * (y₁ + y₂) = 0 := by
+    simp only [OnCurve] at h₁ h₂
+    linear_combination h₁ - h₂
+  rcases mul_eq_zero.mp h with h | h
+  · exact Or.inl (sub_eq_zero.mp h)
+  · exact Or.inr (by linear_combination h)
+
 /-- Negation `(x, y) ↦ (x, -y)`; fixes the `(0, 0)` sentinel. -/
 def neg (p : F × F) : F × F := (p.1, -p.2)
 
@@ -425,6 +437,36 @@ worth naming: without it every caller re-derives it inline. -/
 omit [DecidableEq F] in
 /-- Negation negates the `y`-coordinate — the one fact that makes `2 • P = 0` say `P.y = -P.y`. -/
 @[simp] theorem SWPoint.neg_y {E : SWCurve F} (P : SWPoint E) : (-P).y = -P.y := rfl
+
+/-- Addition computes its `x`-coordinate by the raw `add` on the coordinate pairs. -/
+lemma SWPoint.add_x {E : SWCurve F} (P Q : SWPoint E) :
+    (P + Q).x = (add E.A (P.x, P.y) (Q.x, Q.y)).1 := rfl
+
+/-- Addition computes its `y`-coordinate by the raw `add` on the coordinate pairs. -/
+lemma SWPoint.add_y {E : SWCurve F} (P Q : SWPoint E) :
+    (P + Q).y = (add E.A (P.x, P.y) (Q.x, Q.y)).2 := rfl
+
+omit [DecidableEq F] in
+/-- A nonzero representable point is on the curve: its `Valid` disjunction cannot be the `(0, 0)`
+sentinel. -/
+theorem SWPoint.onCurve_of_ne_zero {E : SWCurve F} {P : SWPoint E} (h : P ≠ 0) :
+    OnCurve E.A E.B (P.x, P.y) := by
+  rcases P.onCurve with hc | h0
+  · exact hc
+  · exact absurd (SWPoint.ext_pair (by rw [h0]; rfl)) h
+
+omit [DecidableEq F] in
+/-- Nonzero representable points sharing an `x`-coordinate are equal up to sign: both are on the
+curve (`onCurve_of_ne_zero`), so their `y`-coordinates agree up to sign
+(`y_eq_pm_of_onCurve_x_eq`). -/
+theorem SWPoint.eq_pm_of_x_eq {E : SWCurve F} {P Q : SWPoint E}
+    (hP : P ≠ 0) (hQ : Q ≠ 0) (hx : P.x = Q.x) : P = Q ∨ P = -Q := by
+  have hPC := onCurve_of_ne_zero hP
+  have hQC := onCurve_of_ne_zero hQ
+  rw [hx] at hPC
+  rcases y_eq_pm_of_onCurve_x_eq hPC hQC with hy | hy
+  · exact Or.inl (ext_pair (by rw [hx, hy]))
+  · exact Or.inr (ext_pair (by rw [hx, hy]; rfl))
 
 /-! ### Fast (logarithmic) scalar multiplication
 

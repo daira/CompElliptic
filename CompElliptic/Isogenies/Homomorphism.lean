@@ -457,20 +457,6 @@ theorem map_neg (P : SWPoint I.domain) : I.map (-P) = -I.map P := by
   · have hP0 : (P.x, P.y) = ((0 : F), (0 : F)) := P.onCurve.resolve_left hP
     rw [SWPoint.ext_pair (E := I.domain) (Q := 0) hP0, neg_zero, I.map_zero, neg_zero]
 
-omit [DecidableEq F] in
-/-- Two on-curve points with the same abscissa are equal or negatives. -/
-private theorem eq_or_eq_neg_of_x_eq {E : SWCurve F} {R S : SWPoint E}
-    (hR : OnCurve E.A E.B (R.x, R.y)) (hS : OnCurve E.A E.B (S.x, S.y))
-    (hx : R.x = S.x) : R = S ∨ R = -S := by
-  have h1 : R.y^2 = R.x^3 + E.A * R.x + E.B := hR
-  have h2 : S.y^2 = S.x^3 + E.A * S.x + E.B := hS
-  rw [hx] at h1
-  have h0 : (R.y - S.y) * (R.y + S.y) = 0 := by linear_combination h1 - h2
-  rcases mul_eq_zero.mp h0 with h | h
-  · exact Or.inl (SWPoint.ext_pair (Prod.ext_iff.mpr ⟨hx, sub_eq_zero.mp h⟩))
-  · exact Or.inr (SWPoint.ext_pair (Prod.ext_iff.mpr
-      ⟨by rw [SWPoint.neg_x]; exact hx, by rw [SWPoint.neg_y]; linear_combination h⟩))
-
 /-- The image of a sum is the sum of the images, up to sign. -/
 theorem map_add_pm (h2 : (2 : F) ≠ 0)
     (hd : ∀ X : F, ¬ OnCurve I.domain.A I.domain.B (X, 0))
@@ -484,7 +470,13 @@ theorem map_add_pm (h2 : (2 : F) ≠ 0)
           ((I.map (P + Q)).x, (I.map (P + Q)).y) := by
         rw [map, dif_pos hs]
         exact I.onCurve_mapXY hs
-      exact eq_or_eq_neg_of_x_eq hLon hi (I.map_add_x h2 hd hc P Q)
+      have hLne : I.map (P + Q) ≠ 0 := fun h0 => by
+        rw [h0] at hLon
+        exact origin_not_on_curve I.codomain hLon
+      have hine : I.map P + I.map Q ≠ 0 := fun h0 => by
+        rw [h0] at hi
+        exact origin_not_on_curve I.codomain hi
+      exact SWPoint.eq_pm_of_x_eq hLne hine (I.map_add_x h2 hd hc P Q)
     · exfalso
       have hi0 : ((I.map P + I.map Q).x, (I.map P + I.map Q).y) = ((0 : F), (0 : F)) :=
         (I.map P + I.map Q).onCurve.resolve_left hi
@@ -546,8 +538,8 @@ operation: it is cryptographically hazardous unless composed with
 modelled as a random oracle by itself. Maps two field elements, intended to
 be outputs of `hash_to_field`, to the isogeny's domain curve, adds there, and
 applies the isogeny once (spec §5.4.9.8). -/
-def mapHashOutputsToCurve (m : F → SWPoint I.domain) (u₀ u₁ : F) : SWPoint I.codomain :=
-  I.map (m u₀ + m u₁)
+def mapHashOutputsToCurve (f : F → SWPoint I.domain) (u₀ u₁ : F) : SWPoint I.codomain :=
+  I.map (f u₀ + f u₁)
 
 /-- `mapHashOutputsToCurve` agrees with applying the isogeny to each point and
 adding on the codomain. RFC 9380 §6.6.3 notes exactly this optimization —add on
@@ -558,8 +550,8 @@ spec and `hashtocurve.sage` use the one-evaluation order, while
 theorem mapHashOutputsToCurve_eq (h2 : (2 : F) ≠ 0)
     (hd : ∀ X : F, ¬ OnCurve I.domain.A I.domain.B (X, 0))
     (hc : ∀ X : F, ¬ OnCurve I.codomain.A I.codomain.B (X, 0))
-    (m : F → SWPoint I.domain) (u₀ u₁ : F) :
-    I.mapHashOutputsToCurve m u₀ u₁ = I.map (m u₀) + I.map (m u₁) :=
-  I.map_add h2 hd hc (m u₀) (m u₁)
+    (f : F → SWPoint I.domain) (u₀ u₁ : F) :
+    I.mapHashOutputsToCurve f u₀ u₁ = I.map (f u₀) + I.map (f u₁) :=
+  I.map_add h2 hd hc (f u₀) (f u₁)
 
 end CompElliptic.Isogenies.ThreeIsogeny

@@ -112,6 +112,14 @@ assert_axioms CompElliptic.Curves.Pasta.Pallas.norm_charSum_mapToCurve_sub_zeroR
   CompElliptic.Fields.Pasta.pallasBase)
 assert_axioms CompElliptic.Curves.Pasta.Vesta.norm_charSum_mapToCurve_sub_zeroRepaired +native(
   CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms CompElliptic.Curves.Pasta.Pallas.card_mapToCurve_fibre_le +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_isoGpt)
+assert_axioms CompElliptic.Curves.Pasta.Vesta.card_mapToCurve_fibre_le +native(
+  CompElliptic.Fields.Pasta.vestaBase,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_isoGpt)
 assert_axioms CompElliptic.Curves.Pasta.Pallas.mapHashOutputsToCurve_eq +native(
   CompElliptic.Fields.Pasta.pallasBase)
 assert_axioms CompElliptic.Curves.Pasta.Vesta.mapHashOutputsToCurve_eq +native(

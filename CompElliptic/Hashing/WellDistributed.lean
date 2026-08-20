@@ -34,9 +34,10 @@ It does not, for four reasons that compound.
 
 1. **It is a bound on a different curve.** The character sum `∑ u, ψ (f u)` equals,
    up to `O(1)`, a character sum over the *covering curve* `C` attached to the
-   mapping (for simplified SWU, of genus 8). Its size is governed by Hasse–Weil
-   for `C` (`|#C(F) - (#F + 1)| ≤ 2·genus·√#F`), not by the order of the target
-   curve `E`. The order of `E` does not determine the order of `C`.
+   mapping (for the deployed simplified SWU, of genus 6 per branch). Its size is
+   governed by Hasse–Weil for `C` (`|#C(F) - (#F + 1)| ≤ 2·genus·√#F`), not by
+   the order of the target curve `E`. The order of `E` does not determine the
+   order of `C`.
 
 2. **One order is not a uniform family bound.** Well-distributedness needs the
    bound to hold *uniformly over every nontrivial character* `ψ`, i.e. over roughly
@@ -46,17 +47,17 @@ It does not, for four reasons that compound.
 
 3. **CompElliptic's order method is special to near-prime-order elliptic curves.**
    `CurveOrder` pins `#E` from a prime-order witness (`r • P = 0`) plus the fibre
-   bound `#E ≤ 2·#F + 1`. For a genus-8 curve the group to count is its Jacobian
+   bound `#E ≤ 2·#F + 1`. For a genus-6 curve the group to count is its Jacobian
    (the curve's own points carry no group law; the Jacobian's degree-0 divisor
    classes do, with the curve embedded in it), and that group has composite order
-   `≈ (#F)⁸` — no prime to pin, which is the decisive obstruction. And the fibre
+   `≈ (#F)⁶` — no prime to pin, which is the decisive obstruction. And the fibre
    bound is only good to a factor of about two, whereas the character sum needs
    `√#F`-precision — a far finer target than "pin to a prime". So the elementary
    method does not transfer.
 
 4. **Jacobian arithmetic is necessary but not sufficient.** Even implementing the
    Jacobian's group operations (which we do not), there is no witness-plus-fibre
-   shortcut at genus 8, and direct point counting over a field of size `≈ 2^{254}`
+   shortcut at genus 6, and direct point counting over a field of size `≈ 2^{254}`
    is infeasible (no verified higher-genus counting algorithm; the naive count is
    `≈ 2^{254}` points). Off-line tools (e.g. Sage) can in principle count Jacobian
    points, but the result is one order, not the uniform family bound of (2), and
@@ -83,12 +84,35 @@ is the elementary, orthogonality-only content of `CharacterSum.lean`.
   character `χ` of conductor `𝔣` on a curve `X` of genus `g` over a field of size `q`,
   `|∑_{P ∈ X(F)} χ(P)| ≤ (2g − 2 + deg 𝔣(χ))·√q`. Theorem 3 is its workhorse form for
   encodings presented by a covering `C → E`. Theorem 6 instantiates it for the
-  simplified SWU encoding (genus-8 covering, `|S_f(χ)| ≤ 52·√q + 151`, stated there
-  for fields of size `≡ 3 (mod 4)`). The Pasta base fields have size `≡ 1 (mod 4)`,
-  so the deployed generalized variant needs the same genus computation redone for
-  its covering; that redo is routine but does not seem to be covered in the
-  literature. Separately, `WeilBounded` itself is an external input to the
-  formalization.
+  simplified SWU encoding of Brier et al. with the residue-status sign rule of
+  Fouque-Tibouchi: `Z = -1`, fields of size `≡ 3 (mod 4)`, and the
+  `y`-coordinate's sign given by its quadratic-residue status. It obtains
+  `|S_f(χ)| ≤ 52·√q + 151` from genus-8 branch coverings; the conductor term
+  `deg y = 12` accounts for the residue-status indicator, which enters the
+  proof as a multiplicative character. The deployed variant differs in all
+  three parameters. RFC 9380's `Z` criteria exclude `Z = -1` outright, and the
+  deployed `Z = -13` is the first admissible candidate for each iso-curve
+  independently under the RFC's search order. The Pasta base fields have size
+  `≡ 1 (mod 4)`. The sign rule is the parity-based `sgn0`, which is not a
+  multiplicative character, so the indicator step of the proof does not apply
+  as written — and the sign-convention-free reduction in `CharacterSum.lean`
+  makes the hypothesis depend only on the ±-class multiplicities, so the redone
+  bound needs no sign indicator at all. The bound for the deployed parameters
+  is calculated in zcash/pasta's `weilbound.sage`
+  (<https://github.com/zcash/pasta/blob/acc1384bfa7a079b7ecc59182ac821215605cd39/weilbound.sage>):
+  re-rooting each branch covering as a hyperelliptic model over the input line
+  gives genus 6 per branch against FFSTV's 8, with dihedral monodromy, and the
+  exceptional input set is exactly `{0}` (for fields of size `≡ 1 (mod 4)`,
+  `-1/Z` is a nonsquare whenever `Z` is, so the `t = -1` fibre is empty). The
+  result, for both iso-curves, is `|S_f(χ)| ≤ 10·√q + 1` (the script's
+  coarser audit gives `+ 3`), and `C = 21/2` absorbs the additive term at
+  the deployed sizes with margin `≈ 2^{127}`. The bound is proven in
+  `design/weil-constant-derivation.md`, modulo results cited there as
+  established mathematics (Weil's theorem in the form of FFSTV's Lemma 1
+  and Theorem 3, and standard hyperelliptic point bookkeeping);
+  formalizing the calculation in Lean is what remains of
+  <https://github.com/daira/CompElliptic/issues/28>. Separately,
+  `WeilBounded` itself is an external input to the formalization.
 -/
 
 namespace CompElliptic.Hashing
