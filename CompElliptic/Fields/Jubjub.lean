@@ -19,11 +19,13 @@ base field (the BLS12-381 scalar field) are not defined here.
 
 namespace CompElliptic.Fields.Jubjub
 
--- Jubjub scalar field ℓ (the prime-order subgroup order).
+/-- The order `ℓ` of the Jubjub scalar field (the prime-order subgroup order). -/
 @[reducible] def JUBJUB_SCALAR_CARD : Nat := 0xe7db4ea6533afa906673b0101343b00a6682093ccc81082d0970e5ed6f72cb7
 
+/-- The Jubjub scalar field `F_ℓ`. -/
 abbrev JubjubScalarField := ZMod JUBJUB_SCALAR_CARD
 
+/-- `ℓ` is prime, by a Pratt certificate. -/
 theorem JUBJUB_SCALAR_is_prime : Nat.Prime JUBJUB_SCALAR_CARD := by
   unfold JUBJUB_SCALAR_CARD
   refine PrattCertificate'.out (p := 6554484396890773809930967563523245729705921265872317281365359162392183254199) ⟨6, (by reduce_mod_char), ?_⟩

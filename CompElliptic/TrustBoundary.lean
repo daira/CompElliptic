@@ -6,6 +6,8 @@ Authors: Daira-Emma Hopwood
 -/
 import CompElliptic.Curves.PastaOrder
 import CompElliptic.Hashing.PastaSSWU
+import CompElliptic.Hashing.TwoTermUniformity
+import CompElliptic.Hashing.WeilSupport
 import CompElliptic.Curves.Pasta.Fast.Projective
 import CompElliptic.Curves.Pasta.Fast.Msm
 import CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv
@@ -140,3 +142,133 @@ assert_axioms CompElliptic.Curves.Pasta.Fast.Msm.pippengerFastPar_eq_msm
 assert_axioms CompElliptic.Curves.Pasta.Fast.Msm.commitLagrangeFastWith_eq
 assert_axioms CompElliptic.Curves.Pasta.Fast.ProjectiveMont.pnsmulM_spec
 assert_axioms CompElliptic.Curves.Pasta.Fast.ProjectiveMont.msmM_spec
+
+/-! ## The Weil-derivation design doc's citations
+
+`design/weil-constant-derivation.md` is a pencil-and-paper proof whose reader relies on
+every Lean declaration it cites. To avoid a resulting axiom-checking gap, every such
+declaration must be pinned here (checked in CI by `scripts/check_weil_support_refs.py`).
+Definitions of polynomials in these modules use Mathlib's noncomputable ones, so they
+take `assert_axioms` like the theorems and `Prop`-shaped definitions. -/
+
+/-! ### The abscissae, branch covers, and models (`Hashing/BranchCovers.lean`,
+`Hashing/FibreBound.lean`, `Hashing/SimplifiedSWU.lean`, `Hashing/SignedLift.lean`) -/
+
+assert_computable CompElliptic.Hashing.SSWUParams.x1
+assert_computable CompElliptic.Hashing.SSWUParams.x2
+assert_computable CompElliptic.Hashing.SSWUParams.phiCore
+assert_computable CompElliptic.Hashing.SSWUParams.twist1
+assert_computable CompElliptic.Hashing.SSWUParams.twist2
+assert_computable CompElliptic.Hashing.SSWUParams.model1
+assert_computable CompElliptic.Hashing.SSWUParams.model2
+assert_computable CompElliptic.Hashing.SSWUParams.scale1
+assert_computable CompElliptic.Hashing.SSWUParams.scale2
+assert_computable CompElliptic.Hashing.sgn0
+assert_axioms CompElliptic.Hashing.SSWUParams.map_neg
+assert_axioms CompElliptic.Hashing.SSWUParams.Zuu_add_one_ne_zero
+assert_axioms CompElliptic.Hashing.SSWUParams.ta_ne_zero_of_u_ne_zero
+assert_axioms CompElliptic.Hashing.SSWUParams.g_x2_eq
+assert_axioms CompElliptic.Hashing.SSWUParams.model1_eq
+assert_axioms CompElliptic.Hashing.SSWUParams.model2_eq
+assert_axioms CompElliptic.Hashing.SSWUParams.model1_zero
+assert_axioms CompElliptic.Hashing.SSWUParams.model2_zero
+assert_axioms CompElliptic.Hashing.SSWUParams.scale1_ne_zero
+assert_axioms CompElliptic.Hashing.SSWUParams.scale2_ne_zero
+
+/-! ### The model point sets and covering maps (`Hashing/BranchCovers.lean`) -/
+
+assert_computable CompElliptic.Hashing.SSWUParams.modelPoints1 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.modelPoints2 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.cover1Map +choice
+assert_computable CompElliptic.Hashing.SSWUParams.cover2Map +choice
+assert_axioms CompElliptic.Hashing.SSWUParams.fibre_sum
+assert_axioms CompElliptic.Hashing.SSWUParams.modelPoints_sum
+
+/-! ### The supporting facts of the cited steps (`Hashing/WeilSupport.lean`) -/
+
+assert_axioms CompElliptic.Hashing.isCoprime_of_bezout
+assert_axioms CompElliptic.Hashing.isCoprime_X_of_coeff_zero
+assert_axioms CompElliptic.Hashing.isCoprime_C_of_ne_zero
+assert_axioms CompElliptic.Hashing.not_X_sq_dvd
+assert_axioms CompElliptic.Hashing.SSWUParams.gPoly
+assert_axioms CompElliptic.Hashing.SSWUParams.gPoly_separable
+assert_axioms CompElliptic.Hashing.SSWUParams.eval_g_neg_B_div_A
+assert_axioms CompElliptic.Hashing.SSWUParams.g_neg_B_div_A_ne_zero
+assert_axioms CompElliptic.Hashing.SSWUParams.phiCubic
+assert_axioms CompElliptic.Hashing.SSWUParams.phiCubic_derivative
+assert_axioms CompElliptic.Hashing.SSWUParams.phiCubic_separable
+assert_axioms CompElliptic.Hashing.SSWUParams.taPoly_derivative
+assert_axioms CompElliptic.Hashing.SSWUParams.tPoly_add_one_separable
+assert_axioms CompElliptic.Hashing.SSWUParams.phiPoly
+assert_axioms CompElliptic.Hashing.SSWUParams.eval_phiPoly
+assert_axioms CompElliptic.Hashing.SSWUParams.phiPoly_eq_comp
+assert_axioms CompElliptic.Hashing.SSWUParams.phiPoly_natDegree
+assert_axioms CompElliptic.Hashing.SSWUParams.phiPoly_coeff_zero
+assert_axioms CompElliptic.Hashing.SSWUParams.psiPoly
+assert_axioms CompElliptic.Hashing.SSWUParams.psiPoly_coeff_zero
+assert_axioms CompElliptic.Hashing.SSWUParams.phiPoly_64_eq
+assert_axioms CompElliptic.Hashing.SSWUParams.phiPoly_isCoprime_snd
+assert_axioms CompElliptic.Hashing.SSWUParams.phiPoly_isCoprime_tPoly_add_one
+assert_axioms CompElliptic.Hashing.SSWUParams.phiPoly_separable
+assert_axioms CompElliptic.Hashing.SSWUParams.phiPoly_squarefree
+assert_axioms CompElliptic.Hashing.SSWUParams.model1Poly
+assert_axioms CompElliptic.Hashing.SSWUParams.model2Poly
+assert_axioms CompElliptic.Hashing.SSWUParams.eval_model1Poly
+assert_axioms CompElliptic.Hashing.SSWUParams.eval_model2Poly
+assert_axioms CompElliptic.Hashing.SSWUParams.model1Poly_natDegree
+assert_axioms CompElliptic.Hashing.SSWUParams.model2Poly_natDegree
+assert_axioms CompElliptic.Hashing.SSWUParams.model1Poly_squarefree
+assert_axioms CompElliptic.Hashing.SSWUParams.model2Poly_squarefree
+assert_axioms CompElliptic.Hashing.SSWUParams.p2Poly
+assert_axioms CompElliptic.Hashing.SSWUParams.p2Poly_coeff
+assert_axioms CompElliptic.Hashing.SSWUParams.p2Poly_natDegree
+assert_axioms CompElliptic.Hashing.SSWUParams.p2Poly_isEisensteinAt
+assert_axioms CompElliptic.Hashing.SSWUParams.p1RecipPoly
+assert_axioms CompElliptic.Hashing.SSWUParams.p1RecipPoly_coeff
+assert_axioms CompElliptic.Hashing.SSWUParams.p1RecipPoly_natDegree
+assert_axioms CompElliptic.Hashing.SSWUParams.p1RecipPoly_isEisensteinAt
+assert_axioms CompElliptic.Hashing.not_isSquare_ratFunc_of_squarefree
+assert_axioms CompElliptic.Hashing.exists_sq_eq_of_ratFunc_sq
+assert_axioms CompElliptic.Hashing.sq_or_mul_sq_of_isSquare_adjoinRoot
+assert_axioms CompElliptic.Hashing.SSWUParams.not_isSquare_adjoinRoot_of_linear
+assert_axioms CompElliptic.Hashing.SSWUParams.gPoly_not_isSquare_ratFunc
+assert_axioms CompElliptic.Hashing.SSWUParams.v4TestPoly
+assert_axioms CompElliptic.Hashing.SSWUParams.v4TestPoly_not_isSquare
+assert_axioms CompElliptic.Hashing.SSWUParams.c4TestPoly
+assert_axioms CompElliptic.Hashing.SSWUParams.c4TestPoly_not_isSquare
+
+/-! ### Characters and realness (`Hashing/CharacterSum.lean`) -/
+
+assert_axioms CompElliptic.Hashing.charSum_eq
+assert_axioms CompElliptic.Hashing.addChar_map_neg_eq_conj
+assert_axioms CompElliptic.Hashing.IsOdd.mult_neg
+assert_axioms CompElliptic.Hashing.IsOdd.conj_charSum
+assert_axioms CompElliptic.Hashing.IsOdd.two_mul_charSum
+
+/-! ### The Weil-input shape and the assembly (`Hashing/WeilInstance.lean`,
+`Hashing/WellDistributed.lean`, `Hashing/TwoTermUniformity.lean`) -/
+
+assert_axioms CompElliptic.Hashing.CharSumBounded
+assert_axioms CompElliptic.Hashing.SSWUParams.cover_charSum
+assert_axioms CompElliptic.Hashing.SSWUParams.weilBounded_zeroRepaired
+assert_axioms CompElliptic.Hashing.WeilBounded
+assert_axioms CompElliptic.Hashing.WeilBounded.comp
+assert_axioms CompElliptic.Hashing.sum_abs_prob_dev_le
+assert_axioms CompElliptic.Hashing.sum_abs_prob_dev_transport_le
+
+/-! ### The deployed instances (`Hashing/PastaSSWU.lean`) -/
+
+assert_computable CompElliptic.Curves.Pasta.Pallas.mapToCurve +choice +native(
+  CompElliptic.Fields.Pasta.pallasBase)
+assert_computable CompElliptic.Curves.Pasta.Vesta.mapToCurve +choice +native(
+  CompElliptic.Fields.Pasta.vestaBase)
+assert_axioms CompElliptic.Curves.Pasta.Pallas.neg_AB_not_isSquare
+assert_axioms CompElliptic.Curves.Pasta.Vesta.neg_AB_not_isSquare
+assert_axioms CompElliptic.Curves.Pasta.Pallas.weilBounded_zeroRepaired_mapToCurve +native(
+  CompElliptic.Fields.Pasta.pallasBase,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Pallas.q_nsmul_isoGpt)
+assert_axioms CompElliptic.Curves.Pasta.Vesta.weilBounded_zeroRepaired_mapToCurve +native(
+  CompElliptic.Fields.Pasta.vestaBase,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_Gpt,
+  CompElliptic.Curves.Pasta.Vesta.p_nsmul_isoGpt)

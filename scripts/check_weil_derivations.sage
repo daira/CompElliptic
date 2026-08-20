@@ -60,6 +60,20 @@ assert phi(0) == b^2
 assert 64*phi(-1/QQ(4)) == 4*a^3 + 27*b^2
 print("φ composition, discriminant, and critical values: OK")
 
+# The certificates transcribed in Hashing/WeilSupport.lean: φ's Bézout
+# cofactors, the re-expansion 64·Φ = Ψ(2·z·u² + 1), and the coprimality
+# decomposition of Φ against z·u² + 1:
+s3 = (6*a^3*b^2 + 36*b^4)*T + (4*a^6 + 36*a^3*b^2 + 63*b^4)
+t3 = (-2*a^3*b^2 - 12*b^4)*T^2 + (-2*a^6 - 18*a^3*b^2 - 33*b^4)*T \
+    + (-3*a^3*b^2 - 21*b^4)
+assert s3*phi + t3*phi.derivative() == a^3*b^2*(4*a^3 + 27*b^2)
+Psi = b^2*T^6 + (4*a^3 + 9*b^2)*T^4 + (27*b^2 - 8*a^3)*T^2 \
+    + (4*a^3 + 27*b^2)
+assert 64*Phi == Psi(2*z*u^2 + 1)
+assert Psi(0) == 4*a^3 + 27*b^2
+assert Phi == ta*(b^2*ta^2 + (3*b^2 + a^3)*ta + 3*b^2) + b^2
+print("WeilSupport certificates: OK")
+
 # g(−b/a) = −(b/a)³, so its square class is that of −a·b:
 assert g(-b/a) == -(b/a)^3
 print("Eisenstein-fibre ordinate identity: OK")
@@ -84,3 +98,32 @@ assert n1.leading_coefficient() / e1.leading_coefficient() == -b/a
 assert n2(0) / e2(0) == -b/a
 assert n2.degree() > e2.degree()
 print("boundary images of x_j: OK")
+
+# Monodromy square-exclusion certificates (design doc §3, WeilSupport):
+# g's separability, the coprimality of the V₄/C₄ linear factors with g,
+# and the Kappe–Warren reductions to the square classes b·w and
+# b·(w − 4·b) = b·(a·x − 3·b).
+Rx = PolynomialRing(K, 'x')
+X = Rx.gen()
+gx = X^3 + a*X + b
+gd = gx.derivative()
+assert (27*b - 18*a*X)*gx + (6*a*X^2 - 9*b*X + 4*a^2)*gd \
+    == 4*a^3 + 27*b^2
+assert (a^2*X^2 - a*b*X + (b^2 + a^3))*(a*X + b) - a^3*gx == b^3
+assert a^3*gx - (a^2*X^2 + 3*a*b*X + (9*b^2 + a^3))*(a*X - 3*b) \
+    == b*(4*a^3 + 27*b^2)
+assert gx(3*b/a) == b*(4*a^3 + 27*b^2)/a^3
+print("monodromy Bézout certificates: OK")
+
+# The Kappe–Warren square-class reductions. Writing each quartic monically
+# as u⁴ + p·u² + q over F_q(E′): V₄ needs q a square, C₄ needs q·(p² − 4·q)
+# a square. Both quartics reduce both tests to the same two square classes:
+FW = PolynomialRing(K, 'w').fraction_field()
+w = FW.gen()
+p1q, q1q = 1/FW(z), b/(z^2*w)
+p2q, q2q = w/(b*z), w/(b*z^2)
+assert q1q * (b*w) == (b/z)^2
+assert q2q * (b*w) == (w/z)^2
+assert q1q*(p1q^2 - 4*q1q) * (b*(w - 4*b)) == (b*(w - 4*b)/(z^2*w))^2
+assert q2q*(p2q^2 - 4*q2q) * (b*(w - 4*b)) == (w*(w - 4*b)/(b*z^2))^2
+print("Kappe–Warren square-class reductions: OK")

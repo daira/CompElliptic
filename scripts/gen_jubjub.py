@@ -56,6 +56,8 @@ end CompElliptic.Fields.Jubjub
 if __name__ == "__main__":
     out = HEADER
     out += field_block("JUBJUB_SCALAR", L, "JubjubScalarField",
-                       "Jubjub scalar field ℓ (the prime-order subgroup order).")
+                       "The order `ℓ` of the Jubjub scalar field (the prime-order subgroup order).",
+                       "The Jubjub scalar field `F_ℓ`.",
+                       "`ℓ` is prime, by a Pratt certificate.")
     out += FOOTER
     print(out, end="")
