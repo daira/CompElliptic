@@ -14,15 +14,17 @@ with enormous margin: (10√q + 1)² ≤ (21/2)²·q needs 10.25·q ≥ 20√q +
 and q > 2^{254}.
 
 Status: this document is a proof of the bound, modulo results cited as
-established mathematics: Weil's theorem in the form of FFSTV's Lemma 1
-and Theorem 3, and the standard point bookkeeping for hyperelliptic
-models [Galbraith, ch. 10]. The symbolic identities it relies on are
-checked by `scripts/check_weil_derivations.sage`; the per-instance
-facts (the empty w = 0 fibre, the Frobenius statistics, the
-square-class witnesses) by `weilbound.sage`. The calculation from the
-per-cover Weil inputs to the deployed constants is machine-checked
-(CompElliptic's `Hashing/BranchCovers.lean`, `Hashing/WeilInstance.lean`,
-and `Hashing/PastaSSWU.lean`), and so are the checkable inputs of the two
+established mathematics: Weil's theorem in the form of Lemma 1 and
+Theorem 3 of Farashahi–Fouque–Shparlinski–Tibouchi–Voloch
+([eprint 2010/539](https://eprint.iacr.org/2010/539), "FFSTV"), and the
+standard point bookkeeping for hyperelliptic models [Galbraith, ch. 10].
+The symbolic identities it relies on are checked by
+`scripts/check_weil_derivations.sage`; the per-instance facts (the empty
+w = 0 fibre, the Frobenius statistics, the square-class witnesses) by
+`weilbound.sage`. The calculation from the per-cover Weil inputs to the
+deployed constants is machine-checked (CompElliptic's
+`Hashing/BranchCovers.lean`, `Hashing/WeilInstance.lean`, and
+`Hashing/PastaSSWU.lean`), and so are the checkable inputs of the two
 cited steps (`Hashing/WeilSupport.lean`, whose facts are referenced at
 their points of use below; CI checks that this document references all
 of that file's declarations). The cited steps themselves and Weil's
@@ -102,9 +104,8 @@ Throughout: q ≡ 1 (mod 4) is the base field size; E′ : y² = g(x) with
 g(x) = x³ + A·x + B, A·B ≠ 0, and #E′(F_q) an odd prime; Z is a
 nonsquare with Z ∉ {0, −1}; t = Z·u² and ta = t² + t. The deployed
 instances are iso-Pallas and iso-Vesta with Z = −13 and B = 1265. We
-follow Farashahi–Fouque–Shparlinski–Tibouchi–Voloch
-([eprint 2010/539](https://eprint.iacr.org/2010/539), "FFSTV"),
-Theorem 6, adapted to these parameters and to sign-freeness.
+follow FFSTV's Theorem 6, adapted to these parameters and to
+sign-freeness.
 
 ## 1. The branch covers
 
