@@ -12,6 +12,7 @@ import CompElliptic.Curves.Pasta.Fast.Projective
 import CompElliptic.Curves.Pasta.Fast.Msm
 import CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv
 import CompElliptic.Fields.Sqrt
+import CompElliptic.Rings.Eisenstein.Units
 import CompElliptic.Rings.Eisenstein.Orbits
 import CompElliptic.Meta.AxiomCheck
 
@@ -63,6 +64,10 @@ not reach for `native_decide`, and here it does not have to. -/
 
 assert_axioms CompElliptic.Rings.Eisenstein.norm_mul
 assert_axioms CompElliptic.Rings.Eisenstein.two_dvd_iff
+assert_axioms CompElliptic.Rings.Eisenstein.isUnit_iff_norm_eq_one
+assert_axioms CompElliptic.Rings.Eisenstein.isUnit_iff_mem_mu6Z
+assert_axioms CompElliptic.Rings.Eisenstein.prime_two
+assert_axioms CompElliptic.Rings.Eisenstein.not_two_pow_dvd_unit_sub_one
 assert_axioms CompElliptic.Rings.Eisenstein.mul_eq_zero_mod_two
 assert_axioms CompElliptic.Rings.Eisenstein.card_odd
 assert_axioms CompElliptic.Rings.Eisenstein.mu6_free_on_odd

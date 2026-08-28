@@ -30,5 +30,6 @@ import CompElliptic.Hashing.WeilSupport
 import CompElliptic.Hashing.WellDistributed
 import CompElliptic.Rings.Eisenstein.Basic
 import CompElliptic.Rings.Eisenstein.Mod
+import CompElliptic.Rings.Eisenstein.Units
 import CompElliptic.Rings.Eisenstein.Orbits
 import CompElliptic.TrustBoundary
