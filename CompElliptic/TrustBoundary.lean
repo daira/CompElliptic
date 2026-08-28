@@ -69,6 +69,8 @@ assert_axioms CompElliptic.Rings.Eisenstein.isUnit_iff_mem_mu6Z
 assert_axioms CompElliptic.Rings.Eisenstein.prime_two
 assert_axioms CompElliptic.Rings.Eisenstein.not_two_pow_dvd_unit_sub_one
 assert_axioms CompElliptic.Rings.Eisenstein.mul_eq_zero_mod_two
+assert_axioms CompElliptic.Rings.Eisenstein.mul_invTwo
+assert_axioms CompElliptic.Rings.Eisenstein.nonempty_ringEquiv_galoisField
 assert_axioms CompElliptic.Rings.Eisenstein.card_odd
 assert_axioms CompElliptic.Rings.Eisenstein.mu6_free_on_odd
 assert_axioms CompElliptic.Rings.Eisenstein.reps_cover

@@ -6,6 +6,7 @@ Authors: Danny Willems
 -/
 import CompElliptic.Rings.Eisenstein.Basic
 import Mathlib.Data.ZMod.Basic
+import Mathlib.FieldTheory.Finite.GaloisField
 
 /-!
 # The finite quotients `ℤ[ω]/n`, computably
@@ -20,10 +21,12 @@ claims in `Rings.Eisenstein.Orbits` are settled by kernel `decide`.
 * `Eisenstein.card_eq` — `#(ℤ[ω]/n) = n²`.
 * `Eisenstein.two_dvd_iff` — an element is even exactly when both
   coordinates are, so halving is exact and coordinate-wise.
-* `Eisenstein.mod_two_eq_zero_or_isUnit`, `Eisenstein.mul_eq_zero_mod_two` —
-  `ℤ[ω]/2` is the field `𝔽₄`, i.e. `2` is inert. This is what makes
-  "odd" and "unit" the same predicate mod `2^w`, and it is why `ℤ[ω]/2^w` is a
-  local ring with maximal ideal `(2)`.
+* `Eisenstein.instFieldModTwo`, `Eisenstein.algEquivGaloisField` — `ℤ[ω]/2` is
+  not merely *a* four-element field with no zero divisors: it **is** `𝔽₄`, as an
+  explicit isomorphism onto `GaloisField 2 2`. That is the precise content of
+  `2` being INERT rather than split, and it is what makes "odd" and "unit" the
+  same predicate mod `2^w`, hence why `ℤ[ω]/2^w` is a local ring with maximal
+  ideal `(2)`.
 -/
 
 namespace CompElliptic.Rings.Eisenstein
@@ -100,5 +103,59 @@ so a class is a unit exactly when it is nonzero. This is the fact that lets
 "odd" (not divisible by `2`) and "unit" be used interchangeably mod `2^w`. -/
 theorem exists_inv_mod_two (x : Eisenstein (ZMod 2)) (hx : x ≠ 0) :
     ∃ y, x * y = 1 := by revert x; decide
+
+/-! ## `ℤ[ω]/2` is `𝔽₄`
+
+The three facts above say `ℤ[ω]/2` is a commutative ring with four elements in
+which every nonzero element is invertible. That makes it a field of order `4`,
+and finite fields of equal cardinality are isomorphic, so it is `𝔽₄` — which
+`GaloisField 2 2` denotes. Below, that identification is made explicit.
+
+The inverse is computable and needs no search: the multiplicative group of a
+four-element field has order `3`, so `x³ = 1` for `x ≠ 0` and therefore
+`x⁻¹ = x²`. -/
+
+/-- Inversion in `ℤ[ω]/2`. The unit group has order `3`, so squaring inverts. -/
+def invTwo (x : Eisenstein (ZMod 2)) : Eisenstein (ZMod 2) := x ^ 2
+
+/-- Squaring really does invert: `x · x² = x³ = 1` for every nonzero `x`. -/
+theorem mul_invTwo (x : Eisenstein (ZMod 2)) (hx : x ≠ 0) : x * invTwo x = 1 := by
+  revert x; decide
+
+/-- **`ℤ[ω]/2` is a field.** Computable: the inverse is squaring, not a search. -/
+instance instFieldModTwo : Field (Eisenstein (ZMod 2)) :=
+  { instCommRing with
+    inv := invTwo
+    exists_pair_ne := ⟨0, 1, by decide⟩
+    mul_inv_cancel := mul_invTwo
+    inv_zero := by decide
+    nnqsmul := _
+    qsmul := _ }
+
+/-- Its cardinality is `2² = 4`, in the shape the classification wants. -/
+theorem card_mod_two_eq_pow : Fintype.card (Eisenstein (ZMod 2)) = 2 ^ 2 := by
+  rw [card_mod_two]; norm_num
+
+/-- **`ℤ[ω]/2 ≅ 𝔽₄`.** A finite field is determined up to isomorphism by its
+cardinality, so the four-element field `ℤ[ω]/2` is `GaloisField 2 2`, Mathlib's
+`𝔽₄`. The isomorphism is one of `ZMod 2`-algebras, so it respects the coefficient
+embedding as well as the ring structure.
+
+This is the precise statement that `2` is INERT in `ℤ[ω]`: were `2` split, the
+quotient would be `𝔽₂ × 𝔽₂`, which has four elements but zero divisors and is
+not a field. The `𝔽₄`-ness is exactly what fails in that case, and it is what the
+rest of the development uses when it treats "odd" and "unit" as the same
+predicate.
+
+Noncomputable because the classification produces the isomorphism by choice; the
+field structure itself (`instFieldModTwo`) stays computable. -/
+noncomputable def algEquivGaloisField :
+    Eisenstein (ZMod 2) ≃ₐ[ZMod 2] GaloisField 2 2 :=
+  GaloisField.algEquivGaloisFieldOfFintype 2 2 card_mod_two_eq_pow
+
+/-- `ℤ[ω]/2` and `𝔽₄` are isomorphic as rings. -/
+theorem nonempty_ringEquiv_galoisField :
+    Nonempty (Eisenstein (ZMod 2) ≃+* GaloisField 2 2) :=
+  ⟨algEquivGaloisField.toRingEquiv⟩
 
 end CompElliptic.Rings.Eisenstein

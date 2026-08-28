@@ -5,6 +5,7 @@ as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Danny Willems
 -/
 import Mathlib.Algebra.Ring.Hom.Defs
+import Mathlib.Algebra.Algebra.Defs
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.LinearCombination
 
@@ -209,6 +210,20 @@ def map (f : R →+* S) : Eisenstein R →+* Eisenstein S where
 
 @[simp] theorem map_apply_a (f : R →+* S) (x : Eisenstein R) : (map f x).a = f x.a := rfl
 @[simp] theorem map_apply_b (f : R →+* S) (x : Eisenstein R) : (map f x).b = f x.b := rfl
+
+/-- The coefficient embedding `R → R[ω]`, `r ↦ r + 0·ω`. -/
+def coeffHom : R →+* Eisenstein R where
+  toFun r := ⟨r, 0⟩
+  map_one' := rfl
+  map_mul' := by intros; ext <;> simp
+  map_zero' := rfl
+  map_add' := by intros; ext <;> simp
+
+@[simp] theorem coeffHom_a (r : R) : (coeffHom r : Eisenstein R).a = r := rfl
+@[simp] theorem coeffHom_b (r : R) : (coeffHom r : Eisenstein R).b = 0 := rfl
+
+/-- `R[ω]` is an `R`-algebra, free of rank two on `{1, ω}`. -/
+instance instAlgebra : Algebra R (Eisenstein R) := (coeffHom (R := R)).toAlgebra
 
 /-- **The universal property.** `R[ω]` is initial among `R`-algebras carrying a
 root of `X² + X + 1`: given a coefficient hom `f : R →+* S` and any `z : S` with
