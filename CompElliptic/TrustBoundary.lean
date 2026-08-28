@@ -12,6 +12,7 @@ import CompElliptic.Curves.Pasta.Fast.Projective
 import CompElliptic.Curves.Pasta.Fast.Msm
 import CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv
 import CompElliptic.Fields.Sqrt
+import CompElliptic.Rings.Eisenstein.Orbits
 import CompElliptic.Meta.AxiomCheck
 
 /-!
@@ -52,6 +53,22 @@ assert_axioms CompElliptic.CurveOrder.card_eq_of_prime_witness_of_card_lt_two_mu
 assert_axioms CompElliptic.CurveOrder.card_eq_of_prime_witness_of_card_lt_three_mul
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_mul_self
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_isSome_of_isSquare
+
+/-! ## The Eisenstein ring `ℤ[ω]` and its unit action — standard axioms only
+
+The finite claims (`card_odd`, the freeness and Burnside counts, the covering)
+are quantified statements, but over a 64-element ring, so they are discharged by
+KERNEL `decide` and add no axiom. That is deliberate: a quantified result must
+not reach for `native_decide`, and here it does not have to. -/
+
+assert_axioms CompElliptic.Rings.Eisenstein.norm_mul
+assert_axioms CompElliptic.Rings.Eisenstein.two_dvd_iff
+assert_axioms CompElliptic.Rings.Eisenstein.mul_eq_zero_mod_two
+assert_axioms CompElliptic.Rings.Eisenstein.card_odd
+assert_axioms CompElliptic.Rings.Eisenstein.mu6_free_on_odd
+assert_axioms CompElliptic.Rings.Eisenstein.reps_cover
+assert_axioms CompElliptic.Rings.Eisenstein.card_orbits_all
+assert_axioms CompElliptic.Rings.Eisenstein.orbit_mul_unit
 
 /-! ## Concrete closed facts checked by the kernel (Pratt certificates) — standard axioms only -/
 
