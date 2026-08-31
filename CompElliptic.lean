@@ -28,6 +28,9 @@ import CompElliptic.Hashing.TwoTermUniformity
 import CompElliptic.Hashing.WeilInstance
 import CompElliptic.Hashing.WeilSupport
 import CompElliptic.Hashing.WellDistributed
+import CompElliptic.Endomorphism
+import CompElliptic.CurveForms.Automorphisms
+import CompElliptic.Curves.PastaAut
 import CompElliptic.Rings.Eisenstein.Basic
 import CompElliptic.Rings.Eisenstein.Mod
 import CompElliptic.Rings.Eisenstein.Units
