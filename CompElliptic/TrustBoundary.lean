@@ -12,6 +12,9 @@ import CompElliptic.Curves.Pasta.Fast.Projective
 import CompElliptic.Curves.Pasta.Fast.Msm
 import CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv
 import CompElliptic.Fields.Sqrt
+import CompElliptic.Curves.PastaAut
+import CompElliptic.Rings.Eisenstein.Units
+import CompElliptic.Rings.Eisenstein.Orbits
 import CompElliptic.Meta.AxiomCheck
 
 /-!
@@ -52,6 +55,45 @@ assert_axioms CompElliptic.CurveOrder.card_eq_of_prime_witness_of_card_lt_two_mu
 assert_axioms CompElliptic.CurveOrder.card_eq_of_prime_witness_of_card_lt_three_mul
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_mul_self
 assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_isSome_of_isSquare
+
+/-! ## The six automorphisms of a `j = 0` curve — standard axioms only
+
+The coordinate form, additivity and the group law are general theorems over any
+field with a cube root of unity. The Pasta-specific facts (the constant `ζ`, and
+that the six automorphisms are distinct) are concrete closed facts settled by
+KERNEL `decide`, so they add no axiom and need no `+native` entry. -/
+
+assert_axioms CompElliptic.Endomorphism.phiPt_add
+assert_axioms CompElliptic.CurveForms.Automorphisms.autPt_x
+assert_axioms CompElliptic.CurveForms.Automorphisms.autPt_y
+assert_axioms CompElliptic.CurveForms.Automorphisms.autPt_add
+assert_axioms CompElliptic.CurveForms.Automorphisms.autPt_comp
+assert_axioms CompElliptic.CurveForms.Automorphisms.autOfUnit_mul
+assert_axioms CompElliptic.Curves.Pasta.Pallas.ZETA_cube
+assert_axioms CompElliptic.Curves.Pasta.Pallas.aut_nodup_at_Gpt
+assert_axioms CompElliptic.Curves.Pasta.Vesta.aut_nodup_at_Gpt
+
+/-! ## The Eisenstein ring `ℤ[ω]` and its unit action — standard axioms only
+
+The finite claims (`card_odd`, the freeness and Burnside counts, the covering)
+are quantified statements, but over a 64-element ring, so they are discharged by
+KERNEL `decide` and add no axiom. That is deliberate: a quantified result must
+not reach for `native_decide`, and here it does not have to. -/
+
+assert_axioms CompElliptic.Rings.Eisenstein.norm_mul
+assert_axioms CompElliptic.Rings.Eisenstein.two_dvd_iff
+assert_axioms CompElliptic.Rings.Eisenstein.isUnit_iff_norm_eq_one
+assert_axioms CompElliptic.Rings.Eisenstein.isUnit_iff_mem_mu6Z
+assert_axioms CompElliptic.Rings.Eisenstein.prime_two
+assert_axioms CompElliptic.Rings.Eisenstein.not_two_pow_dvd_unit_sub_one
+assert_axioms CompElliptic.Rings.Eisenstein.mul_eq_zero_mod_two
+assert_axioms CompElliptic.Rings.Eisenstein.mul_invTwo
+assert_axioms CompElliptic.Rings.Eisenstein.nonempty_ringEquiv_galoisField
+assert_axioms CompElliptic.Rings.Eisenstein.card_odd
+assert_axioms CompElliptic.Rings.Eisenstein.mu6_free_on_odd
+assert_axioms CompElliptic.Rings.Eisenstein.reps_cover
+assert_axioms CompElliptic.Rings.Eisenstein.card_orbits_all
+assert_axioms CompElliptic.Rings.Eisenstein.orbit_mul_unit
 
 /-! ## Concrete closed facts checked by the kernel (Pratt certificates) — standard axioms only -/
 
