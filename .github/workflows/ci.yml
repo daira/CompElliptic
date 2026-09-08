@@ -72,6 +72,10 @@ jobs:
           python3 scripts/gen_jubjub.py > CompElliptic/Fields/Jubjub.lean
       - name: Fail if the regenerated files differ from the committed ones
         run: git diff --exit-code CompElliptic/Fields/Pasta.lean CompElliptic/Fields/Jubjub.lean
+      # The AArch64 transcription is generated the same way, from the vendored assembly and
+      # reference vectors; the script also checks their recorded hashes.
+      - name: Check the AArch64 Pasta transcription is current
+        run: scripts/check_aarch64_pasta_mul.sh
 
   sage-checks:
     name: sage checks - Vélu certificates and Weil-derivation identities

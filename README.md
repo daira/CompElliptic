@@ -140,7 +140,11 @@ Early work in progress. Present so far:
   together with a natively compilable Montgomery-limb kernel proven against them
   (`CompElliptic/Curves/Pasta/Fast/`, not imported by `CompElliptic.lean`). These interfaces are
   provisional: they are not guaranteed to remain public, and may be folded into the existing API
-  or otherwise changed incompatibly.
+  or otherwise changed incompatibly;
+- a transcription of the AArch64 Pasta Montgomery routines that pasta_curves vendors from
+  Semolina, generated from the assembly over a small instruction-semantics module, with
+  reference vectors from the real routines checked by the kernel (`CompElliptic/Asm/AArch64/`;
+  `design/aarch64-pasta-mul-verification.md` states the intended correctness theorems).
 
 The library's general theorems depend only on the standard `propext` / `Classical.choice` /
 `Quot.sound` axioms. Facts specific to concrete fields and curves additionally depend on
