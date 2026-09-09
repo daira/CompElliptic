@@ -68,26 +68,33 @@ The generator emits each routine as a chain of `let`s in a single function from 
 input limbs (and modulus limbs and `inv`) to the output limbs. The proofs in
 `PastaMulSpec.lean` follow that chain instruction by instruction, and their mechanical
 part is generated too (`gen_aarch64_pasta_mul.py --skeleton <routine>`). The skeleton
-unfolds the routine and extracts its `let`s under unique names. Then, for every
-instruction, it records the defining equation of the result (by `rfl`, in `%`/`/` form),
-derives from it the facts that later steps need (the carry-chain equation
-`x + 2^64 * c = a + b + cin`, the range facts, the product decomposition
-`lo + 2^64 * hi = a * b`), clears the `%`/`/` equation, and makes the local opaque with
-`clear_value`. The hand-written parts are the theorem statements and the
-`-- BEGIN ... -- END` annotation blocks between instructions. A block states the
-Montgomery round invariant that holds at that point and derives it from the facts it
-names. `gen_aarch64_pasta_mul.py --check-spec` strips the blocks and requires the rest
-of the proof to be the current skeleton, so an edit to the `.S` regenerates the skeleton
-and the check fails loudly until the annotations are moved.
+unfolds the routine in the hypothesis that names its result. Then, for every
+instruction, it extracts that instruction's `let`s from the hypothesis under unique
+names, records the defining equation of the result (by `rfl`, in `%`/`/` form), makes
+the locals opaque with `clear_value`, and derives from the equation the facts that later
+steps need (the carry-chain equation `x + 2^64 * c = a + b + cin`, the range facts, the
+product decomposition `lo + 2^64 * hi = a * b`), each an instance of one lemma, clearing
+the `%`/`/` equation when nothing later needs it. The hand-written parts are the theorem
+statements and the `-- BEGIN ... -- END` annotation blocks between instructions. A
+block states the Montgomery round invariant that holds at that point and derives it
+from the facts it names. `gen_aarch64_pasta_mul.py --check-spec` strips the blocks and
+requires the rest of the proof to be the current skeleton, so an edit to the `.S`
+regenerates the skeleton and the check fails loudly until the annotations are moved.
 
-Two measurements fixed this shape. `omega` given a whole reduction round at once, or
+Three measurements fixed this shape. `omega` given a whole reduction round at once, or
 given the cancellation fact with its `%` terms still in it, runs for minutes without
 finishing; given one carry step at a time, or linear equations only, it answers in
 milliseconds. So each round block first rewrites the cancellation fact
 `(t0 + p0 * q % 2^64) % 2^64 = 0` to the linear `t0 + lo = 2^64 * c`, using the ghost
 low limb and the carry of `subs xzr, t0, #1`; it then shows that neither `adc` wraps;
 and the invariant is a linear combination of the instruction equations, proved by
-`omega` in a context cleared down to exactly those equations.
+`omega` in a context cleared down to exactly those equations. `clear_value` reverts
+every later local and re-checks the reverted context, so extracting all the `let`s up
+front made each clear quadratic in the chain's length; the multiplication routine's 264
+locals exhausted the heartbeat budget, and extracting one instruction at a time, with
+the rest of the chain still folded in the hypothesis, is what keeps every clear cheap.
+What remains of the multiplication's cost is its sixty-odd `clear * -` calls in a
+context of a thousand hypotheses, so that theorem raises its heartbeat budget.
 
 ## Theorems
 
@@ -97,11 +104,15 @@ the code assumes) and `inv · p0 ≡ −1 (mod 2^64)`:
 * `mulBy1_spec` (proved): for every four-limb `t`, the shared reduction helper returns
   limbs `r` below `2^64` with `2^256 · r = t + Q · p` for some `Q < 2^256`. So `r` is
   congruent to `t · 2^−256` modulo `p`, and `r ≤ p`.
-* `mul_spec` (to prove): if `lhs < p` and `rhs < 2^256`, or `lhs < 2^256`, `rhs < p`, and every
-  `rhs` limb in positions 1 to 3 is at most `2^64 − 4`, then the output is below `p`
-  and `output · 2^256 ≡ lhs · rhs (mod p)`. The exact wrap boundary (whether `2^64 − 2`
-  and `2^64 − 3` can wrap) is settled as a by-product of the round lemma and stated as
-  its own lemma.
+* `mulMont_spec` (proved): the output is below `p` and `output · 2^256 ≡ lhs · rhs (mod p)`
+  under two arithmetic conditions: `lhs · (rhs_i + 1) + p + 3 · 2^254 + 2^128 ≤ 2^320`
+  for each of `rhs_1`, `rhs_2`, `rhs_3` (the five-limb accumulator, which enters each
+  round below `lhs + p`, stays below `2^320` through the round's `adc`s), and
+  `lhs · rhs < 2^256 · p` (the final accumulator is below `2 · p`, which one conditional
+  subtraction reduces). Its two corollaries are the operand contracts:
+  `mulMont_spec_of_lhs_lt`, for `lhs < p` and any four-limb `rhs`, and
+  `mulMont_spec_of_rhs_lt`, for any four-limb `lhs` and `rhs < p` whose limbs 1 to 3 are
+  at most `2^64 − 3`. Whether `2^64 − 2` can wrap is not settled by these conditions.
 * `sqr_spec` (to prove): if `a < p`, the output is below `p` and `output · 2^256 ≡ a² (mod p)`.
 * `fromMont_spec` (proved): for every four-limb `a`, the output is below `p` and
   `output · 2^256 ≡ a (mod p)`. No bound on `a` below `p` is needed: the helper's result is
@@ -110,7 +121,7 @@ the code assumes) and `inv · p0 ≡ −1 (mod 2^64)`:
 `Pasta.lean` instantiates these at `PALLAS_BASE_CARD` and `PALLAS_SCALAR_CARD` with
 the crate's `MODULUS`, `INV`, `R2`, `R3` limbs pinned by `decide`, and states the
 corollary the crate relies on: `mul lhs R2` and `mul lhs R3` are correct for every
-256-bit `lhs`, because no limb 1 to 3 of `R2`/`R3` is above `2^64 − 4`. It also states
+256-bit `lhs`, because no limb 1 to 3 of `R2`/`R3` is above `2^64 − 3`. It also states
 the negative: the witness pair is inside `lhs · rhs < 2^256 · p` and the model's output
 is not the Montgomery product (by evaluation), documenting why #108's contract is
 wrong.
@@ -118,15 +129,15 @@ wrong.
 ## Status
 
 Present: the semantics, the generator, the generated program, the vendored `.S` with its
-hash, the vectors, and the CI check; the proofs of the helper (four reduction rounds) and
-of `from_mont` (the helper and a conditional subtraction).
+hash, the vectors, and the CI check; the proofs of the helper (four reduction rounds), of
+`from_mont` (the helper and a conditional subtraction), and of `mul` (four rounds of
+schoolbook fold and reduction, the accumulator no-wrap conditions, the final comparison,
+and the two operand contracts as corollaries).
 
 Remaining, in order:
 
-1. `mul`: the round invariant, the accumulator no-wrap lemma under each contract, and the
-   final comparison.
-2. `sqr`: the cross-term schoolbook, the doubling, and the "can't overflow" claims.
-3. The Pasta instantiation and the census entries in `TrustBoundary.lean`.
+1. `sqr`: the cross-term schoolbook, the doubling, and the "can't overflow" claims.
+2. The Pasta instantiation and the census entries in `TrustBoundary.lean`.
 
 Out of scope for now: Zakura's inline-`asm!` transcription (provable later by
 instruction-by-instruction correspondence), `sqr_n_mul` (zakura-core/common#65), and

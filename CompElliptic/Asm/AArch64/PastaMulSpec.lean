@@ -996,4 +996,1742 @@ theorem fromMont_spec (value modulus : Limbs) (inv : Nat) (hv : value.Bounded)
     exact ⟨by omega, modEq_of_add_mul _ _ (2^256) Q _ (by omega)⟩
   -- END conclusion
 
+-- BEGIN mulMont_spec statement
+-- The proof is about 1600 lines of small steps: the generated skeleton is cheap, but its
+-- annotation blocks run some sixty `clear * -` calls in a context of a thousand hypotheses,
+-- and their total exceeds the default per-declaration budget.
+set_option maxHeartbeats 1000000 in
+/-- Montgomery multiplication: the result is below `p` and `2^256 * result ≡ lhs * rhs (mod p)`,
+under two arithmetic conditions that each operand contract implies (`mulMont_spec_of_lhs_lt` and
+`mulMont_spec_of_rhs_lt`). `hsafe` keeps the five-limb accumulator below `2^320` in rounds 1 to 3,
+where it holds the previous round's result (below `lhs + p`) plus `lhs * rhs_i`, and then the low
+limbs of the reduction; without it the `adc` that closes each fold can drop a carry. `hfinal` keeps
+the final accumulator below `2 * p`, which one conditional subtraction reduces. -/
+theorem mulMont_spec (lhs rhs modulus : Limbs) (inv : Nat) (hlhs : lhs.Bounded)
+    (hrhs : rhs.Bounded) (hm : modulus.Bounded) (hshape : modulus.l2 = 0 ∧ modulus.l3 = 2^62)
+    (hinv_lt : inv < 2^64) (hinv : (inv * modulus.l0 + 1) % 2^64 = 0)
+    (hsafe : lhs.toNat * (rhs.l1 + 1) + modulus.toNat + 3 * 2^254 + 2^128 ≤ 2^320 ∧
+      lhs.toNat * (rhs.l2 + 1) + modulus.toNat + 3 * 2^254 + 2^128 ≤ 2^320 ∧
+      lhs.toNat * (rhs.l3 + 1) + modulus.toNat + 3 * 2^254 + 2^128 ≤ 2^320)
+    (hfinal : lhs.toNat * rhs.toNat < 2^256 * modulus.toNat) :
+    ∀ r, r = mulMont lhs rhs modulus inv →
+      r.Bounded ∧ r.toNat < modulus.toNat ∧
+        2^256 * r.toNat ≡ lhs.toNat * rhs.toNat [MOD modulus.toNat] := by
+  intro r hr
+-- END mulMont_spec statement
+  -- generated skeleton for `mulMont`: do not edit between the annotations
+  unfold mulMont at hr
+  lift_lets at hr
+  -- x4: argument
+  extract_lets +onlyGivenNames x4 at hr
+  have e_x4 : x4 = inv := rfl
+  clear_value x4
+  have b_x4 : x4 < 2^64 := by rw [e_x4]; exact hinv_lt
+  -- x10: ldp x10,x11,[x1]
+  extract_lets +onlyGivenNames x10 at hr
+  have e_x10 : x10 = lhs.l0 := rfl
+  clear_value x10
+  have b_x10 : x10 < 2^64 := by rw [e_x10]; exact hlhs.1
+  -- x11: ldp x10,x11,[x1]
+  extract_lets +onlyGivenNames x11 at hr
+  have e_x11 : x11 = lhs.l1 := rfl
+  clear_value x11
+  have b_x11 : x11 < 2^64 := by rw [e_x11]; exact hlhs.2.1
+  -- x9: ldr x9,[x2]
+  extract_lets +onlyGivenNames x9 at hr
+  have e_x9 : x9 = rhs.l0 := rfl
+  clear_value x9
+  have b_x9 : x9 < 2^64 := by rw [e_x9]; exact hrhs.1
+  -- x12: ldp x12,x13,[x1,#16]
+  extract_lets +onlyGivenNames x12 at hr
+  have e_x12 : x12 = lhs.l2 := rfl
+  clear_value x12
+  have b_x12 : x12 < 2^64 := by rw [e_x12]; exact hlhs.2.2.1
+  -- x13: ldp x12,x13,[x1,#16]
+  extract_lets +onlyGivenNames x13 at hr
+  have e_x13 : x13 = lhs.l3 := rfl
+  clear_value x13
+  have b_x13 : x13 < 2^64 := by rw [e_x13]; exact hlhs.2.2.2
+  -- x19: mul x19,x10,x9
+  extract_lets +onlyGivenNames x19 at hr
+  have e_x19 : x19 = x10 * x9 % 2^64 := rfl
+  clear_value x19
+  have b_x19 : x19 < 2^64 := by rw [e_x19]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x5: ldp x5,x6,[x3]
+  extract_lets +onlyGivenNames x5 at hr
+  have e_x5 : x5 = modulus.l0 := rfl
+  clear_value x5
+  have b_x5 : x5 < 2^64 := by rw [e_x5]; exact hm.1
+  -- x6: ldp x5,x6,[x3]
+  extract_lets +onlyGivenNames x6 at hr
+  have e_x6 : x6 = modulus.l1 := rfl
+  clear_value x6
+  have b_x6 : x6 < 2^64 := by rw [e_x6]; exact hm.2.1
+  -- x20: mul x20,x11,x9
+  extract_lets +onlyGivenNames x20 at hr
+  have e_x20 : x20 = x11 * x9 % 2^64 := rfl
+  clear_value x20
+  have b_x20 : x20 < 2^64 := by rw [e_x20]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x8: ldp x7,x8,[x3,#16]
+  extract_lets +onlyGivenNames x8 at hr
+  have e_x8 : x8 = modulus.l3 := rfl
+  clear_value x8
+  have b_x8 : x8 < 2^64 := by rw [e_x8]; exact hm.2.2.2
+  -- x21: mul x21,x12,x9
+  extract_lets +onlyGivenNames x21 at hr
+  have e_x21 : x21 = x12 * x9 % 2^64 := rfl
+  clear_value x21
+  have b_x21 : x21 < 2^64 := by rw [e_x21]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x22: mul x22,x13,x9
+  extract_lets +onlyGivenNames x22 at hr
+  have e_x22 : x22 = x13 * x9 % 2^64 := rfl
+  clear_value x22
+  have b_x22 : x22 < 2^64 := by rw [e_x22]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x14: umulh x14,x10,x9
+  extract_lets +onlyGivenNames x14 at hr
+  have e_x14 : x14 = x10 * x9 / 2^64 := rfl
+  clear_value x14
+  have p_x14 : x10 * x9 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x10 b_x9
+  have b_x14 : x14 < 2^64 := by rw [e_x14]; exact Nat.div_lt_of_lt_mul p_x14
+  have d_x14 : x19 + 2^64 * x14 = x10 * x9 := by
+    rw [e_x19, e_x14]; exact Nat.mod_add_div _ _
+  clear e_x19 e_x14
+  -- x15: umulh x15,x11,x9
+  extract_lets +onlyGivenNames x15 at hr
+  have e_x15 : x15 = x11 * x9 / 2^64 := rfl
+  clear_value x15
+  have p_x15 : x11 * x9 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x11 b_x9
+  have b_x15 : x15 < 2^64 := by rw [e_x15]; exact Nat.div_lt_of_lt_mul p_x15
+  have d_x15 : x20 + 2^64 * x15 = x11 * x9 := by
+    rw [e_x20, e_x15]; exact Nat.mod_add_div _ _
+  clear e_x20 e_x15
+  -- x3: mul x3,x4,x19
+  extract_lets +onlyGivenNames x3 at hr
+  have e_x3 : x3 = x4 * x19 % 2^64 := rfl
+  clear_value x3
+  have b_x3 : x3 < 2^64 := by rw [e_x3]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x16: umulh x16,x12,x9
+  extract_lets +onlyGivenNames x16 at hr
+  have e_x16 : x16 = x12 * x9 / 2^64 := rfl
+  clear_value x16
+  have p_x16 : x12 * x9 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x12 b_x9
+  have b_x16 : x16 < 2^64 := by rw [e_x16]; exact Nat.div_lt_of_lt_mul p_x16
+  have d_x16 : x21 + 2^64 * x16 = x12 * x9 := by
+    rw [e_x21, e_x16]; exact Nat.mod_add_div _ _
+  clear e_x21 e_x16
+  -- x17: umulh x17,x13,x9
+  extract_lets +onlyGivenNames x17 at hr
+  have e_x17 : x17 = x13 * x9 / 2^64 := rfl
+  clear_value x17
+  have p_x17 : x13 * x9 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x13 b_x9
+  have b_x17 : x17 < 2^64 := by rw [e_x17]; exact Nat.div_lt_of_lt_mul p_x17
+  have d_x17 : x22 + 2^64 * x17 = x13 * x9 := by
+    rw [e_x22, e_x17]; exact Nat.mod_add_div _ _
+  clear e_x22 e_x17
+  -- x20_1: adds x20,x20,x14
+  extract_lets +onlyGivenNames s x20_1 c at hr
+  have e_x20_1 : x20_1 = (x20 + x14 + 0) % 2^64 := rfl
+  have e_c : c = (x20 + x14 + 0) / 2^64 := rfl
+  clear_value s x20_1 c
+  have l_x20_1 : x20_1 + 2^64 * c = x20 + x14 + 0 := by
+    rw [e_x20_1, e_c]; exact Nat.mod_add_div _ _
+  have b_x20_1 : x20_1 < 2^64 := by rw [e_x20_1]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c : c ≤ 1 := by
+    rw [e_c]; exact addc_carry_le_one x20 x14 0 b_x20 b_x14 (by decide)
+  clear e_x20_1 e_c
+  -- x21_1: adcs x21,x21,x15
+  extract_lets +onlyGivenNames s_1 x21_1 c_1 at hr
+  have e_x21_1 : x21_1 = (x21 + x15 + c) % 2^64 := rfl
+  have e_c_1 : c_1 = (x21 + x15 + c) / 2^64 := rfl
+  clear_value s_1 x21_1 c_1
+  have l_x21_1 : x21_1 + 2^64 * c_1 = x21 + x15 + c := by
+    rw [e_x21_1, e_c_1]; exact Nat.mod_add_div _ _
+  have b_x21_1 : x21_1 < 2^64 := by rw [e_x21_1]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_1 : c_1 ≤ 1 := by
+    rw [e_c_1]; exact addc_carry_le_one x21 x15 c b_x21 b_x15 b_c
+  clear e_x21_1 e_c_1
+  -- x15_1: mul x15,x6,x3
+  extract_lets +onlyGivenNames x15_1 at hr
+  have e_x15_1 : x15_1 = x6 * x3 % 2^64 := rfl
+  clear_value x15_1
+  have b_x15_1 : x15_1 < 2^64 := by rw [e_x15_1]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x22_1: adcs x22,x22,x16
+  extract_lets +onlyGivenNames s_2 x22_1 c_2 at hr
+  have e_x22_1 : x22_1 = (x22 + x16 + c_1) % 2^64 := rfl
+  have e_c_2 : c_2 = (x22 + x16 + c_1) / 2^64 := rfl
+  clear_value s_2 x22_1 c_2
+  have l_x22_1 : x22_1 + 2^64 * c_2 = x22 + x16 + c_1 := by
+    rw [e_x22_1, e_c_2]; exact Nat.mod_add_div _ _
+  have b_x22_1 : x22_1 < 2^64 := by rw [e_x22_1]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_2 : c_2 ≤ 1 := by
+    rw [e_c_2]; exact addc_carry_le_one x22 x16 c_1 b_x22 b_x16 b_c_1
+  clear e_x22_1 e_c_2
+  -- x23: adc x23,xzr,x17
+  extract_lets +onlyGivenNames x23 at hr
+  have e_x23 : x23 = (0 + x17 + c_2) % 2^64 := rfl
+  clear_value x23
+  have b_x23 : x23 < 2^64 := by rw [e_x23]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23, b_k_x23, l_x23⟩ :
+      ∃ k, k ≤ 1 ∧ x23 + 2^64 * k = 0 + x17 + c_2 :=
+    ⟨(0 + x17 + c_2) / 2^64, addc_carry_le_one 0 x17 c_2 (by decide) b_x17 b_c_2,
+      by rw [e_x23]; exact Nat.mod_add_div _ _⟩
+  clear e_x23
+  -- BEGIN round 0 fold
+  have hP : modulus.toNat = x5 + 2^64 * x6 + 2^192 * 2^62 := by
+    rw [e_x5, e_x6]; simp only [Limbs.toNat, hshape.1, hshape.2, Nat.mul_zero, Nat.add_zero]
+  have hP_lt : modulus.toNat < 2^255 := by clear * - hP b_x5 b_x6; omega
+  have hL256 : lhs.toNat < 2^256 := by
+    clear * - e_x10 e_x11 e_x12 e_x13 b_x10 b_x11 b_x12 b_x13
+    simp only [Limbs.toNat]; omega
+  -- `lhs * rhs_0` as the sum of the limb products.
+  have hL_0 : lhs.toNat * x9
+      = x10 * x9 + 2^64 * (x11 * x9) + 2^128 * (x12 * x9) + 2^192 * (x13 * x9) := by
+    rw [e_x10, e_x11, e_x12, e_x13]; simp only [Limbs.toNat]; ring
+  -- The one `adc` of this round's fold cannot wrap: the high half of a product of two limbs
+  -- is at most `2^64 - 2`.
+  have hx17 : x13 * x9 ≤ (2^64 - 1) * (2^64 - 1) :=
+    Nat.mul_le_mul (Nat.le_sub_one_of_lt b_x13) (Nat.le_sub_one_of_lt b_x9)
+  norm_num at hx17
+  have hk_0 : k_x23 = 0 := by
+    clear * - l_x23 d_x17 hx17 b_c_2
+    omega
+  have F_0 : x19 + 2^64 * x20_1 + 2^128 * x21_1 + 2^192 * x22_1 + 2^256 * x23 = lhs.toNat * x9 := by
+    clear * - l_x20_1 l_x21_1 l_x22_1 l_x23 d_x14 d_x15 d_x16 d_x17 hL_0 hk_0
+    omega
+  -- END round 0 fold
+  -- x17_1: lsl x17,x3,#62
+  extract_lets +onlyGivenNames x17_1 at hr
+  have e_x17_1 : x17_1 = x3 * 2^62 % 2^64 := rfl
+  clear_value x17_1
+  have b_x17_1 : x17_1 < 2^64 := by rw [e_x17_1]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x9_1: ldr x9,[x2,8*1]
+  extract_lets +onlyGivenNames x9_1 at hr
+  have e_x9_1 : x9_1 = rhs.l1 := rfl
+  clear_value x9_1
+  have b_x9_1 : x9_1 < 2^64 := by rw [e_x9_1]; exact hrhs.2.1
+  -- c_3: subs xzr,x19,#1
+  extract_lets +onlyGivenNames c_3 at hr
+  have e_c_3 : c_3 = (x19 + 2^64 - 1 - (1 - 1)) / 2^64 := rfl
+  clear_value c_3
+  have b_c_3 : c_3 ≤ 1 := by rw [e_c_3]; exact subc_carry_le_one x19 1 1 b_x19
+  have l_c_3 : (c_3 = 1 ∧ 1 + 1 ≤ x19 + 1) ∨ (c_3 = 0 ∧ x19 + 1 < 1 + 1) :=
+    subc_carry_cases x19 1 1 _ e_c_3 b_x19 (by decide) (by decide)
+  clear e_c_3
+  -- x14_1: umulh x14,x5,x3
+  extract_lets +onlyGivenNames x14_1 at hr
+  have e_x14_1 : x14_1 = x5 * x3 / 2^64 := rfl
+  clear_value x14_1
+  have p_x14_1 : x5 * x3 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x5 b_x3
+  have b_x14_1 : x14_1 < 2^64 := by rw [e_x14_1]; exact Nat.div_lt_of_lt_mul p_x14_1
+  obtain ⟨lo_x14_1, b_lo_x14_1, d_x14_1⟩ :
+      ∃ lo, lo < 2^64 ∧ lo + 2^64 * x14_1 = x5 * x3 :=
+    ⟨x5 * x3 % 2^64, Nat.mod_lt _ (Nat.two_pow_pos _),
+      by rw [e_x14_1]; exact Nat.mod_add_div _ _⟩
+  clear e_x14_1
+  -- x20_2: adcs x20,x20,x15
+  extract_lets +onlyGivenNames s_3 x20_2 c_4 at hr
+  have e_x20_2 : x20_2 = (x20_1 + x15_1 + c_3) % 2^64 := rfl
+  have e_c_4 : c_4 = (x20_1 + x15_1 + c_3) / 2^64 := rfl
+  clear_value s_3 x20_2 c_4
+  have l_x20_2 : x20_2 + 2^64 * c_4 = x20_1 + x15_1 + c_3 := by
+    rw [e_x20_2, e_c_4]; exact Nat.mod_add_div _ _
+  have b_x20_2 : x20_2 < 2^64 := by rw [e_x20_2]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_4 : c_4 ≤ 1 := by
+    rw [e_c_4]; exact addc_carry_le_one x20_1 x15_1 c_3 b_x20_1 b_x15_1 b_c_3
+  clear e_x20_2 e_c_4
+  -- x15_2: umulh x15,x6,x3
+  extract_lets +onlyGivenNames x15_2 at hr
+  have e_x15_2 : x15_2 = x6 * x3 / 2^64 := rfl
+  clear_value x15_2
+  have p_x15_2 : x6 * x3 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x6 b_x3
+  have b_x15_2 : x15_2 < 2^64 := by rw [e_x15_2]; exact Nat.div_lt_of_lt_mul p_x15_2
+  have d_x15_2 : x15_1 + 2^64 * x15_2 = x6 * x3 := by
+    rw [e_x15_1, e_x15_2]; exact Nat.mod_add_div _ _
+  clear e_x15_1 e_x15_2
+  -- x21_2: adcs x21,x21,xzr
+  extract_lets +onlyGivenNames s_4 x21_2 c_5 at hr
+  have e_x21_2 : x21_2 = (x21_1 + 0 + c_4) % 2^64 := rfl
+  have e_c_5 : c_5 = (x21_1 + 0 + c_4) / 2^64 := rfl
+  clear_value s_4 x21_2 c_5
+  have l_x21_2 : x21_2 + 2^64 * c_5 = x21_1 + 0 + c_4 := by
+    rw [e_x21_2, e_c_5]; exact Nat.mod_add_div _ _
+  have b_x21_2 : x21_2 < 2^64 := by rw [e_x21_2]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_5 : c_5 ≤ 1 := by
+    rw [e_c_5]; exact addc_carry_le_one x21_1 0 c_4 b_x21_1 (by decide) b_c_4
+  clear e_x21_2 e_c_5
+  -- x22_2: adcs x22,x22,x17
+  extract_lets +onlyGivenNames s_5 x22_2 c_6 at hr
+  have e_x22_2 : x22_2 = (x22_1 + x17_1 + c_5) % 2^64 := rfl
+  have e_c_6 : c_6 = (x22_1 + x17_1 + c_5) / 2^64 := rfl
+  clear_value s_5 x22_2 c_6
+  have l_x22_2 : x22_2 + 2^64 * c_6 = x22_1 + x17_1 + c_5 := by
+    rw [e_x22_2, e_c_6]; exact Nat.mod_add_div _ _
+  have b_x22_2 : x22_2 < 2^64 := by rw [e_x22_2]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_6 : c_6 ≤ 1 := by
+    rw [e_c_6]; exact addc_carry_le_one x22_1 x17_1 c_5 b_x22_1 b_x17_1 b_c_5
+  clear e_x22_2 e_c_6
+  -- x17_2: lsr x17,x3,#2
+  extract_lets +onlyGivenNames x17_2 at hr
+  have e_x17_2 : x17_2 = x3 / 2^2 := rfl
+  clear_value x17_2
+  have b_x17_2 : x17_2 < 2^62 := by
+    rw [e_x17_2]; exact Nat.div_lt_of_lt_mul (lt_of_lt_of_eq b_x3 (by norm_num))
+  have sh_x17_2 : x17_1 + 2^64 * x17_2 = x3 * 2^62 := by
+    rw [e_x17_1, e_x17_2]; exact lsl62_lsr2_split _
+  clear e_x17_1 e_x17_2
+  -- x23_1: adc x23,x23,xzr
+  extract_lets +onlyGivenNames x23_1 at hr
+  have e_x23_1 : x23_1 = (x23 + 0 + c_6) % 2^64 := rfl
+  clear_value x23_1
+  have b_x23_1 : x23_1 < 2^64 := by rw [e_x23_1]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23_1, b_k_x23_1, l_x23_1⟩ :
+      ∃ k, k ≤ 1 ∧ x23_1 + 2^64 * k = x23 + 0 + c_6 :=
+    ⟨(x23 + 0 + c_6) / 2^64, addc_carry_le_one x23 0 c_6 b_x23 (by decide) b_c_6,
+      by rw [e_x23_1]; exact Nat.mod_add_div _ _⟩
+  clear e_x23_1
+  -- x19_1: adds x19,x20,x14
+  extract_lets +onlyGivenNames s_6 x19_1 c_7 at hr
+  have e_x19_1 : x19_1 = (x20_2 + x14_1 + 0) % 2^64 := rfl
+  have e_c_7 : c_7 = (x20_2 + x14_1 + 0) / 2^64 := rfl
+  clear_value s_6 x19_1 c_7
+  have l_x19_1 : x19_1 + 2^64 * c_7 = x20_2 + x14_1 + 0 := by
+    rw [e_x19_1, e_c_7]; exact Nat.mod_add_div _ _
+  have b_x19_1 : x19_1 < 2^64 := by rw [e_x19_1]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_7 : c_7 ≤ 1 := by
+    rw [e_c_7]; exact addc_carry_le_one x20_2 x14_1 0 b_x20_2 b_x14_1 (by decide)
+  clear e_x19_1 e_c_7
+  -- x14_2: mul x14,x10,x9
+  extract_lets +onlyGivenNames x14_2 at hr
+  have e_x14_2 : x14_2 = x10 * x9_1 % 2^64 := rfl
+  clear_value x14_2
+  have b_x14_2 : x14_2 < 2^64 := by rw [e_x14_2]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x20_3: adcs x20,x21,x15
+  extract_lets +onlyGivenNames s_7 x20_3 c_8 at hr
+  have e_x20_3 : x20_3 = (x21_2 + x15_2 + c_7) % 2^64 := rfl
+  have e_c_8 : c_8 = (x21_2 + x15_2 + c_7) / 2^64 := rfl
+  clear_value s_7 x20_3 c_8
+  have l_x20_3 : x20_3 + 2^64 * c_8 = x21_2 + x15_2 + c_7 := by
+    rw [e_x20_3, e_c_8]; exact Nat.mod_add_div _ _
+  have b_x20_3 : x20_3 < 2^64 := by rw [e_x20_3]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_8 : c_8 ≤ 1 := by
+    rw [e_c_8]; exact addc_carry_le_one x21_2 x15_2 c_7 b_x21_2 b_x15_2 b_c_7
+  clear e_x20_3 e_c_8
+  -- x15_3: mul x15,x11,x9
+  extract_lets +onlyGivenNames x15_3 at hr
+  have e_x15_3 : x15_3 = x11 * x9_1 % 2^64 := rfl
+  clear_value x15_3
+  have b_x15_3 : x15_3 < 2^64 := by rw [e_x15_3]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x21_3: adcs x21,x22,xzr
+  extract_lets +onlyGivenNames s_8 x21_3 c_9 at hr
+  have e_x21_3 : x21_3 = (x22_2 + 0 + c_8) % 2^64 := rfl
+  have e_c_9 : c_9 = (x22_2 + 0 + c_8) / 2^64 := rfl
+  clear_value s_8 x21_3 c_9
+  have l_x21_3 : x21_3 + 2^64 * c_9 = x22_2 + 0 + c_8 := by
+    rw [e_x21_3, e_c_9]; exact Nat.mod_add_div _ _
+  have b_x21_3 : x21_3 < 2^64 := by rw [e_x21_3]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_9 : c_9 ≤ 1 := by
+    rw [e_c_9]; exact addc_carry_le_one x22_2 0 c_8 b_x22_2 (by decide) b_c_8
+  clear e_x21_3 e_c_9
+  -- x16_1: mul x16,x12,x9
+  extract_lets +onlyGivenNames x16_1 at hr
+  have e_x16_1 : x16_1 = x12 * x9_1 % 2^64 := rfl
+  clear_value x16_1
+  have b_x16_1 : x16_1 < 2^64 := by rw [e_x16_1]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x22_3: adcs x22,x23,x17
+  extract_lets +onlyGivenNames s_9 x22_3 c_10 at hr
+  have e_x22_3 : x22_3 = (x23_1 + x17_2 + c_9) % 2^64 := rfl
+  have e_c_10 : c_10 = (x23_1 + x17_2 + c_9) / 2^64 := rfl
+  clear_value s_9 x22_3 c_10
+  have l_x22_3 : x22_3 + 2^64 * c_10 = x23_1 + x17_2 + c_9 := by
+    rw [e_x22_3, e_c_10]; exact Nat.mod_add_div _ _
+  have b_x22_3 : x22_3 < 2^64 := by rw [e_x22_3]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_10 : c_10 ≤ 1 := by
+    rw [e_c_10]; exact addc_carry_le_one x23_1 x17_2 c_9 b_x23_1 (lt_of_lt_of_le b_x17_2 (by norm_num)) b_c_9
+  clear e_x22_3 e_c_10
+  -- x17_3: mul x17,x13,x9
+  extract_lets +onlyGivenNames x17_3 at hr
+  have e_x17_3 : x17_3 = x13 * x9_1 % 2^64 := rfl
+  clear_value x17_3
+  have b_x17_3 : x17_3 < 2^64 := by rw [e_x17_3]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x23_2: adc x23,xzr,xzr
+  extract_lets +onlyGivenNames x23_2 at hr
+  have e_x23_2 : x23_2 = (0 + 0 + c_10) % 2^64 := rfl
+  clear_value x23_2
+  have b_x23_2 : x23_2 < 2^64 := by rw [e_x23_2]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23_2, b_k_x23_2, l_x23_2⟩ :
+      ∃ k, k ≤ 1 ∧ x23_2 + 2^64 * k = 0 + 0 + c_10 :=
+    ⟨(0 + 0 + c_10) / 2^64, addc_carry_le_one 0 0 c_10 (by decide) (by decide) b_c_10,
+      by rw [e_x23_2]; exact Nat.mod_add_div _ _⟩
+  clear e_x23_2
+  -- BEGIN round 0 reduction
+  -- Cancellation: the low limb of `x19 + p0 * x3` is zero, so `x19 + lo_x14_1` is
+  -- `0` or `2^64`, and `subs xzr, x19, #1` set the carry exactly when it is `2^64`.
+  have hc_0 : x19 + lo_x14_1 = 2^64 * c_3 := by
+    have h := cancel_low x19 inv modulus.l0 hinv
+    rw [← e_x5, ← e_x4, ← e_x3, ← d_x14_1, Nat.add_mul_mod_self_left,
+      Nat.mod_eq_of_lt b_lo_x14_1] at h
+    clear * - h b_x19 b_lo_x14_1 l_c_3
+    omega
+  have bc_0 : c_3 ≤ 1 := by clear * - l_c_3; omega
+  have hPq_0 : x3 * modulus.toNat = x5 * x3 + 2^64 * (x6 * x3) + 2^254 * x3 := by
+    rw [hP]; ring
+  -- `x17_1` is the low two bits of `x3` at the top of a limb.
+  have hsh_0 : x17_1 ≤ 3 * 2^62 := by
+    clear * - sh_x17_2 b_x17_1 b_x17_2; omega
+  -- The reduction's carry chain, summed with the limb weights.
+  have hsum'_0 : x19 + 2^64 * x20_2 + 2^128 * x21_2 + 2^192 * x22_2 + 2^256 * x23_1
+        + 2^320 * k_x23_1
+      = x19 + 2^64 * x20_1 + 2^128 * x21_1 + 2^192 * x22_1 + 2^256 * x23
+        + 2^64 * x15_1 + 2^64 * c_3 + 2^192 * x17_1 := by
+    clear * - l_x20_2 l_x21_2 l_x22_2 l_x23_1
+    omega
+  -- Neither `adc` of the reduction wraps: `lhs * rhs_0` is below `2^320 - 2^256`, and the
+  -- reduction adds less than `2^256` to the five-limb accumulator before the shift.
+  have hF0b : lhs.toNat * x9 ≤ (2^256 - 1) * (2^64 - 1) :=
+    Nat.mul_le_mul (Nat.le_sub_one_of_lt hL256) (Nat.le_sub_one_of_lt b_x9)
+  norm_num at hF0b
+  have hkr_0 : k_x23_1 = 0 := by
+    clear * - hsum'_0 F_0 hF0b b_x15_1 bc_0 hsh_0
+    omega
+  have hks_0 : k_x23_2 = 0 := by clear * - l_x23_2 b_c_10; omega
+  have I_0 : 2^64 * (x19_1 + 2^64 * x20_3 + 2^128 * x21_3 + 2^192 * x22_3 + 2^256 * x23_2)
+      = x19 + 2^64 * x20_1 + 2^128 * x21_1 + 2^192 * x22_1 + 2^256 * x23
+        + x3 * modulus.toNat := by
+    clear * - hc_0 d_x14_1 d_x15_2 sh_x17_2 l_x20_2 l_x21_2 l_x22_2 l_x23_1 l_x19_1 l_x20_3 l_x21_3
+        l_x22_3 l_x23_2 hkr_0 hks_0 hPq_0
+    omega
+  -- The shifted accumulator stays below `lhs + p`.
+  have hLx_0 : lhs.toNat * x9 + lhs.toNat ≤ lhs.toNat * 2^64 := by
+    rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ b_x9
+  have hqP_0 : x3 * modulus.toNat + modulus.toNat ≤ 2^64 * modulus.toNat := by
+    rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ b_x3
+  have B_0 : x19_1 + 2^64 * x20_3 + 2^128 * x21_3 + 2^192 * x22_3 + 2^256 * x23_2
+      < lhs.toNat + modulus.toNat := by
+    clear * - I_0 F_0 hLx_0 hqP_0 hP
+    omega
+  have t_0 : x23_2 ≤ 1 := by clear * - l_x23_2 hks_0 b_c_10; omega
+  -- END round 0 reduction
+  -- x19_2: adds x19,x19,x14
+  extract_lets +onlyGivenNames s_10 x19_2 c_11 at hr
+  have e_x19_2 : x19_2 = (x19_1 + x14_2 + 0) % 2^64 := rfl
+  have e_c_11 : c_11 = (x19_1 + x14_2 + 0) / 2^64 := rfl
+  clear_value s_10 x19_2 c_11
+  have l_x19_2 : x19_2 + 2^64 * c_11 = x19_1 + x14_2 + 0 := by
+    rw [e_x19_2, e_c_11]; exact Nat.mod_add_div _ _
+  have b_x19_2 : x19_2 < 2^64 := by rw [e_x19_2]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_11 : c_11 ≤ 1 := by
+    rw [e_c_11]; exact addc_carry_le_one x19_1 x14_2 0 b_x19_1 b_x14_2 (by decide)
+  clear e_x19_2 e_c_11
+  -- x14_3: umulh x14,x10,x9
+  extract_lets +onlyGivenNames x14_3 at hr
+  have e_x14_3 : x14_3 = x10 * x9_1 / 2^64 := rfl
+  clear_value x14_3
+  have p_x14_3 : x10 * x9_1 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x10 b_x9_1
+  have b_x14_3 : x14_3 < 2^64 := by rw [e_x14_3]; exact Nat.div_lt_of_lt_mul p_x14_3
+  have d_x14_3 : x14_2 + 2^64 * x14_3 = x10 * x9_1 := by
+    rw [e_x14_2, e_x14_3]; exact Nat.mod_add_div _ _
+  clear e_x14_2 e_x14_3
+  -- x20_4: adcs x20,x20,x15
+  extract_lets +onlyGivenNames s_11 x20_4 c_12 at hr
+  have e_x20_4 : x20_4 = (x20_3 + x15_3 + c_11) % 2^64 := rfl
+  have e_c_12 : c_12 = (x20_3 + x15_3 + c_11) / 2^64 := rfl
+  clear_value s_11 x20_4 c_12
+  have l_x20_4 : x20_4 + 2^64 * c_12 = x20_3 + x15_3 + c_11 := by
+    rw [e_x20_4, e_c_12]; exact Nat.mod_add_div _ _
+  have b_x20_4 : x20_4 < 2^64 := by rw [e_x20_4]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_12 : c_12 ≤ 1 := by
+    rw [e_c_12]; exact addc_carry_le_one x20_3 x15_3 c_11 b_x20_3 b_x15_3 b_c_11
+  clear e_x20_4 e_c_12
+  -- x15_4: umulh x15,x11,x9
+  extract_lets +onlyGivenNames x15_4 at hr
+  have e_x15_4 : x15_4 = x11 * x9_1 / 2^64 := rfl
+  clear_value x15_4
+  have p_x15_4 : x11 * x9_1 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x11 b_x9_1
+  have b_x15_4 : x15_4 < 2^64 := by rw [e_x15_4]; exact Nat.div_lt_of_lt_mul p_x15_4
+  have d_x15_4 : x15_3 + 2^64 * x15_4 = x11 * x9_1 := by
+    rw [e_x15_3, e_x15_4]; exact Nat.mod_add_div _ _
+  clear e_x15_3 e_x15_4
+  -- x21_4: adcs x21,x21,x16
+  extract_lets +onlyGivenNames s_12 x21_4 c_13 at hr
+  have e_x21_4 : x21_4 = (x21_3 + x16_1 + c_12) % 2^64 := rfl
+  have e_c_13 : c_13 = (x21_3 + x16_1 + c_12) / 2^64 := rfl
+  clear_value s_12 x21_4 c_13
+  have l_x21_4 : x21_4 + 2^64 * c_13 = x21_3 + x16_1 + c_12 := by
+    rw [e_x21_4, e_c_13]; exact Nat.mod_add_div _ _
+  have b_x21_4 : x21_4 < 2^64 := by rw [e_x21_4]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_13 : c_13 ≤ 1 := by
+    rw [e_c_13]; exact addc_carry_le_one x21_3 x16_1 c_12 b_x21_3 b_x16_1 b_c_12
+  clear e_x21_4 e_c_13
+  -- x3_1: mul x3,x4,x19
+  extract_lets +onlyGivenNames x3_1 at hr
+  have e_x3_1 : x3_1 = x4 * x19_2 % 2^64 := rfl
+  clear_value x3_1
+  have b_x3_1 : x3_1 < 2^64 := by rw [e_x3_1]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x16_2: umulh x16,x12,x9
+  extract_lets +onlyGivenNames x16_2 at hr
+  have e_x16_2 : x16_2 = x12 * x9_1 / 2^64 := rfl
+  clear_value x16_2
+  have p_x16_2 : x12 * x9_1 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x12 b_x9_1
+  have b_x16_2 : x16_2 < 2^64 := by rw [e_x16_2]; exact Nat.div_lt_of_lt_mul p_x16_2
+  have d_x16_2 : x16_1 + 2^64 * x16_2 = x12 * x9_1 := by
+    rw [e_x16_1, e_x16_2]; exact Nat.mod_add_div _ _
+  clear e_x16_1 e_x16_2
+  -- x22_4: adcs x22,x22,x17
+  extract_lets +onlyGivenNames s_13 x22_4 c_14 at hr
+  have e_x22_4 : x22_4 = (x22_3 + x17_3 + c_13) % 2^64 := rfl
+  have e_c_14 : c_14 = (x22_3 + x17_3 + c_13) / 2^64 := rfl
+  clear_value s_13 x22_4 c_14
+  have l_x22_4 : x22_4 + 2^64 * c_14 = x22_3 + x17_3 + c_13 := by
+    rw [e_x22_4, e_c_14]; exact Nat.mod_add_div _ _
+  have b_x22_4 : x22_4 < 2^64 := by rw [e_x22_4]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_14 : c_14 ≤ 1 := by
+    rw [e_c_14]; exact addc_carry_le_one x22_3 x17_3 c_13 b_x22_3 b_x17_3 b_c_13
+  clear e_x22_4 e_c_14
+  -- x17_4: umulh x17,x13,x9
+  extract_lets +onlyGivenNames x17_4 at hr
+  have e_x17_4 : x17_4 = x13 * x9_1 / 2^64 := rfl
+  clear_value x17_4
+  have p_x17_4 : x13 * x9_1 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x13 b_x9_1
+  have b_x17_4 : x17_4 < 2^64 := by rw [e_x17_4]; exact Nat.div_lt_of_lt_mul p_x17_4
+  have d_x17_4 : x17_3 + 2^64 * x17_4 = x13 * x9_1 := by
+    rw [e_x17_3, e_x17_4]; exact Nat.mod_add_div _ _
+  clear e_x17_3 e_x17_4
+  -- x23_3: adc x23,x23,xzr
+  extract_lets +onlyGivenNames x23_3 at hr
+  have e_x23_3 : x23_3 = (x23_2 + 0 + c_14) % 2^64 := rfl
+  clear_value x23_3
+  have b_x23_3 : x23_3 < 2^64 := by rw [e_x23_3]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23_3, b_k_x23_3, l_x23_3⟩ :
+      ∃ k, k ≤ 1 ∧ x23_3 + 2^64 * k = x23_2 + 0 + c_14 :=
+    ⟨(x23_2 + 0 + c_14) / 2^64, addc_carry_le_one x23_2 0 c_14 b_x23_2 (by decide) b_c_14,
+      by rw [e_x23_3]; exact Nat.mod_add_div _ _⟩
+  clear e_x23_3
+  -- x20_5: adds x20,x20,x14
+  extract_lets +onlyGivenNames s_14 x20_5 c_15 at hr
+  have e_x20_5 : x20_5 = (x20_4 + x14_3 + 0) % 2^64 := rfl
+  have e_c_15 : c_15 = (x20_4 + x14_3 + 0) / 2^64 := rfl
+  clear_value s_14 x20_5 c_15
+  have l_x20_5 : x20_5 + 2^64 * c_15 = x20_4 + x14_3 + 0 := by
+    rw [e_x20_5, e_c_15]; exact Nat.mod_add_div _ _
+  have b_x20_5 : x20_5 < 2^64 := by rw [e_x20_5]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_15 : c_15 ≤ 1 := by
+    rw [e_c_15]; exact addc_carry_le_one x20_4 x14_3 0 b_x20_4 b_x14_3 (by decide)
+  clear e_x20_5 e_c_15
+  -- x21_5: adcs x21,x21,x15
+  extract_lets +onlyGivenNames s_15 x21_5 c_16 at hr
+  have e_x21_5 : x21_5 = (x21_4 + x15_4 + c_15) % 2^64 := rfl
+  have e_c_16 : c_16 = (x21_4 + x15_4 + c_15) / 2^64 := rfl
+  clear_value s_15 x21_5 c_16
+  have l_x21_5 : x21_5 + 2^64 * c_16 = x21_4 + x15_4 + c_15 := by
+    rw [e_x21_5, e_c_16]; exact Nat.mod_add_div _ _
+  have b_x21_5 : x21_5 < 2^64 := by rw [e_x21_5]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_16 : c_16 ≤ 1 := by
+    rw [e_c_16]; exact addc_carry_le_one x21_4 x15_4 c_15 b_x21_4 b_x15_4 b_c_15
+  clear e_x21_5 e_c_16
+  -- x15_5: mul x15,x6,x3
+  extract_lets +onlyGivenNames x15_5 at hr
+  have e_x15_5 : x15_5 = x6 * x3_1 % 2^64 := rfl
+  clear_value x15_5
+  have b_x15_5 : x15_5 < 2^64 := by rw [e_x15_5]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x22_5: adcs x22,x22,x16
+  extract_lets +onlyGivenNames s_16 x22_5 c_17 at hr
+  have e_x22_5 : x22_5 = (x22_4 + x16_2 + c_16) % 2^64 := rfl
+  have e_c_17 : c_17 = (x22_4 + x16_2 + c_16) / 2^64 := rfl
+  clear_value s_16 x22_5 c_17
+  have l_x22_5 : x22_5 + 2^64 * c_17 = x22_4 + x16_2 + c_16 := by
+    rw [e_x22_5, e_c_17]; exact Nat.mod_add_div _ _
+  have b_x22_5 : x22_5 < 2^64 := by rw [e_x22_5]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_17 : c_17 ≤ 1 := by
+    rw [e_c_17]; exact addc_carry_le_one x22_4 x16_2 c_16 b_x22_4 b_x16_2 b_c_16
+  clear e_x22_5 e_c_17
+  -- x23_4: adc x23,x23,x17
+  extract_lets +onlyGivenNames x23_4 at hr
+  have e_x23_4 : x23_4 = (x23_3 + x17_4 + c_17) % 2^64 := rfl
+  clear_value x23_4
+  have b_x23_4 : x23_4 < 2^64 := by rw [e_x23_4]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23_4, b_k_x23_4, l_x23_4⟩ :
+      ∃ k, k ≤ 1 ∧ x23_4 + 2^64 * k = x23_3 + x17_4 + c_17 :=
+    ⟨(x23_3 + x17_4 + c_17) / 2^64, addc_carry_le_one x23_3 x17_4 c_17 b_x23_3 b_x17_4 b_c_17,
+      by rw [e_x23_4]; exact Nat.mod_add_div _ _⟩
+  clear e_x23_4
+  -- BEGIN round 1 fold
+  -- `lhs * rhs_1` as the sum of the limb products.
+  have hL_1 : lhs.toNat * x9_1
+      = x10 * x9_1 + 2^64 * (x11 * x9_1) + 2^128 * (x12 * x9_1) + 2^192 * (x13 * x9_1) := by
+    rw [e_x10, e_x11, e_x12, e_x13]; simp only [Limbs.toNat]; ring
+  have hs_1 : lhs.toNat * x9_1 + lhs.toNat + modulus.toNat + 3 * 2^254 + 2^128 ≤ 2^320 := by
+    rw [e_x9_1, ← Nat.mul_add_one]; exact hsafe.1
+  -- The fold's two carry chains, summed with the limb weights.
+  have hsum_1 : x19_2 + 2^64 * x20_5 + 2^128 * x21_5 + 2^192 * x22_5 + 2^256 * x23_4
+        + 2^320 * (k_x23_3 + k_x23_4)
+      = x19_1 + 2^64 * x20_3 + 2^128 * x21_3 + 2^192 * x22_3 + 2^256 * x23_2
+        + lhs.toNat * x9_1 := by
+    clear * - l_x19_2 l_x20_4 l_x21_4 l_x22_4 l_x23_3 l_x20_5 l_x21_5 l_x22_5 l_x23_4 d_x14_3
+        d_x15_4 d_x16_2 d_x17_4 hL_1
+    omega
+  -- Neither `adc` of the fold wraps: the accumulator entering the round is below
+  -- `lhs + p`, and `hs_1` bounds it plus `lhs * rhs_1` below `2^320`.
+  have hk_1 : k_x23_3 = 0 ∧ k_x23_4 = 0 := by
+    clear * - hsum_1 B_0 hs_1
+    omega
+  have F_1 : x19_2 + 2^64 * x20_5 + 2^128 * x21_5 + 2^192 * x22_5 + 2^256 * x23_4
+      = x19_1 + 2^64 * x20_3 + 2^128 * x21_3 + 2^192 * x22_3 + 2^256 * x23_2
+        + lhs.toNat * x9_1 := by
+    clear * - hsum_1 hk_1
+    omega
+  -- END round 1 fold
+  -- x17_5: lsl x17,x3,#62
+  extract_lets +onlyGivenNames x17_5 at hr
+  have e_x17_5 : x17_5 = x3_1 * 2^62 % 2^64 := rfl
+  clear_value x17_5
+  have b_x17_5 : x17_5 < 2^64 := by rw [e_x17_5]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x9_2: ldr x9,[x2,8*2]
+  extract_lets +onlyGivenNames x9_2 at hr
+  have e_x9_2 : x9_2 = rhs.l2 := rfl
+  clear_value x9_2
+  have b_x9_2 : x9_2 < 2^64 := by rw [e_x9_2]; exact hrhs.2.2.1
+  -- c_18: subs xzr,x19,#1
+  extract_lets +onlyGivenNames c_18 at hr
+  have e_c_18 : c_18 = (x19_2 + 2^64 - 1 - (1 - 1)) / 2^64 := rfl
+  clear_value c_18
+  have b_c_18 : c_18 ≤ 1 := by rw [e_c_18]; exact subc_carry_le_one x19_2 1 1 b_x19_2
+  have l_c_18 : (c_18 = 1 ∧ 1 + 1 ≤ x19_2 + 1) ∨ (c_18 = 0 ∧ x19_2 + 1 < 1 + 1) :=
+    subc_carry_cases x19_2 1 1 _ e_c_18 b_x19_2 (by decide) (by decide)
+  clear e_c_18
+  -- x14_4: umulh x14,x5,x3
+  extract_lets +onlyGivenNames x14_4 at hr
+  have e_x14_4 : x14_4 = x5 * x3_1 / 2^64 := rfl
+  clear_value x14_4
+  have p_x14_4 : x5 * x3_1 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x5 b_x3_1
+  have b_x14_4 : x14_4 < 2^64 := by rw [e_x14_4]; exact Nat.div_lt_of_lt_mul p_x14_4
+  obtain ⟨lo_x14_4, b_lo_x14_4, d_x14_4⟩ :
+      ∃ lo, lo < 2^64 ∧ lo + 2^64 * x14_4 = x5 * x3_1 :=
+    ⟨x5 * x3_1 % 2^64, Nat.mod_lt _ (Nat.two_pow_pos _),
+      by rw [e_x14_4]; exact Nat.mod_add_div _ _⟩
+  clear e_x14_4
+  -- x20_6: adcs x20,x20,x15
+  extract_lets +onlyGivenNames s_17 x20_6 c_19 at hr
+  have e_x20_6 : x20_6 = (x20_5 + x15_5 + c_18) % 2^64 := rfl
+  have e_c_19 : c_19 = (x20_5 + x15_5 + c_18) / 2^64 := rfl
+  clear_value s_17 x20_6 c_19
+  have l_x20_6 : x20_6 + 2^64 * c_19 = x20_5 + x15_5 + c_18 := by
+    rw [e_x20_6, e_c_19]; exact Nat.mod_add_div _ _
+  have b_x20_6 : x20_6 < 2^64 := by rw [e_x20_6]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_19 : c_19 ≤ 1 := by
+    rw [e_c_19]; exact addc_carry_le_one x20_5 x15_5 c_18 b_x20_5 b_x15_5 b_c_18
+  clear e_x20_6 e_c_19
+  -- x15_6: umulh x15,x6,x3
+  extract_lets +onlyGivenNames x15_6 at hr
+  have e_x15_6 : x15_6 = x6 * x3_1 / 2^64 := rfl
+  clear_value x15_6
+  have p_x15_6 : x6 * x3_1 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x6 b_x3_1
+  have b_x15_6 : x15_6 < 2^64 := by rw [e_x15_6]; exact Nat.div_lt_of_lt_mul p_x15_6
+  have d_x15_6 : x15_5 + 2^64 * x15_6 = x6 * x3_1 := by
+    rw [e_x15_5, e_x15_6]; exact Nat.mod_add_div _ _
+  clear e_x15_5 e_x15_6
+  -- x21_6: adcs x21,x21,xzr
+  extract_lets +onlyGivenNames s_18 x21_6 c_20 at hr
+  have e_x21_6 : x21_6 = (x21_5 + 0 + c_19) % 2^64 := rfl
+  have e_c_20 : c_20 = (x21_5 + 0 + c_19) / 2^64 := rfl
+  clear_value s_18 x21_6 c_20
+  have l_x21_6 : x21_6 + 2^64 * c_20 = x21_5 + 0 + c_19 := by
+    rw [e_x21_6, e_c_20]; exact Nat.mod_add_div _ _
+  have b_x21_6 : x21_6 < 2^64 := by rw [e_x21_6]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_20 : c_20 ≤ 1 := by
+    rw [e_c_20]; exact addc_carry_le_one x21_5 0 c_19 b_x21_5 (by decide) b_c_19
+  clear e_x21_6 e_c_20
+  -- x22_6: adcs x22,x22,x17
+  extract_lets +onlyGivenNames s_19 x22_6 c_21 at hr
+  have e_x22_6 : x22_6 = (x22_5 + x17_5 + c_20) % 2^64 := rfl
+  have e_c_21 : c_21 = (x22_5 + x17_5 + c_20) / 2^64 := rfl
+  clear_value s_19 x22_6 c_21
+  have l_x22_6 : x22_6 + 2^64 * c_21 = x22_5 + x17_5 + c_20 := by
+    rw [e_x22_6, e_c_21]; exact Nat.mod_add_div _ _
+  have b_x22_6 : x22_6 < 2^64 := by rw [e_x22_6]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_21 : c_21 ≤ 1 := by
+    rw [e_c_21]; exact addc_carry_le_one x22_5 x17_5 c_20 b_x22_5 b_x17_5 b_c_20
+  clear e_x22_6 e_c_21
+  -- x17_6: lsr x17,x3,#2
+  extract_lets +onlyGivenNames x17_6 at hr
+  have e_x17_6 : x17_6 = x3_1 / 2^2 := rfl
+  clear_value x17_6
+  have b_x17_6 : x17_6 < 2^62 := by
+    rw [e_x17_6]; exact Nat.div_lt_of_lt_mul (lt_of_lt_of_eq b_x3_1 (by norm_num))
+  have sh_x17_6 : x17_5 + 2^64 * x17_6 = x3_1 * 2^62 := by
+    rw [e_x17_5, e_x17_6]; exact lsl62_lsr2_split _
+  clear e_x17_5 e_x17_6
+  -- x23_5: adc x23,x23,xzr
+  extract_lets +onlyGivenNames x23_5 at hr
+  have e_x23_5 : x23_5 = (x23_4 + 0 + c_21) % 2^64 := rfl
+  clear_value x23_5
+  have b_x23_5 : x23_5 < 2^64 := by rw [e_x23_5]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23_5, b_k_x23_5, l_x23_5⟩ :
+      ∃ k, k ≤ 1 ∧ x23_5 + 2^64 * k = x23_4 + 0 + c_21 :=
+    ⟨(x23_4 + 0 + c_21) / 2^64, addc_carry_le_one x23_4 0 c_21 b_x23_4 (by decide) b_c_21,
+      by rw [e_x23_5]; exact Nat.mod_add_div _ _⟩
+  clear e_x23_5
+  -- x19_3: adds x19,x20,x14
+  extract_lets +onlyGivenNames s_20 x19_3 c_22 at hr
+  have e_x19_3 : x19_3 = (x20_6 + x14_4 + 0) % 2^64 := rfl
+  have e_c_22 : c_22 = (x20_6 + x14_4 + 0) / 2^64 := rfl
+  clear_value s_20 x19_3 c_22
+  have l_x19_3 : x19_3 + 2^64 * c_22 = x20_6 + x14_4 + 0 := by
+    rw [e_x19_3, e_c_22]; exact Nat.mod_add_div _ _
+  have b_x19_3 : x19_3 < 2^64 := by rw [e_x19_3]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_22 : c_22 ≤ 1 := by
+    rw [e_c_22]; exact addc_carry_le_one x20_6 x14_4 0 b_x20_6 b_x14_4 (by decide)
+  clear e_x19_3 e_c_22
+  -- x14_5: mul x14,x10,x9
+  extract_lets +onlyGivenNames x14_5 at hr
+  have e_x14_5 : x14_5 = x10 * x9_2 % 2^64 := rfl
+  clear_value x14_5
+  have b_x14_5 : x14_5 < 2^64 := by rw [e_x14_5]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x20_7: adcs x20,x21,x15
+  extract_lets +onlyGivenNames s_21 x20_7 c_23 at hr
+  have e_x20_7 : x20_7 = (x21_6 + x15_6 + c_22) % 2^64 := rfl
+  have e_c_23 : c_23 = (x21_6 + x15_6 + c_22) / 2^64 := rfl
+  clear_value s_21 x20_7 c_23
+  have l_x20_7 : x20_7 + 2^64 * c_23 = x21_6 + x15_6 + c_22 := by
+    rw [e_x20_7, e_c_23]; exact Nat.mod_add_div _ _
+  have b_x20_7 : x20_7 < 2^64 := by rw [e_x20_7]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_23 : c_23 ≤ 1 := by
+    rw [e_c_23]; exact addc_carry_le_one x21_6 x15_6 c_22 b_x21_6 b_x15_6 b_c_22
+  clear e_x20_7 e_c_23
+  -- x15_7: mul x15,x11,x9
+  extract_lets +onlyGivenNames x15_7 at hr
+  have e_x15_7 : x15_7 = x11 * x9_2 % 2^64 := rfl
+  clear_value x15_7
+  have b_x15_7 : x15_7 < 2^64 := by rw [e_x15_7]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x21_7: adcs x21,x22,xzr
+  extract_lets +onlyGivenNames s_22 x21_7 c_24 at hr
+  have e_x21_7 : x21_7 = (x22_6 + 0 + c_23) % 2^64 := rfl
+  have e_c_24 : c_24 = (x22_6 + 0 + c_23) / 2^64 := rfl
+  clear_value s_22 x21_7 c_24
+  have l_x21_7 : x21_7 + 2^64 * c_24 = x22_6 + 0 + c_23 := by
+    rw [e_x21_7, e_c_24]; exact Nat.mod_add_div _ _
+  have b_x21_7 : x21_7 < 2^64 := by rw [e_x21_7]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_24 : c_24 ≤ 1 := by
+    rw [e_c_24]; exact addc_carry_le_one x22_6 0 c_23 b_x22_6 (by decide) b_c_23
+  clear e_x21_7 e_c_24
+  -- x16_3: mul x16,x12,x9
+  extract_lets +onlyGivenNames x16_3 at hr
+  have e_x16_3 : x16_3 = x12 * x9_2 % 2^64 := rfl
+  clear_value x16_3
+  have b_x16_3 : x16_3 < 2^64 := by rw [e_x16_3]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x22_7: adcs x22,x23,x17
+  extract_lets +onlyGivenNames s_23 x22_7 c_25 at hr
+  have e_x22_7 : x22_7 = (x23_5 + x17_6 + c_24) % 2^64 := rfl
+  have e_c_25 : c_25 = (x23_5 + x17_6 + c_24) / 2^64 := rfl
+  clear_value s_23 x22_7 c_25
+  have l_x22_7 : x22_7 + 2^64 * c_25 = x23_5 + x17_6 + c_24 := by
+    rw [e_x22_7, e_c_25]; exact Nat.mod_add_div _ _
+  have b_x22_7 : x22_7 < 2^64 := by rw [e_x22_7]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_25 : c_25 ≤ 1 := by
+    rw [e_c_25]; exact addc_carry_le_one x23_5 x17_6 c_24 b_x23_5 (lt_of_lt_of_le b_x17_6 (by norm_num)) b_c_24
+  clear e_x22_7 e_c_25
+  -- x17_7: mul x17,x13,x9
+  extract_lets +onlyGivenNames x17_7 at hr
+  have e_x17_7 : x17_7 = x13 * x9_2 % 2^64 := rfl
+  clear_value x17_7
+  have b_x17_7 : x17_7 < 2^64 := by rw [e_x17_7]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x23_6: adc x23,xzr,xzr
+  extract_lets +onlyGivenNames x23_6 at hr
+  have e_x23_6 : x23_6 = (0 + 0 + c_25) % 2^64 := rfl
+  clear_value x23_6
+  have b_x23_6 : x23_6 < 2^64 := by rw [e_x23_6]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23_6, b_k_x23_6, l_x23_6⟩ :
+      ∃ k, k ≤ 1 ∧ x23_6 + 2^64 * k = 0 + 0 + c_25 :=
+    ⟨(0 + 0 + c_25) / 2^64, addc_carry_le_one 0 0 c_25 (by decide) (by decide) b_c_25,
+      by rw [e_x23_6]; exact Nat.mod_add_div _ _⟩
+  clear e_x23_6
+  -- BEGIN round 1 reduction
+  -- Cancellation: the low limb of `x19_2 + p0 * x3_1` is zero, so `x19_2 + lo_x14_4` is
+  -- `0` or `2^64`, and `subs xzr, x19_2, #1` set the carry exactly when it is `2^64`.
+  have hc_1 : x19_2 + lo_x14_4 = 2^64 * c_18 := by
+    have h := cancel_low x19_2 inv modulus.l0 hinv
+    rw [← e_x5, ← e_x4, ← e_x3_1, ← d_x14_4, Nat.add_mul_mod_self_left,
+      Nat.mod_eq_of_lt b_lo_x14_4] at h
+    clear * - h b_x19_2 b_lo_x14_4 l_c_18
+    omega
+  have bc_1 : c_18 ≤ 1 := by clear * - l_c_18; omega
+  have hPq_1 : x3_1 * modulus.toNat = x5 * x3_1 + 2^64 * (x6 * x3_1) + 2^254 * x3_1 := by
+    rw [hP]; ring
+  -- `x17_5` is the low two bits of `x3_1` at the top of a limb.
+  have hsh_1 : x17_5 ≤ 3 * 2^62 := by
+    clear * - sh_x17_6 b_x17_5 b_x17_6; omega
+  -- The reduction's carry chain, summed with the limb weights.
+  have hsum'_1 : x19_2 + 2^64 * x20_6 + 2^128 * x21_6 + 2^192 * x22_6 + 2^256 * x23_5
+        + 2^320 * k_x23_5
+      = x19_2 + 2^64 * x20_5 + 2^128 * x21_5 + 2^192 * x22_5 + 2^256 * x23_4
+        + 2^64 * x15_5 + 2^64 * c_18 + 2^192 * x17_5 := by
+    clear * - l_x20_6 l_x21_6 l_x22_6 l_x23_5
+    omega
+  -- Neither `adc` of the reduction wraps: the five-limb accumulator is below
+  -- `2^320 - 3 * 2^254 - 2^128` by `hs_1`, and the reduction adds less than that before
+  -- the shift.
+  have hkr_1 : k_x23_5 = 0 := by
+    clear * - hsum'_1 F_1 B_0 hs_1 b_x15_5 bc_1 hsh_1
+    omega
+  have hks_1 : k_x23_6 = 0 := by clear * - l_x23_6 b_c_25; omega
+  have I_1 : 2^64 * (x19_3 + 2^64 * x20_7 + 2^128 * x21_7 + 2^192 * x22_7 + 2^256 * x23_6)
+      = x19_2 + 2^64 * x20_5 + 2^128 * x21_5 + 2^192 * x22_5 + 2^256 * x23_4
+        + x3_1 * modulus.toNat := by
+    clear * - hc_1 d_x14_4 d_x15_6 sh_x17_6 l_x20_6 l_x21_6 l_x22_6 l_x23_5 l_x19_3 l_x20_7 l_x21_7
+        l_x22_7 l_x23_6 hkr_1 hks_1 hPq_1
+    omega
+  -- The shifted accumulator stays below `lhs + p`.
+  have hLx_1 : lhs.toNat * x9_1 + lhs.toNat ≤ lhs.toNat * 2^64 := by
+    rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ b_x9_1
+  have hqP_1 : x3_1 * modulus.toNat + modulus.toNat ≤ 2^64 * modulus.toNat := by
+    rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ b_x3_1
+  have B_1 : x19_3 + 2^64 * x20_7 + 2^128 * x21_7 + 2^192 * x22_7 + 2^256 * x23_6
+      < lhs.toNat + modulus.toNat := by
+    clear * - I_1 F_1 hLx_1 hqP_1 B_0
+    omega
+  have t_1 : x23_6 ≤ 1 := by clear * - l_x23_6 hks_1 b_c_25; omega
+  -- END round 1 reduction
+  -- x19_4: adds x19,x19,x14
+  extract_lets +onlyGivenNames s_24 x19_4 c_26 at hr
+  have e_x19_4 : x19_4 = (x19_3 + x14_5 + 0) % 2^64 := rfl
+  have e_c_26 : c_26 = (x19_3 + x14_5 + 0) / 2^64 := rfl
+  clear_value s_24 x19_4 c_26
+  have l_x19_4 : x19_4 + 2^64 * c_26 = x19_3 + x14_5 + 0 := by
+    rw [e_x19_4, e_c_26]; exact Nat.mod_add_div _ _
+  have b_x19_4 : x19_4 < 2^64 := by rw [e_x19_4]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_26 : c_26 ≤ 1 := by
+    rw [e_c_26]; exact addc_carry_le_one x19_3 x14_5 0 b_x19_3 b_x14_5 (by decide)
+  clear e_x19_4 e_c_26
+  -- x14_6: umulh x14,x10,x9
+  extract_lets +onlyGivenNames x14_6 at hr
+  have e_x14_6 : x14_6 = x10 * x9_2 / 2^64 := rfl
+  clear_value x14_6
+  have p_x14_6 : x10 * x9_2 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x10 b_x9_2
+  have b_x14_6 : x14_6 < 2^64 := by rw [e_x14_6]; exact Nat.div_lt_of_lt_mul p_x14_6
+  have d_x14_6 : x14_5 + 2^64 * x14_6 = x10 * x9_2 := by
+    rw [e_x14_5, e_x14_6]; exact Nat.mod_add_div _ _
+  clear e_x14_5 e_x14_6
+  -- x20_8: adcs x20,x20,x15
+  extract_lets +onlyGivenNames s_25 x20_8 c_27 at hr
+  have e_x20_8 : x20_8 = (x20_7 + x15_7 + c_26) % 2^64 := rfl
+  have e_c_27 : c_27 = (x20_7 + x15_7 + c_26) / 2^64 := rfl
+  clear_value s_25 x20_8 c_27
+  have l_x20_8 : x20_8 + 2^64 * c_27 = x20_7 + x15_7 + c_26 := by
+    rw [e_x20_8, e_c_27]; exact Nat.mod_add_div _ _
+  have b_x20_8 : x20_8 < 2^64 := by rw [e_x20_8]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_27 : c_27 ≤ 1 := by
+    rw [e_c_27]; exact addc_carry_le_one x20_7 x15_7 c_26 b_x20_7 b_x15_7 b_c_26
+  clear e_x20_8 e_c_27
+  -- x15_8: umulh x15,x11,x9
+  extract_lets +onlyGivenNames x15_8 at hr
+  have e_x15_8 : x15_8 = x11 * x9_2 / 2^64 := rfl
+  clear_value x15_8
+  have p_x15_8 : x11 * x9_2 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x11 b_x9_2
+  have b_x15_8 : x15_8 < 2^64 := by rw [e_x15_8]; exact Nat.div_lt_of_lt_mul p_x15_8
+  have d_x15_8 : x15_7 + 2^64 * x15_8 = x11 * x9_2 := by
+    rw [e_x15_7, e_x15_8]; exact Nat.mod_add_div _ _
+  clear e_x15_7 e_x15_8
+  -- x21_8: adcs x21,x21,x16
+  extract_lets +onlyGivenNames s_26 x21_8 c_28 at hr
+  have e_x21_8 : x21_8 = (x21_7 + x16_3 + c_27) % 2^64 := rfl
+  have e_c_28 : c_28 = (x21_7 + x16_3 + c_27) / 2^64 := rfl
+  clear_value s_26 x21_8 c_28
+  have l_x21_8 : x21_8 + 2^64 * c_28 = x21_7 + x16_3 + c_27 := by
+    rw [e_x21_8, e_c_28]; exact Nat.mod_add_div _ _
+  have b_x21_8 : x21_8 < 2^64 := by rw [e_x21_8]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_28 : c_28 ≤ 1 := by
+    rw [e_c_28]; exact addc_carry_le_one x21_7 x16_3 c_27 b_x21_7 b_x16_3 b_c_27
+  clear e_x21_8 e_c_28
+  -- x3_2: mul x3,x4,x19
+  extract_lets +onlyGivenNames x3_2 at hr
+  have e_x3_2 : x3_2 = x4 * x19_4 % 2^64 := rfl
+  clear_value x3_2
+  have b_x3_2 : x3_2 < 2^64 := by rw [e_x3_2]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x16_4: umulh x16,x12,x9
+  extract_lets +onlyGivenNames x16_4 at hr
+  have e_x16_4 : x16_4 = x12 * x9_2 / 2^64 := rfl
+  clear_value x16_4
+  have p_x16_4 : x12 * x9_2 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x12 b_x9_2
+  have b_x16_4 : x16_4 < 2^64 := by rw [e_x16_4]; exact Nat.div_lt_of_lt_mul p_x16_4
+  have d_x16_4 : x16_3 + 2^64 * x16_4 = x12 * x9_2 := by
+    rw [e_x16_3, e_x16_4]; exact Nat.mod_add_div _ _
+  clear e_x16_3 e_x16_4
+  -- x22_8: adcs x22,x22,x17
+  extract_lets +onlyGivenNames s_27 x22_8 c_29 at hr
+  have e_x22_8 : x22_8 = (x22_7 + x17_7 + c_28) % 2^64 := rfl
+  have e_c_29 : c_29 = (x22_7 + x17_7 + c_28) / 2^64 := rfl
+  clear_value s_27 x22_8 c_29
+  have l_x22_8 : x22_8 + 2^64 * c_29 = x22_7 + x17_7 + c_28 := by
+    rw [e_x22_8, e_c_29]; exact Nat.mod_add_div _ _
+  have b_x22_8 : x22_8 < 2^64 := by rw [e_x22_8]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_29 : c_29 ≤ 1 := by
+    rw [e_c_29]; exact addc_carry_le_one x22_7 x17_7 c_28 b_x22_7 b_x17_7 b_c_28
+  clear e_x22_8 e_c_29
+  -- x17_8: umulh x17,x13,x9
+  extract_lets +onlyGivenNames x17_8 at hr
+  have e_x17_8 : x17_8 = x13 * x9_2 / 2^64 := rfl
+  clear_value x17_8
+  have p_x17_8 : x13 * x9_2 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x13 b_x9_2
+  have b_x17_8 : x17_8 < 2^64 := by rw [e_x17_8]; exact Nat.div_lt_of_lt_mul p_x17_8
+  have d_x17_8 : x17_7 + 2^64 * x17_8 = x13 * x9_2 := by
+    rw [e_x17_7, e_x17_8]; exact Nat.mod_add_div _ _
+  clear e_x17_7 e_x17_8
+  -- x23_7: adc x23,x23,xzr
+  extract_lets +onlyGivenNames x23_7 at hr
+  have e_x23_7 : x23_7 = (x23_6 + 0 + c_29) % 2^64 := rfl
+  clear_value x23_7
+  have b_x23_7 : x23_7 < 2^64 := by rw [e_x23_7]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23_7, b_k_x23_7, l_x23_7⟩ :
+      ∃ k, k ≤ 1 ∧ x23_7 + 2^64 * k = x23_6 + 0 + c_29 :=
+    ⟨(x23_6 + 0 + c_29) / 2^64, addc_carry_le_one x23_6 0 c_29 b_x23_6 (by decide) b_c_29,
+      by rw [e_x23_7]; exact Nat.mod_add_div _ _⟩
+  clear e_x23_7
+  -- x20_9: adds x20,x20,x14
+  extract_lets +onlyGivenNames s_28 x20_9 c_30 at hr
+  have e_x20_9 : x20_9 = (x20_8 + x14_6 + 0) % 2^64 := rfl
+  have e_c_30 : c_30 = (x20_8 + x14_6 + 0) / 2^64 := rfl
+  clear_value s_28 x20_9 c_30
+  have l_x20_9 : x20_9 + 2^64 * c_30 = x20_8 + x14_6 + 0 := by
+    rw [e_x20_9, e_c_30]; exact Nat.mod_add_div _ _
+  have b_x20_9 : x20_9 < 2^64 := by rw [e_x20_9]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_30 : c_30 ≤ 1 := by
+    rw [e_c_30]; exact addc_carry_le_one x20_8 x14_6 0 b_x20_8 b_x14_6 (by decide)
+  clear e_x20_9 e_c_30
+  -- x21_9: adcs x21,x21,x15
+  extract_lets +onlyGivenNames s_29 x21_9 c_31 at hr
+  have e_x21_9 : x21_9 = (x21_8 + x15_8 + c_30) % 2^64 := rfl
+  have e_c_31 : c_31 = (x21_8 + x15_8 + c_30) / 2^64 := rfl
+  clear_value s_29 x21_9 c_31
+  have l_x21_9 : x21_9 + 2^64 * c_31 = x21_8 + x15_8 + c_30 := by
+    rw [e_x21_9, e_c_31]; exact Nat.mod_add_div _ _
+  have b_x21_9 : x21_9 < 2^64 := by rw [e_x21_9]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_31 : c_31 ≤ 1 := by
+    rw [e_c_31]; exact addc_carry_le_one x21_8 x15_8 c_30 b_x21_8 b_x15_8 b_c_30
+  clear e_x21_9 e_c_31
+  -- x15_9: mul x15,x6,x3
+  extract_lets +onlyGivenNames x15_9 at hr
+  have e_x15_9 : x15_9 = x6 * x3_2 % 2^64 := rfl
+  clear_value x15_9
+  have b_x15_9 : x15_9 < 2^64 := by rw [e_x15_9]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x22_9: adcs x22,x22,x16
+  extract_lets +onlyGivenNames s_30 x22_9 c_32 at hr
+  have e_x22_9 : x22_9 = (x22_8 + x16_4 + c_31) % 2^64 := rfl
+  have e_c_32 : c_32 = (x22_8 + x16_4 + c_31) / 2^64 := rfl
+  clear_value s_30 x22_9 c_32
+  have l_x22_9 : x22_9 + 2^64 * c_32 = x22_8 + x16_4 + c_31 := by
+    rw [e_x22_9, e_c_32]; exact Nat.mod_add_div _ _
+  have b_x22_9 : x22_9 < 2^64 := by rw [e_x22_9]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_32 : c_32 ≤ 1 := by
+    rw [e_c_32]; exact addc_carry_le_one x22_8 x16_4 c_31 b_x22_8 b_x16_4 b_c_31
+  clear e_x22_9 e_c_32
+  -- x23_8: adc x23,x23,x17
+  extract_lets +onlyGivenNames x23_8 at hr
+  have e_x23_8 : x23_8 = (x23_7 + x17_8 + c_32) % 2^64 := rfl
+  clear_value x23_8
+  have b_x23_8 : x23_8 < 2^64 := by rw [e_x23_8]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23_8, b_k_x23_8, l_x23_8⟩ :
+      ∃ k, k ≤ 1 ∧ x23_8 + 2^64 * k = x23_7 + x17_8 + c_32 :=
+    ⟨(x23_7 + x17_8 + c_32) / 2^64, addc_carry_le_one x23_7 x17_8 c_32 b_x23_7 b_x17_8 b_c_32,
+      by rw [e_x23_8]; exact Nat.mod_add_div _ _⟩
+  clear e_x23_8
+  -- BEGIN round 2 fold
+  -- `lhs * rhs_2` as the sum of the limb products.
+  have hL_2 : lhs.toNat * x9_2
+      = x10 * x9_2 + 2^64 * (x11 * x9_2) + 2^128 * (x12 * x9_2) + 2^192 * (x13 * x9_2) := by
+    rw [e_x10, e_x11, e_x12, e_x13]; simp only [Limbs.toNat]; ring
+  have hs_2 : lhs.toNat * x9_2 + lhs.toNat + modulus.toNat + 3 * 2^254 + 2^128 ≤ 2^320 := by
+    rw [e_x9_2, ← Nat.mul_add_one]; exact hsafe.2.1
+  -- The fold's two carry chains, summed with the limb weights.
+  have hsum_2 : x19_4 + 2^64 * x20_9 + 2^128 * x21_9 + 2^192 * x22_9 + 2^256 * x23_8
+        + 2^320 * (k_x23_7 + k_x23_8)
+      = x19_3 + 2^64 * x20_7 + 2^128 * x21_7 + 2^192 * x22_7 + 2^256 * x23_6
+        + lhs.toNat * x9_2 := by
+    clear * - l_x19_4 l_x20_8 l_x21_8 l_x22_8 l_x23_7 l_x20_9 l_x21_9 l_x22_9 l_x23_8 d_x14_6
+        d_x15_8 d_x16_4 d_x17_8 hL_2
+    omega
+  -- Neither `adc` of the fold wraps: the accumulator entering the round is below
+  -- `lhs + p`, and `hs_2` bounds it plus `lhs * rhs_2` below `2^320`.
+  have hk_2 : k_x23_7 = 0 ∧ k_x23_8 = 0 := by
+    clear * - hsum_2 B_1 hs_2
+    omega
+  have F_2 : x19_4 + 2^64 * x20_9 + 2^128 * x21_9 + 2^192 * x22_9 + 2^256 * x23_8
+      = x19_3 + 2^64 * x20_7 + 2^128 * x21_7 + 2^192 * x22_7 + 2^256 * x23_6
+        + lhs.toNat * x9_2 := by
+    clear * - hsum_2 hk_2
+    omega
+  -- END round 2 fold
+  -- x17_9: lsl x17,x3,#62
+  extract_lets +onlyGivenNames x17_9 at hr
+  have e_x17_9 : x17_9 = x3_2 * 2^62 % 2^64 := rfl
+  clear_value x17_9
+  have b_x17_9 : x17_9 < 2^64 := by rw [e_x17_9]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x9_3: ldr x9,[x2,8*3]
+  extract_lets +onlyGivenNames x9_3 at hr
+  have e_x9_3 : x9_3 = rhs.l3 := rfl
+  clear_value x9_3
+  have b_x9_3 : x9_3 < 2^64 := by rw [e_x9_3]; exact hrhs.2.2.2
+  -- c_33: subs xzr,x19,#1
+  extract_lets +onlyGivenNames c_33 at hr
+  have e_c_33 : c_33 = (x19_4 + 2^64 - 1 - (1 - 1)) / 2^64 := rfl
+  clear_value c_33
+  have b_c_33 : c_33 ≤ 1 := by rw [e_c_33]; exact subc_carry_le_one x19_4 1 1 b_x19_4
+  have l_c_33 : (c_33 = 1 ∧ 1 + 1 ≤ x19_4 + 1) ∨ (c_33 = 0 ∧ x19_4 + 1 < 1 + 1) :=
+    subc_carry_cases x19_4 1 1 _ e_c_33 b_x19_4 (by decide) (by decide)
+  clear e_c_33
+  -- x14_7: umulh x14,x5,x3
+  extract_lets +onlyGivenNames x14_7 at hr
+  have e_x14_7 : x14_7 = x5 * x3_2 / 2^64 := rfl
+  clear_value x14_7
+  have p_x14_7 : x5 * x3_2 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x5 b_x3_2
+  have b_x14_7 : x14_7 < 2^64 := by rw [e_x14_7]; exact Nat.div_lt_of_lt_mul p_x14_7
+  obtain ⟨lo_x14_7, b_lo_x14_7, d_x14_7⟩ :
+      ∃ lo, lo < 2^64 ∧ lo + 2^64 * x14_7 = x5 * x3_2 :=
+    ⟨x5 * x3_2 % 2^64, Nat.mod_lt _ (Nat.two_pow_pos _),
+      by rw [e_x14_7]; exact Nat.mod_add_div _ _⟩
+  clear e_x14_7
+  -- x20_10: adcs x20,x20,x15
+  extract_lets +onlyGivenNames s_31 x20_10 c_34 at hr
+  have e_x20_10 : x20_10 = (x20_9 + x15_9 + c_33) % 2^64 := rfl
+  have e_c_34 : c_34 = (x20_9 + x15_9 + c_33) / 2^64 := rfl
+  clear_value s_31 x20_10 c_34
+  have l_x20_10 : x20_10 + 2^64 * c_34 = x20_9 + x15_9 + c_33 := by
+    rw [e_x20_10, e_c_34]; exact Nat.mod_add_div _ _
+  have b_x20_10 : x20_10 < 2^64 := by rw [e_x20_10]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_34 : c_34 ≤ 1 := by
+    rw [e_c_34]; exact addc_carry_le_one x20_9 x15_9 c_33 b_x20_9 b_x15_9 b_c_33
+  clear e_x20_10 e_c_34
+  -- x15_10: umulh x15,x6,x3
+  extract_lets +onlyGivenNames x15_10 at hr
+  have e_x15_10 : x15_10 = x6 * x3_2 / 2^64 := rfl
+  clear_value x15_10
+  have p_x15_10 : x6 * x3_2 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x6 b_x3_2
+  have b_x15_10 : x15_10 < 2^64 := by rw [e_x15_10]; exact Nat.div_lt_of_lt_mul p_x15_10
+  have d_x15_10 : x15_9 + 2^64 * x15_10 = x6 * x3_2 := by
+    rw [e_x15_9, e_x15_10]; exact Nat.mod_add_div _ _
+  clear e_x15_9 e_x15_10
+  -- x21_10: adcs x21,x21,xzr
+  extract_lets +onlyGivenNames s_32 x21_10 c_35 at hr
+  have e_x21_10 : x21_10 = (x21_9 + 0 + c_34) % 2^64 := rfl
+  have e_c_35 : c_35 = (x21_9 + 0 + c_34) / 2^64 := rfl
+  clear_value s_32 x21_10 c_35
+  have l_x21_10 : x21_10 + 2^64 * c_35 = x21_9 + 0 + c_34 := by
+    rw [e_x21_10, e_c_35]; exact Nat.mod_add_div _ _
+  have b_x21_10 : x21_10 < 2^64 := by rw [e_x21_10]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_35 : c_35 ≤ 1 := by
+    rw [e_c_35]; exact addc_carry_le_one x21_9 0 c_34 b_x21_9 (by decide) b_c_34
+  clear e_x21_10 e_c_35
+  -- x22_10: adcs x22,x22,x17
+  extract_lets +onlyGivenNames s_33 x22_10 c_36 at hr
+  have e_x22_10 : x22_10 = (x22_9 + x17_9 + c_35) % 2^64 := rfl
+  have e_c_36 : c_36 = (x22_9 + x17_9 + c_35) / 2^64 := rfl
+  clear_value s_33 x22_10 c_36
+  have l_x22_10 : x22_10 + 2^64 * c_36 = x22_9 + x17_9 + c_35 := by
+    rw [e_x22_10, e_c_36]; exact Nat.mod_add_div _ _
+  have b_x22_10 : x22_10 < 2^64 := by rw [e_x22_10]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_36 : c_36 ≤ 1 := by
+    rw [e_c_36]; exact addc_carry_le_one x22_9 x17_9 c_35 b_x22_9 b_x17_9 b_c_35
+  clear e_x22_10 e_c_36
+  -- x17_10: lsr x17,x3,#2
+  extract_lets +onlyGivenNames x17_10 at hr
+  have e_x17_10 : x17_10 = x3_2 / 2^2 := rfl
+  clear_value x17_10
+  have b_x17_10 : x17_10 < 2^62 := by
+    rw [e_x17_10]; exact Nat.div_lt_of_lt_mul (lt_of_lt_of_eq b_x3_2 (by norm_num))
+  have sh_x17_10 : x17_9 + 2^64 * x17_10 = x3_2 * 2^62 := by
+    rw [e_x17_9, e_x17_10]; exact lsl62_lsr2_split _
+  clear e_x17_9 e_x17_10
+  -- x23_9: adc x23,x23,xzr
+  extract_lets +onlyGivenNames x23_9 at hr
+  have e_x23_9 : x23_9 = (x23_8 + 0 + c_36) % 2^64 := rfl
+  clear_value x23_9
+  have b_x23_9 : x23_9 < 2^64 := by rw [e_x23_9]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23_9, b_k_x23_9, l_x23_9⟩ :
+      ∃ k, k ≤ 1 ∧ x23_9 + 2^64 * k = x23_8 + 0 + c_36 :=
+    ⟨(x23_8 + 0 + c_36) / 2^64, addc_carry_le_one x23_8 0 c_36 b_x23_8 (by decide) b_c_36,
+      by rw [e_x23_9]; exact Nat.mod_add_div _ _⟩
+  clear e_x23_9
+  -- x19_5: adds x19,x20,x14
+  extract_lets +onlyGivenNames s_34 x19_5 c_37 at hr
+  have e_x19_5 : x19_5 = (x20_10 + x14_7 + 0) % 2^64 := rfl
+  have e_c_37 : c_37 = (x20_10 + x14_7 + 0) / 2^64 := rfl
+  clear_value s_34 x19_5 c_37
+  have l_x19_5 : x19_5 + 2^64 * c_37 = x20_10 + x14_7 + 0 := by
+    rw [e_x19_5, e_c_37]; exact Nat.mod_add_div _ _
+  have b_x19_5 : x19_5 < 2^64 := by rw [e_x19_5]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_37 : c_37 ≤ 1 := by
+    rw [e_c_37]; exact addc_carry_le_one x20_10 x14_7 0 b_x20_10 b_x14_7 (by decide)
+  clear e_x19_5 e_c_37
+  -- x14_8: mul x14,x10,x9
+  extract_lets +onlyGivenNames x14_8 at hr
+  have e_x14_8 : x14_8 = x10 * x9_3 % 2^64 := rfl
+  clear_value x14_8
+  have b_x14_8 : x14_8 < 2^64 := by rw [e_x14_8]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x20_11: adcs x20,x21,x15
+  extract_lets +onlyGivenNames s_35 x20_11 c_38 at hr
+  have e_x20_11 : x20_11 = (x21_10 + x15_10 + c_37) % 2^64 := rfl
+  have e_c_38 : c_38 = (x21_10 + x15_10 + c_37) / 2^64 := rfl
+  clear_value s_35 x20_11 c_38
+  have l_x20_11 : x20_11 + 2^64 * c_38 = x21_10 + x15_10 + c_37 := by
+    rw [e_x20_11, e_c_38]; exact Nat.mod_add_div _ _
+  have b_x20_11 : x20_11 < 2^64 := by rw [e_x20_11]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_38 : c_38 ≤ 1 := by
+    rw [e_c_38]; exact addc_carry_le_one x21_10 x15_10 c_37 b_x21_10 b_x15_10 b_c_37
+  clear e_x20_11 e_c_38
+  -- x15_11: mul x15,x11,x9
+  extract_lets +onlyGivenNames x15_11 at hr
+  have e_x15_11 : x15_11 = x11 * x9_3 % 2^64 := rfl
+  clear_value x15_11
+  have b_x15_11 : x15_11 < 2^64 := by rw [e_x15_11]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x21_11: adcs x21,x22,xzr
+  extract_lets +onlyGivenNames s_36 x21_11 c_39 at hr
+  have e_x21_11 : x21_11 = (x22_10 + 0 + c_38) % 2^64 := rfl
+  have e_c_39 : c_39 = (x22_10 + 0 + c_38) / 2^64 := rfl
+  clear_value s_36 x21_11 c_39
+  have l_x21_11 : x21_11 + 2^64 * c_39 = x22_10 + 0 + c_38 := by
+    rw [e_x21_11, e_c_39]; exact Nat.mod_add_div _ _
+  have b_x21_11 : x21_11 < 2^64 := by rw [e_x21_11]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_39 : c_39 ≤ 1 := by
+    rw [e_c_39]; exact addc_carry_le_one x22_10 0 c_38 b_x22_10 (by decide) b_c_38
+  clear e_x21_11 e_c_39
+  -- x16_5: mul x16,x12,x9
+  extract_lets +onlyGivenNames x16_5 at hr
+  have e_x16_5 : x16_5 = x12 * x9_3 % 2^64 := rfl
+  clear_value x16_5
+  have b_x16_5 : x16_5 < 2^64 := by rw [e_x16_5]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x22_11: adcs x22,x23,x17
+  extract_lets +onlyGivenNames s_37 x22_11 c_40 at hr
+  have e_x22_11 : x22_11 = (x23_9 + x17_10 + c_39) % 2^64 := rfl
+  have e_c_40 : c_40 = (x23_9 + x17_10 + c_39) / 2^64 := rfl
+  clear_value s_37 x22_11 c_40
+  have l_x22_11 : x22_11 + 2^64 * c_40 = x23_9 + x17_10 + c_39 := by
+    rw [e_x22_11, e_c_40]; exact Nat.mod_add_div _ _
+  have b_x22_11 : x22_11 < 2^64 := by rw [e_x22_11]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_40 : c_40 ≤ 1 := by
+    rw [e_c_40]; exact addc_carry_le_one x23_9 x17_10 c_39 b_x23_9 (lt_of_lt_of_le b_x17_10 (by norm_num)) b_c_39
+  clear e_x22_11 e_c_40
+  -- x17_11: mul x17,x13,x9
+  extract_lets +onlyGivenNames x17_11 at hr
+  have e_x17_11 : x17_11 = x13 * x9_3 % 2^64 := rfl
+  clear_value x17_11
+  have b_x17_11 : x17_11 < 2^64 := by rw [e_x17_11]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x23_10: adc x23,xzr,xzr
+  extract_lets +onlyGivenNames x23_10 at hr
+  have e_x23_10 : x23_10 = (0 + 0 + c_40) % 2^64 := rfl
+  clear_value x23_10
+  have b_x23_10 : x23_10 < 2^64 := by rw [e_x23_10]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23_10, b_k_x23_10, l_x23_10⟩ :
+      ∃ k, k ≤ 1 ∧ x23_10 + 2^64 * k = 0 + 0 + c_40 :=
+    ⟨(0 + 0 + c_40) / 2^64, addc_carry_le_one 0 0 c_40 (by decide) (by decide) b_c_40,
+      by rw [e_x23_10]; exact Nat.mod_add_div _ _⟩
+  clear e_x23_10
+  -- BEGIN round 2 reduction
+  -- Cancellation: the low limb of `x19_4 + p0 * x3_2` is zero, so `x19_4 + lo_x14_7` is
+  -- `0` or `2^64`, and `subs xzr, x19_4, #1` set the carry exactly when it is `2^64`.
+  have hc_2 : x19_4 + lo_x14_7 = 2^64 * c_33 := by
+    have h := cancel_low x19_4 inv modulus.l0 hinv
+    rw [← e_x5, ← e_x4, ← e_x3_2, ← d_x14_7, Nat.add_mul_mod_self_left,
+      Nat.mod_eq_of_lt b_lo_x14_7] at h
+    clear * - h b_x19_4 b_lo_x14_7 l_c_33
+    omega
+  have bc_2 : c_33 ≤ 1 := by clear * - l_c_33; omega
+  have hPq_2 : x3_2 * modulus.toNat = x5 * x3_2 + 2^64 * (x6 * x3_2) + 2^254 * x3_2 := by
+    rw [hP]; ring
+  -- `x17_9` is the low two bits of `x3_2` at the top of a limb.
+  have hsh_2 : x17_9 ≤ 3 * 2^62 := by
+    clear * - sh_x17_10 b_x17_9 b_x17_10; omega
+  -- The reduction's carry chain, summed with the limb weights.
+  have hsum'_2 : x19_4 + 2^64 * x20_10 + 2^128 * x21_10 + 2^192 * x22_10 + 2^256 * x23_9
+        + 2^320 * k_x23_9
+      = x19_4 + 2^64 * x20_9 + 2^128 * x21_9 + 2^192 * x22_9 + 2^256 * x23_8
+        + 2^64 * x15_9 + 2^64 * c_33 + 2^192 * x17_9 := by
+    clear * - l_x20_10 l_x21_10 l_x22_10 l_x23_9
+    omega
+  -- Neither `adc` of the reduction wraps: the five-limb accumulator is below
+  -- `2^320 - 3 * 2^254 - 2^128` by `hs_2`, and the reduction adds less than that before
+  -- the shift.
+  have hkr_2 : k_x23_9 = 0 := by
+    clear * - hsum'_2 F_2 B_1 hs_2 b_x15_9 bc_2 hsh_2
+    omega
+  have hks_2 : k_x23_10 = 0 := by clear * - l_x23_10 b_c_40; omega
+  have I_2 : 2^64 * (x19_5 + 2^64 * x20_11 + 2^128 * x21_11 + 2^192 * x22_11 + 2^256 * x23_10)
+      = x19_4 + 2^64 * x20_9 + 2^128 * x21_9 + 2^192 * x22_9 + 2^256 * x23_8
+        + x3_2 * modulus.toNat := by
+    clear * - hc_2 d_x14_7 d_x15_10 sh_x17_10 l_x20_10 l_x21_10 l_x22_10 l_x23_9 l_x19_5 l_x20_11
+        l_x21_11 l_x22_11 l_x23_10 hkr_2 hks_2 hPq_2
+    omega
+  -- The shifted accumulator stays below `lhs + p`.
+  have hLx_2 : lhs.toNat * x9_2 + lhs.toNat ≤ lhs.toNat * 2^64 := by
+    rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ b_x9_2
+  have hqP_2 : x3_2 * modulus.toNat + modulus.toNat ≤ 2^64 * modulus.toNat := by
+    rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ b_x3_2
+  have B_2 : x19_5 + 2^64 * x20_11 + 2^128 * x21_11 + 2^192 * x22_11 + 2^256 * x23_10
+      < lhs.toNat + modulus.toNat := by
+    clear * - I_2 F_2 hLx_2 hqP_2 B_1
+    omega
+  have t_2 : x23_10 ≤ 1 := by clear * - l_x23_10 hks_2 b_c_40; omega
+  -- END round 2 reduction
+  -- x19_6: adds x19,x19,x14
+  extract_lets +onlyGivenNames s_38 x19_6 c_41 at hr
+  have e_x19_6 : x19_6 = (x19_5 + x14_8 + 0) % 2^64 := rfl
+  have e_c_41 : c_41 = (x19_5 + x14_8 + 0) / 2^64 := rfl
+  clear_value s_38 x19_6 c_41
+  have l_x19_6 : x19_6 + 2^64 * c_41 = x19_5 + x14_8 + 0 := by
+    rw [e_x19_6, e_c_41]; exact Nat.mod_add_div _ _
+  have b_x19_6 : x19_6 < 2^64 := by rw [e_x19_6]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_41 : c_41 ≤ 1 := by
+    rw [e_c_41]; exact addc_carry_le_one x19_5 x14_8 0 b_x19_5 b_x14_8 (by decide)
+  clear e_x19_6 e_c_41
+  -- x14_9: umulh x14,x10,x9
+  extract_lets +onlyGivenNames x14_9 at hr
+  have e_x14_9 : x14_9 = x10 * x9_3 / 2^64 := rfl
+  clear_value x14_9
+  have p_x14_9 : x10 * x9_3 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x10 b_x9_3
+  have b_x14_9 : x14_9 < 2^64 := by rw [e_x14_9]; exact Nat.div_lt_of_lt_mul p_x14_9
+  have d_x14_9 : x14_8 + 2^64 * x14_9 = x10 * x9_3 := by
+    rw [e_x14_8, e_x14_9]; exact Nat.mod_add_div _ _
+  clear e_x14_8 e_x14_9
+  -- x20_12: adcs x20,x20,x15
+  extract_lets +onlyGivenNames s_39 x20_12 c_42 at hr
+  have e_x20_12 : x20_12 = (x20_11 + x15_11 + c_41) % 2^64 := rfl
+  have e_c_42 : c_42 = (x20_11 + x15_11 + c_41) / 2^64 := rfl
+  clear_value s_39 x20_12 c_42
+  have l_x20_12 : x20_12 + 2^64 * c_42 = x20_11 + x15_11 + c_41 := by
+    rw [e_x20_12, e_c_42]; exact Nat.mod_add_div _ _
+  have b_x20_12 : x20_12 < 2^64 := by rw [e_x20_12]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_42 : c_42 ≤ 1 := by
+    rw [e_c_42]; exact addc_carry_le_one x20_11 x15_11 c_41 b_x20_11 b_x15_11 b_c_41
+  clear e_x20_12 e_c_42
+  -- x15_12: umulh x15,x11,x9
+  extract_lets +onlyGivenNames x15_12 at hr
+  have e_x15_12 : x15_12 = x11 * x9_3 / 2^64 := rfl
+  clear_value x15_12
+  have p_x15_12 : x11 * x9_3 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x11 b_x9_3
+  have b_x15_12 : x15_12 < 2^64 := by rw [e_x15_12]; exact Nat.div_lt_of_lt_mul p_x15_12
+  have d_x15_12 : x15_11 + 2^64 * x15_12 = x11 * x9_3 := by
+    rw [e_x15_11, e_x15_12]; exact Nat.mod_add_div _ _
+  clear e_x15_11 e_x15_12
+  -- x21_12: adcs x21,x21,x16
+  extract_lets +onlyGivenNames s_40 x21_12 c_43 at hr
+  have e_x21_12 : x21_12 = (x21_11 + x16_5 + c_42) % 2^64 := rfl
+  have e_c_43 : c_43 = (x21_11 + x16_5 + c_42) / 2^64 := rfl
+  clear_value s_40 x21_12 c_43
+  have l_x21_12 : x21_12 + 2^64 * c_43 = x21_11 + x16_5 + c_42 := by
+    rw [e_x21_12, e_c_43]; exact Nat.mod_add_div _ _
+  have b_x21_12 : x21_12 < 2^64 := by rw [e_x21_12]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_43 : c_43 ≤ 1 := by
+    rw [e_c_43]; exact addc_carry_le_one x21_11 x16_5 c_42 b_x21_11 b_x16_5 b_c_42
+  clear e_x21_12 e_c_43
+  -- x3_3: mul x3,x4,x19
+  extract_lets +onlyGivenNames x3_3 at hr
+  have e_x3_3 : x3_3 = x4 * x19_6 % 2^64 := rfl
+  clear_value x3_3
+  have b_x3_3 : x3_3 < 2^64 := by rw [e_x3_3]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x16_6: umulh x16,x12,x9
+  extract_lets +onlyGivenNames x16_6 at hr
+  have e_x16_6 : x16_6 = x12 * x9_3 / 2^64 := rfl
+  clear_value x16_6
+  have p_x16_6 : x12 * x9_3 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x12 b_x9_3
+  have b_x16_6 : x16_6 < 2^64 := by rw [e_x16_6]; exact Nat.div_lt_of_lt_mul p_x16_6
+  have d_x16_6 : x16_5 + 2^64 * x16_6 = x12 * x9_3 := by
+    rw [e_x16_5, e_x16_6]; exact Nat.mod_add_div _ _
+  clear e_x16_5 e_x16_6
+  -- x22_12: adcs x22,x22,x17
+  extract_lets +onlyGivenNames s_41 x22_12 c_44 at hr
+  have e_x22_12 : x22_12 = (x22_11 + x17_11 + c_43) % 2^64 := rfl
+  have e_c_44 : c_44 = (x22_11 + x17_11 + c_43) / 2^64 := rfl
+  clear_value s_41 x22_12 c_44
+  have l_x22_12 : x22_12 + 2^64 * c_44 = x22_11 + x17_11 + c_43 := by
+    rw [e_x22_12, e_c_44]; exact Nat.mod_add_div _ _
+  have b_x22_12 : x22_12 < 2^64 := by rw [e_x22_12]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_44 : c_44 ≤ 1 := by
+    rw [e_c_44]; exact addc_carry_le_one x22_11 x17_11 c_43 b_x22_11 b_x17_11 b_c_43
+  clear e_x22_12 e_c_44
+  -- x17_12: umulh x17,x13,x9
+  extract_lets +onlyGivenNames x17_12 at hr
+  have e_x17_12 : x17_12 = x13 * x9_3 / 2^64 := rfl
+  clear_value x17_12
+  have p_x17_12 : x13 * x9_3 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x13 b_x9_3
+  have b_x17_12 : x17_12 < 2^64 := by rw [e_x17_12]; exact Nat.div_lt_of_lt_mul p_x17_12
+  have d_x17_12 : x17_11 + 2^64 * x17_12 = x13 * x9_3 := by
+    rw [e_x17_11, e_x17_12]; exact Nat.mod_add_div _ _
+  clear e_x17_11 e_x17_12
+  -- x23_11: adc x23,x23,xzr
+  extract_lets +onlyGivenNames x23_11 at hr
+  have e_x23_11 : x23_11 = (x23_10 + 0 + c_44) % 2^64 := rfl
+  clear_value x23_11
+  have b_x23_11 : x23_11 < 2^64 := by rw [e_x23_11]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23_11, b_k_x23_11, l_x23_11⟩ :
+      ∃ k, k ≤ 1 ∧ x23_11 + 2^64 * k = x23_10 + 0 + c_44 :=
+    ⟨(x23_10 + 0 + c_44) / 2^64, addc_carry_le_one x23_10 0 c_44 b_x23_10 (by decide) b_c_44,
+      by rw [e_x23_11]; exact Nat.mod_add_div _ _⟩
+  clear e_x23_11
+  -- x20_13: adds x20,x20,x14
+  extract_lets +onlyGivenNames s_42 x20_13 c_45 at hr
+  have e_x20_13 : x20_13 = (x20_12 + x14_9 + 0) % 2^64 := rfl
+  have e_c_45 : c_45 = (x20_12 + x14_9 + 0) / 2^64 := rfl
+  clear_value s_42 x20_13 c_45
+  have l_x20_13 : x20_13 + 2^64 * c_45 = x20_12 + x14_9 + 0 := by
+    rw [e_x20_13, e_c_45]; exact Nat.mod_add_div _ _
+  have b_x20_13 : x20_13 < 2^64 := by rw [e_x20_13]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_45 : c_45 ≤ 1 := by
+    rw [e_c_45]; exact addc_carry_le_one x20_12 x14_9 0 b_x20_12 b_x14_9 (by decide)
+  clear e_x20_13 e_c_45
+  -- x21_13: adcs x21,x21,x15
+  extract_lets +onlyGivenNames s_43 x21_13 c_46 at hr
+  have e_x21_13 : x21_13 = (x21_12 + x15_12 + c_45) % 2^64 := rfl
+  have e_c_46 : c_46 = (x21_12 + x15_12 + c_45) / 2^64 := rfl
+  clear_value s_43 x21_13 c_46
+  have l_x21_13 : x21_13 + 2^64 * c_46 = x21_12 + x15_12 + c_45 := by
+    rw [e_x21_13, e_c_46]; exact Nat.mod_add_div _ _
+  have b_x21_13 : x21_13 < 2^64 := by rw [e_x21_13]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_46 : c_46 ≤ 1 := by
+    rw [e_c_46]; exact addc_carry_le_one x21_12 x15_12 c_45 b_x21_12 b_x15_12 b_c_45
+  clear e_x21_13 e_c_46
+  -- x15_13: mul x15,x6,x3
+  extract_lets +onlyGivenNames x15_13 at hr
+  have e_x15_13 : x15_13 = x6 * x3_3 % 2^64 := rfl
+  clear_value x15_13
+  have b_x15_13 : x15_13 < 2^64 := by rw [e_x15_13]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- x22_13: adcs x22,x22,x16
+  extract_lets +onlyGivenNames s_44 x22_13 c_47 at hr
+  have e_x22_13 : x22_13 = (x22_12 + x16_6 + c_46) % 2^64 := rfl
+  have e_c_47 : c_47 = (x22_12 + x16_6 + c_46) / 2^64 := rfl
+  clear_value s_44 x22_13 c_47
+  have l_x22_13 : x22_13 + 2^64 * c_47 = x22_12 + x16_6 + c_46 := by
+    rw [e_x22_13, e_c_47]; exact Nat.mod_add_div _ _
+  have b_x22_13 : x22_13 < 2^64 := by rw [e_x22_13]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_47 : c_47 ≤ 1 := by
+    rw [e_c_47]; exact addc_carry_le_one x22_12 x16_6 c_46 b_x22_12 b_x16_6 b_c_46
+  clear e_x22_13 e_c_47
+  -- x23_12: adc x23,x23,x17
+  extract_lets +onlyGivenNames x23_12 at hr
+  have e_x23_12 : x23_12 = (x23_11 + x17_12 + c_47) % 2^64 := rfl
+  clear_value x23_12
+  have b_x23_12 : x23_12 < 2^64 := by rw [e_x23_12]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23_12, b_k_x23_12, l_x23_12⟩ :
+      ∃ k, k ≤ 1 ∧ x23_12 + 2^64 * k = x23_11 + x17_12 + c_47 :=
+    ⟨(x23_11 + x17_12 + c_47) / 2^64, addc_carry_le_one x23_11 x17_12 c_47 b_x23_11 b_x17_12 b_c_47,
+      by rw [e_x23_12]; exact Nat.mod_add_div _ _⟩
+  clear e_x23_12
+  -- BEGIN round 3 fold
+  -- `lhs * rhs_3` as the sum of the limb products.
+  have hL_3 : lhs.toNat * x9_3
+      = x10 * x9_3 + 2^64 * (x11 * x9_3) + 2^128 * (x12 * x9_3) + 2^192 * (x13 * x9_3) := by
+    rw [e_x10, e_x11, e_x12, e_x13]; simp only [Limbs.toNat]; ring
+  have hs_3 : lhs.toNat * x9_3 + lhs.toNat + modulus.toNat + 3 * 2^254 + 2^128 ≤ 2^320 := by
+    rw [e_x9_3, ← Nat.mul_add_one]; exact hsafe.2.2
+  -- The fold's two carry chains, summed with the limb weights.
+  have hsum_3 : x19_6 + 2^64 * x20_13 + 2^128 * x21_13 + 2^192 * x22_13 + 2^256 * x23_12
+        + 2^320 * (k_x23_11 + k_x23_12)
+      = x19_5 + 2^64 * x20_11 + 2^128 * x21_11 + 2^192 * x22_11 + 2^256 * x23_10
+        + lhs.toNat * x9_3 := by
+    clear * - l_x19_6 l_x20_12 l_x21_12 l_x22_12 l_x23_11 l_x20_13 l_x21_13 l_x22_13 l_x23_12
+        d_x14_9 d_x15_12 d_x16_6 d_x17_12 hL_3
+    omega
+  -- Neither `adc` of the fold wraps: the accumulator entering the round is below
+  -- `lhs + p`, and `hs_3` bounds it plus `lhs * rhs_3` below `2^320`.
+  have hk_3 : k_x23_11 = 0 ∧ k_x23_12 = 0 := by
+    clear * - hsum_3 B_2 hs_3
+    omega
+  have F_3 : x19_6 + 2^64 * x20_13 + 2^128 * x21_13 + 2^192 * x22_13 + 2^256 * x23_12
+      = x19_5 + 2^64 * x20_11 + 2^128 * x21_11 + 2^192 * x22_11 + 2^256 * x23_10
+        + lhs.toNat * x9_3 := by
+    clear * - hsum_3 hk_3
+    omega
+  -- END round 3 fold
+  -- x17_13: lsl x17,x3,#62
+  extract_lets +onlyGivenNames x17_13 at hr
+  have e_x17_13 : x17_13 = x3_3 * 2^62 % 2^64 := rfl
+  clear_value x17_13
+  have b_x17_13 : x17_13 < 2^64 := by rw [e_x17_13]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  -- c_48: subs xzr,x19,#1
+  extract_lets +onlyGivenNames c_48 at hr
+  have e_c_48 : c_48 = (x19_6 + 2^64 - 1 - (1 - 1)) / 2^64 := rfl
+  clear_value c_48
+  have b_c_48 : c_48 ≤ 1 := by rw [e_c_48]; exact subc_carry_le_one x19_6 1 1 b_x19_6
+  have l_c_48 : (c_48 = 1 ∧ 1 + 1 ≤ x19_6 + 1) ∨ (c_48 = 0 ∧ x19_6 + 1 < 1 + 1) :=
+    subc_carry_cases x19_6 1 1 _ e_c_48 b_x19_6 (by decide) (by decide)
+  clear e_c_48
+  -- x14_10: umulh x14,x5,x3
+  extract_lets +onlyGivenNames x14_10 at hr
+  have e_x14_10 : x14_10 = x5 * x3_3 / 2^64 := rfl
+  clear_value x14_10
+  have p_x14_10 : x5 * x3_3 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x5 b_x3_3
+  have b_x14_10 : x14_10 < 2^64 := by rw [e_x14_10]; exact Nat.div_lt_of_lt_mul p_x14_10
+  obtain ⟨lo_x14_10, b_lo_x14_10, d_x14_10⟩ :
+      ∃ lo, lo < 2^64 ∧ lo + 2^64 * x14_10 = x5 * x3_3 :=
+    ⟨x5 * x3_3 % 2^64, Nat.mod_lt _ (Nat.two_pow_pos _),
+      by rw [e_x14_10]; exact Nat.mod_add_div _ _⟩
+  clear e_x14_10
+  -- x20_14: adcs x20,x20,x15
+  extract_lets +onlyGivenNames s_45 x20_14 c_49 at hr
+  have e_x20_14 : x20_14 = (x20_13 + x15_13 + c_48) % 2^64 := rfl
+  have e_c_49 : c_49 = (x20_13 + x15_13 + c_48) / 2^64 := rfl
+  clear_value s_45 x20_14 c_49
+  have l_x20_14 : x20_14 + 2^64 * c_49 = x20_13 + x15_13 + c_48 := by
+    rw [e_x20_14, e_c_49]; exact Nat.mod_add_div _ _
+  have b_x20_14 : x20_14 < 2^64 := by rw [e_x20_14]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_49 : c_49 ≤ 1 := by
+    rw [e_c_49]; exact addc_carry_le_one x20_13 x15_13 c_48 b_x20_13 b_x15_13 b_c_48
+  clear e_x20_14 e_c_49
+  -- x15_14: umulh x15,x6,x3
+  extract_lets +onlyGivenNames x15_14 at hr
+  have e_x15_14 : x15_14 = x6 * x3_3 / 2^64 := rfl
+  clear_value x15_14
+  have p_x15_14 : x6 * x3_3 < 2^64 * 2^64 := Nat.mul_lt_mul'' b_x6 b_x3_3
+  have b_x15_14 : x15_14 < 2^64 := by rw [e_x15_14]; exact Nat.div_lt_of_lt_mul p_x15_14
+  have d_x15_14 : x15_13 + 2^64 * x15_14 = x6 * x3_3 := by
+    rw [e_x15_13, e_x15_14]; exact Nat.mod_add_div _ _
+  clear e_x15_13 e_x15_14
+  -- x21_14: adcs x21,x21,xzr
+  extract_lets +onlyGivenNames s_46 x21_14 c_50 at hr
+  have e_x21_14 : x21_14 = (x21_13 + 0 + c_49) % 2^64 := rfl
+  have e_c_50 : c_50 = (x21_13 + 0 + c_49) / 2^64 := rfl
+  clear_value s_46 x21_14 c_50
+  have l_x21_14 : x21_14 + 2^64 * c_50 = x21_13 + 0 + c_49 := by
+    rw [e_x21_14, e_c_50]; exact Nat.mod_add_div _ _
+  have b_x21_14 : x21_14 < 2^64 := by rw [e_x21_14]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_50 : c_50 ≤ 1 := by
+    rw [e_c_50]; exact addc_carry_le_one x21_13 0 c_49 b_x21_13 (by decide) b_c_49
+  clear e_x21_14 e_c_50
+  -- x22_14: adcs x22,x22,x17
+  extract_lets +onlyGivenNames s_47 x22_14 c_51 at hr
+  have e_x22_14 : x22_14 = (x22_13 + x17_13 + c_50) % 2^64 := rfl
+  have e_c_51 : c_51 = (x22_13 + x17_13 + c_50) / 2^64 := rfl
+  clear_value s_47 x22_14 c_51
+  have l_x22_14 : x22_14 + 2^64 * c_51 = x22_13 + x17_13 + c_50 := by
+    rw [e_x22_14, e_c_51]; exact Nat.mod_add_div _ _
+  have b_x22_14 : x22_14 < 2^64 := by rw [e_x22_14]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_51 : c_51 ≤ 1 := by
+    rw [e_c_51]; exact addc_carry_le_one x22_13 x17_13 c_50 b_x22_13 b_x17_13 b_c_50
+  clear e_x22_14 e_c_51
+  -- x17_14: lsr x17,x3,#2
+  extract_lets +onlyGivenNames x17_14 at hr
+  have e_x17_14 : x17_14 = x3_3 / 2^2 := rfl
+  clear_value x17_14
+  have b_x17_14 : x17_14 < 2^62 := by
+    rw [e_x17_14]; exact Nat.div_lt_of_lt_mul (lt_of_lt_of_eq b_x3_3 (by norm_num))
+  have sh_x17_14 : x17_13 + 2^64 * x17_14 = x3_3 * 2^62 := by
+    rw [e_x17_13, e_x17_14]; exact lsl62_lsr2_split _
+  clear e_x17_13 e_x17_14
+  -- x23_13: adc x23,x23,xzr
+  extract_lets +onlyGivenNames x23_13 at hr
+  have e_x23_13 : x23_13 = (x23_12 + 0 + c_51) % 2^64 := rfl
+  clear_value x23_13
+  have b_x23_13 : x23_13 < 2^64 := by rw [e_x23_13]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23_13, b_k_x23_13, l_x23_13⟩ :
+      ∃ k, k ≤ 1 ∧ x23_13 + 2^64 * k = x23_12 + 0 + c_51 :=
+    ⟨(x23_12 + 0 + c_51) / 2^64, addc_carry_le_one x23_12 0 c_51 b_x23_12 (by decide) b_c_51,
+      by rw [e_x23_13]; exact Nat.mod_add_div _ _⟩
+  clear e_x23_13
+  -- x19_7: adds x19,x20,x14
+  extract_lets +onlyGivenNames s_48 x19_7 c_52 at hr
+  have e_x19_7 : x19_7 = (x20_14 + x14_10 + 0) % 2^64 := rfl
+  have e_c_52 : c_52 = (x20_14 + x14_10 + 0) / 2^64 := rfl
+  clear_value s_48 x19_7 c_52
+  have l_x19_7 : x19_7 + 2^64 * c_52 = x20_14 + x14_10 + 0 := by
+    rw [e_x19_7, e_c_52]; exact Nat.mod_add_div _ _
+  have b_x19_7 : x19_7 < 2^64 := by rw [e_x19_7]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_52 : c_52 ≤ 1 := by
+    rw [e_c_52]; exact addc_carry_le_one x20_14 x14_10 0 b_x20_14 b_x14_10 (by decide)
+  clear e_x19_7 e_c_52
+  -- x20_15: adcs x20,x21,x15
+  extract_lets +onlyGivenNames s_49 x20_15 c_53 at hr
+  have e_x20_15 : x20_15 = (x21_14 + x15_14 + c_52) % 2^64 := rfl
+  have e_c_53 : c_53 = (x21_14 + x15_14 + c_52) / 2^64 := rfl
+  clear_value s_49 x20_15 c_53
+  have l_x20_15 : x20_15 + 2^64 * c_53 = x21_14 + x15_14 + c_52 := by
+    rw [e_x20_15, e_c_53]; exact Nat.mod_add_div _ _
+  have b_x20_15 : x20_15 < 2^64 := by rw [e_x20_15]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_53 : c_53 ≤ 1 := by
+    rw [e_c_53]; exact addc_carry_le_one x21_14 x15_14 c_52 b_x21_14 b_x15_14 b_c_52
+  clear e_x20_15 e_c_53
+  -- x21_15: adcs x21,x22,xzr
+  extract_lets +onlyGivenNames s_50 x21_15 c_54 at hr
+  have e_x21_15 : x21_15 = (x22_14 + 0 + c_53) % 2^64 := rfl
+  have e_c_54 : c_54 = (x22_14 + 0 + c_53) / 2^64 := rfl
+  clear_value s_50 x21_15 c_54
+  have l_x21_15 : x21_15 + 2^64 * c_54 = x22_14 + 0 + c_53 := by
+    rw [e_x21_15, e_c_54]; exact Nat.mod_add_div _ _
+  have b_x21_15 : x21_15 < 2^64 := by rw [e_x21_15]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_54 : c_54 ≤ 1 := by
+    rw [e_c_54]; exact addc_carry_le_one x22_14 0 c_53 b_x22_14 (by decide) b_c_53
+  clear e_x21_15 e_c_54
+  -- x22_15: adcs x22,x23,x17
+  extract_lets +onlyGivenNames s_51 x22_15 c_55 at hr
+  have e_x22_15 : x22_15 = (x23_13 + x17_14 + c_54) % 2^64 := rfl
+  have e_c_55 : c_55 = (x23_13 + x17_14 + c_54) / 2^64 := rfl
+  clear_value s_51 x22_15 c_55
+  have l_x22_15 : x22_15 + 2^64 * c_55 = x23_13 + x17_14 + c_54 := by
+    rw [e_x22_15, e_c_55]; exact Nat.mod_add_div _ _
+  have b_x22_15 : x22_15 < 2^64 := by rw [e_x22_15]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_55 : c_55 ≤ 1 := by
+    rw [e_c_55]; exact addc_carry_le_one x23_13 x17_14 c_54 b_x23_13 (lt_of_lt_of_le b_x17_14 (by norm_num)) b_c_54
+  clear e_x22_15 e_c_55
+  -- x23_14: adc x23,xzr,xzr
+  extract_lets +onlyGivenNames x23_14 at hr
+  have e_x23_14 : x23_14 = (0 + 0 + c_55) % 2^64 := rfl
+  clear_value x23_14
+  have b_x23_14 : x23_14 < 2^64 := by rw [e_x23_14]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain ⟨k_x23_14, b_k_x23_14, l_x23_14⟩ :
+      ∃ k, k ≤ 1 ∧ x23_14 + 2^64 * k = 0 + 0 + c_55 :=
+    ⟨(0 + 0 + c_55) / 2^64, addc_carry_le_one 0 0 c_55 (by decide) (by decide) b_c_55,
+      by rw [e_x23_14]; exact Nat.mod_add_div _ _⟩
+  clear e_x23_14
+  -- BEGIN round 3 reduction
+  -- Cancellation: the low limb of `x19_6 + p0 * x3_3` is zero, so `x19_6 + lo_x14_10` is
+  -- `0` or `2^64`, and `subs xzr, x19_6, #1` set the carry exactly when it is `2^64`.
+  have hc_3 : x19_6 + lo_x14_10 = 2^64 * c_48 := by
+    have h := cancel_low x19_6 inv modulus.l0 hinv
+    rw [← e_x5, ← e_x4, ← e_x3_3, ← d_x14_10, Nat.add_mul_mod_self_left,
+      Nat.mod_eq_of_lt b_lo_x14_10] at h
+    clear * - h b_x19_6 b_lo_x14_10 l_c_48
+    omega
+  have bc_3 : c_48 ≤ 1 := by clear * - l_c_48; omega
+  have hPq_3 : x3_3 * modulus.toNat = x5 * x3_3 + 2^64 * (x6 * x3_3) + 2^254 * x3_3 := by
+    rw [hP]; ring
+  -- `x17_13` is the low two bits of `x3_3` at the top of a limb.
+  have hsh_3 : x17_13 ≤ 3 * 2^62 := by
+    clear * - sh_x17_14 b_x17_13 b_x17_14; omega
+  -- The reduction's carry chain, summed with the limb weights.
+  have hsum'_3 : x19_6 + 2^64 * x20_14 + 2^128 * x21_14 + 2^192 * x22_14 + 2^256 * x23_13
+        + 2^320 * k_x23_13
+      = x19_6 + 2^64 * x20_13 + 2^128 * x21_13 + 2^192 * x22_13 + 2^256 * x23_12
+        + 2^64 * x15_13 + 2^64 * c_48 + 2^192 * x17_13 := by
+    clear * - l_x20_14 l_x21_14 l_x22_14 l_x23_13
+    omega
+  -- Neither `adc` of the reduction wraps: the five-limb accumulator is below
+  -- `2^320 - 3 * 2^254 - 2^128` by `hs_3`, and the reduction adds less than that before
+  -- the shift.
+  have hkr_3 : k_x23_13 = 0 := by
+    clear * - hsum'_3 F_3 B_2 hs_3 b_x15_13 bc_3 hsh_3
+    omega
+  have hks_3 : k_x23_14 = 0 := by clear * - l_x23_14 b_c_55; omega
+  have I_3 : 2^64 * (x19_7 + 2^64 * x20_15 + 2^128 * x21_15 + 2^192 * x22_15 + 2^256 * x23_14)
+      = x19_6 + 2^64 * x20_13 + 2^128 * x21_13 + 2^192 * x22_13 + 2^256 * x23_12
+        + x3_3 * modulus.toNat := by
+    clear * - hc_3 d_x14_10 d_x15_14 sh_x17_14 l_x20_14 l_x21_14 l_x22_14 l_x23_13 l_x19_7 l_x20_15
+        l_x21_15 l_x22_15 l_x23_14 hkr_3 hks_3 hPq_3
+    omega
+  -- The shifted accumulator stays below `lhs + p`.
+  have hLx_3 : lhs.toNat * x9_3 + lhs.toNat ≤ lhs.toNat * 2^64 := by
+    rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ b_x9_3
+  have hqP_3 : x3_3 * modulus.toNat + modulus.toNat ≤ 2^64 * modulus.toNat := by
+    rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ b_x3_3
+  have B_3 : x19_7 + 2^64 * x20_15 + 2^128 * x21_15 + 2^192 * x22_15 + 2^256 * x23_14
+      < lhs.toNat + modulus.toNat := by
+    clear * - I_3 F_3 hLx_3 hqP_3 B_2
+    omega
+  have t_3 : x23_14 ≤ 1 := by clear * - l_x23_14 hks_3 b_c_55; omega
+  -- END round 3 reduction
+  -- x14_11: subs x14,x19,x5
+  extract_lets +onlyGivenNames s_52 x14_11 c_56 at hr
+  have e_x14_11 : x14_11 = (x19_7 + 2^64 - x5 - (1 - 1)) % 2^64 := rfl
+  have e_c_56 : c_56 = (x19_7 + 2^64 - x5 - (1 - 1)) / 2^64 := rfl
+  clear_value s_52 x14_11 c_56
+  have l_x14_11 : x14_11 + 2^64 * c_56 + x5 + 1 = x19_7 + 2^64 + 1 := by
+    rw [e_x14_11, e_c_56]; exact subc_lin x19_7 x5 1 b_x5 (by decide)
+  have b_x14_11 : x14_11 < 2^64 := by rw [e_x14_11]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_56 : c_56 ≤ 1 := by
+    rw [e_c_56]; exact subc_carry_le_one x19_7 x5 1 b_x19_7
+  clear e_x14_11 e_c_56
+  -- x15_15: sbcs x15,x20,x6
+  extract_lets +onlyGivenNames s_53 x15_15 c_57 at hr
+  have e_x15_15 : x15_15 = (x20_15 + 2^64 - x6 - (1 - c_56)) % 2^64 := rfl
+  have e_c_57 : c_57 = (x20_15 + 2^64 - x6 - (1 - c_56)) / 2^64 := rfl
+  clear_value s_53 x15_15 c_57
+  have l_x15_15 : x15_15 + 2^64 * c_57 + x6 + 1 = x20_15 + 2^64 + c_56 := by
+    rw [e_x15_15, e_c_57]; exact subc_lin x20_15 x6 c_56 b_x6 b_c_56
+  have b_x15_15 : x15_15 < 2^64 := by rw [e_x15_15]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_57 : c_57 ≤ 1 := by
+    rw [e_c_57]; exact subc_carry_le_one x20_15 x6 c_56 b_x20_15
+  clear e_x15_15 e_c_57
+  -- x16_7: sbcs x16,x21,xzr
+  extract_lets +onlyGivenNames s_54 x16_7 c_58 at hr
+  have e_x16_7 : x16_7 = (x21_15 + 2^64 - 0 - (1 - c_57)) % 2^64 := rfl
+  have e_c_58 : c_58 = (x21_15 + 2^64 - 0 - (1 - c_57)) / 2^64 := rfl
+  clear_value s_54 x16_7 c_58
+  have l_x16_7 : x16_7 + 2^64 * c_58 + 0 + 1 = x21_15 + 2^64 + c_57 := by
+    rw [e_x16_7, e_c_58]; exact subc_lin x21_15 0 c_57 (by decide) b_c_57
+  have b_x16_7 : x16_7 < 2^64 := by rw [e_x16_7]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_58 : c_58 ≤ 1 := by
+    rw [e_c_58]; exact subc_carry_le_one x21_15 0 c_57 b_x21_15
+  clear e_x16_7 e_c_58
+  -- x17_15: sbcs x17,x22,x8
+  extract_lets +onlyGivenNames s_55 x17_15 c_59 at hr
+  have e_x17_15 : x17_15 = (x22_15 + 2^64 - x8 - (1 - c_58)) % 2^64 := rfl
+  have e_c_59 : c_59 = (x22_15 + 2^64 - x8 - (1 - c_58)) / 2^64 := rfl
+  clear_value s_55 x17_15 c_59
+  have l_x17_15 : x17_15 + 2^64 * c_59 + x8 + 1 = x22_15 + 2^64 + c_58 := by
+    rw [e_x17_15, e_c_59]; exact subc_lin x22_15 x8 c_58 b_x8 b_c_58
+  have b_x17_15 : x17_15 < 2^64 := by rw [e_x17_15]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  have b_c_59 : c_59 ≤ 1 := by
+    rw [e_c_59]; exact subc_carry_le_one x22_15 x8 c_58 b_x22_15
+  clear e_x17_15 e_c_59
+  -- c_60: sbcs xzr,x23,xzr
+  extract_lets +onlyGivenNames c_60 at hr
+  have e_c_60 : c_60 = (x23_14 + 2^64 - 0 - (1 - c_59)) / 2^64 := rfl
+  clear_value c_60
+  have b_c_60 : c_60 ≤ 1 := by rw [e_c_60]; exact subc_carry_le_one x23_14 0 c_59 b_x23_14
+  have l_c_60 : (c_60 = 1 ∧ 0 + 1 ≤ x23_14 + c_59) ∨ (c_60 = 0 ∧ x23_14 + c_59 < 0 + 1) :=
+    subc_carry_cases x23_14 0 c_59 _ e_c_60 b_x23_14 (by decide) b_c_59
+  clear e_c_60
+  -- x19_8: csel x19,x19,x14,lo
+  extract_lets +onlyGivenNames x19_8 at hr
+  have e_x19_8 : x19_8 = (if c_60 = 0 then x19_7 else x14_11) := rfl
+  clear_value x19_8
+  have b_x19_8 : x19_8 < 2^64 := by
+    rw [e_x19_8]; split <;> first | exact b_x19_7 | exact b_x14_11
+  -- x20_16: csel x20,x20,x15,lo
+  extract_lets +onlyGivenNames x20_16 at hr
+  have e_x20_16 : x20_16 = (if c_60 = 0 then x20_15 else x15_15) := rfl
+  clear_value x20_16
+  have b_x20_16 : x20_16 < 2^64 := by
+    rw [e_x20_16]; split <;> first | exact b_x20_15 | exact b_x15_15
+  -- x21_16: csel x21,x21,x16,lo
+  extract_lets +onlyGivenNames x21_16 at hr
+  have e_x21_16 : x21_16 = (if c_60 = 0 then x21_15 else x16_7) := rfl
+  clear_value x21_16
+  have b_x21_16 : x21_16 < 2^64 := by
+    rw [e_x21_16]; split <;> first | exact b_x21_15 | exact b_x16_7
+  -- x22_16: csel x22,x22,x17,lo
+  extract_lets +onlyGivenNames x22_16 at hr
+  have e_x22_16 : x22_16 = (if c_60 = 0 then x22_15 else x17_15) := rfl
+  clear_value x22_16
+  have b_x22_16 : x22_16 < 2^64 := by
+    rw [e_x22_16]; split <;> first | exact b_x22_15 | exact b_x17_15
+  -- out0: stp x19,x20,[x0]
+  extract_lets +onlyGivenNames out0 at hr
+  have e_out0 : out0 = x19_8 := rfl
+  clear_value out0
+  -- out1: stp x19,x20,[x0]
+  extract_lets +onlyGivenNames out1 at hr
+  have e_out1 : out1 = x20_16 := rfl
+  clear_value out1
+  -- out2: stp x21,x22,[x0,#16]
+  extract_lets +onlyGivenNames out2 at hr
+  have e_out2 : out2 = x21_16 := rfl
+  clear_value out2
+  -- out3: stp x21,x22,[x0,#16]
+  extract_lets +onlyGivenNames out3 at hr
+  have e_out3 : out3 = x22_16 := rfl
+  clear_value out3
+  subst hr
+  -- BEGIN conclusion
+  subst out0 out1 out2 out3
+  have hLR : lhs.toNat * rhs.toNat
+      = lhs.toNat * x9 + 2^64 * (lhs.toNat * x9_1) + 2^128 * (lhs.toNat * x9_2)
+        + 2^192 * (lhs.toNat * x9_3) := by
+    rw [e_x9, e_x9_1, e_x9_2, e_x9_3]; simp only [Limbs.toNat]; ring
+  have hQ : x3 + 2^64 * x3_1 + 2^128 * x3_2 + 2^192 * x3_3 < 2^256 := by
+    clear * - b_x3 b_x3_1 b_x3_2 b_x3_3; omega
+  have hQP : (x3 + 2^64 * x3_1 + 2^128 * x3_2 + 2^192 * x3_3) * modulus.toNat
+      = x3 * modulus.toNat + 2^64 * (x3_1 * modulus.toNat) + 2^128 * (x3_2 * modulus.toNat)
+        + 2^192 * (x3_3 * modulus.toNat) := by
+    ring
+  -- The four rounds compose to `2^256 * acc = lhs * rhs + Q * p`.
+  have hmain : 2^256 * (x19_7 + 2^64 * x20_15 + 2^128 * x21_15 + 2^192 * x22_15 + 2^256 * x23_14)
+      = lhs.toNat * rhs.toNat
+        + (x3 + 2^64 * x3_1 + 2^128 * x3_2 + 2^192 * x3_3) * modulus.toNat := by
+    clear * - F_0 F_1 F_2 F_3 I_0 I_1 I_2 I_3 hLR hQP
+    omega
+  have hQPle : (x3 + 2^64 * x3_1 + 2^128 * x3_2 + 2^192 * x3_3) * modulus.toNat + modulus.toNat
+      ≤ 2^256 * modulus.toNat := by
+    rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ hQ
+  -- `hfinal` puts the accumulator below `2 * p`, hence below `2^256`: its fifth limb is `0` and the
+  -- five-limb comparison is the four-limb one. The carry is set (`c_60 = 1`) exactly when the
+  -- accumulator is at least `p`; then the result is the difference, otherwise the accumulator.
+  have hA : x19_7 + 2^64 * x20_15 + 2^128 * x21_15 + 2^192 * x22_15 + 2^256 * x23_14
+      < 2 * modulus.toNat := by
+    clear * - hmain hfinal hQPle; omega
+  have hx23 : x23_14 = 0 := by clear * - hA hP_lt; omega
+  have e_x8' : x8 = 2^62 := by rw [e_x8]; exact hshape.2
+  have hD : x14_11 + 2^64 * x15_15 + 2^128 * x16_7 + 2^192 * x17_15
+        + (x5 + 2^64 * x6 + 2^192 * x8) + 2^256 * c_59
+      = x19_7 + 2^64 * x20_15 + 2^128 * x21_15 + 2^192 * x22_15 + 2^256 := by
+    clear * - l_x14_11 l_x15_15 l_x16_7 l_x17_15; omega
+  have hc59 : c_59 = c_60 := by clear * - l_c_60 hx23 b_c_59; omega
+  refine ⟨⟨b_x19_8, b_x20_16, b_x21_16, b_x22_16⟩, ?_⟩
+  show x19_8 + 2^64 * x20_16 + 2^128 * x21_16 + 2^192 * x22_16 < modulus.toNat ∧
+    2^256 * (x19_8 + 2^64 * x20_16 + 2^128 * x21_16 + 2^192 * x22_16)
+      ≡ lhs.toNat * rhs.toNat [MOD modulus.toNat]
+  obtain hc | hc : c_60 = 0 ∨ c_60 = 1 := by clear * - l_c_60; omega
+  · rw [if_pos hc] at e_x19_8 e_x20_16 e_x21_16 e_x22_16
+    refine ⟨?_, modEq_of_add_mul _ _ 0 (x3 + 2^64 * x3_1 + 2^128 * x3_2 + 2^192 * x3_3) _ (by
+      clear * - hmain hx23 e_x19_8 e_x20_16 e_x21_16 e_x22_16
+      omega)⟩
+    · clear * - hD hc59 hc hx23 hP e_x8' b_x14_11 b_x15_15 b_x16_7 b_x17_15 e_x19_8 e_x20_16
+          e_x21_16 e_x22_16
+      omega
+  · rw [if_neg (by clear * - hc; omega)] at e_x19_8 e_x20_16 e_x21_16 e_x22_16
+    refine ⟨?_, modEq_of_add_mul _ _ (2^256) (x3 + 2^64 * x3_1 + 2^128 * x3_2 + 2^192 * x3_3) _ (by
+      clear * - hmain hD hc59 hc hx23 hP e_x8' e_x19_8 e_x20_16 e_x21_16 e_x22_16
+      omega)⟩
+    · clear * - hD hc59 hc hx23 hA hP e_x8' e_x19_8 e_x20_16 e_x21_16 e_x22_16
+      omega
+  -- END conclusion
+
+-- BEGIN mulMont_spec corollaries
+/-- Below `2^256`, by the limb bounds. -/
+theorem Limbs.toNat_lt (x : Limbs) (hx : x.Bounded) : x.toNat < 2^256 := by
+  obtain ⟨h0, h1, h2, h3⟩ := hx
+  simp only [Limbs.toNat]; omega
+
+/-- With the modulus in the shape the code assumes, `p < 2^255`. -/
+theorem Limbs.toNat_lt_of_shape (modulus : Limbs) (hm : modulus.Bounded)
+    (hshape : modulus.l2 = 0 ∧ modulus.l3 = 2^62) : modulus.toNat < 2^255 := by
+  obtain ⟨h0, h1, _, _⟩ := hm
+  simp only [Limbs.toNat, hshape.1, hshape.2]; omega
+
+/-- The contract the crate's callers use: a canonical left operand and any four-limb right
+operand. -/
+theorem mulMont_spec_of_lhs_lt (lhs rhs modulus : Limbs) (inv : Nat) (hlhs : lhs.Bounded)
+    (hrhs : rhs.Bounded) (hm : modulus.Bounded) (hshape : modulus.l2 = 0 ∧ modulus.l3 = 2^62)
+    (hinv_lt : inv < 2^64) (hinv : (inv * modulus.l0 + 1) % 2^64 = 0)
+    (hlt : lhs.toNat < modulus.toNat) :
+    ∀ r, r = mulMont lhs rhs modulus inv →
+      r.Bounded ∧ r.toNat < modulus.toNat ∧
+        2^256 * r.toNat ≡ lhs.toNat * rhs.toNat [MOD modulus.toNat] := by
+  have hP := Limbs.toNat_lt_of_shape modulus hm hshape
+  have hR := Limbs.toNat_lt rhs hrhs
+  -- `lhs * (rhs_i + 1) ≤ (p - 1) * 2^64`, and `lhs * rhs < p * 2^256`.
+  have s1 : lhs.toNat * (rhs.l1 + 1) ≤ (modulus.toNat - 1) * 2^64 :=
+    Nat.mul_le_mul (Nat.le_sub_one_of_lt hlt) hrhs.2.1
+  have s2 : lhs.toNat * (rhs.l2 + 1) ≤ (modulus.toNat - 1) * 2^64 :=
+    Nat.mul_le_mul (Nat.le_sub_one_of_lt hlt) hrhs.2.2.1
+  have s3 : lhs.toNat * (rhs.l3 + 1) ≤ (modulus.toNat - 1) * 2^64 :=
+    Nat.mul_le_mul (Nat.le_sub_one_of_lt hlt) hrhs.2.2.2
+  have f : (lhs.toNat + 1) * (rhs.toNat + 1) ≤ modulus.toNat * 2^256 := Nat.mul_le_mul hlt hR
+  rw [Nat.add_one_mul, Nat.mul_add_one] at f
+  exact mulMont_spec lhs rhs modulus inv hlhs hrhs hm hshape hinv_lt hinv
+    ⟨by omega, by omega, by omega⟩ (by omega)
+
+/-- The other safe contract: any four-limb left operand, a canonical right operand whose limbs 1
+to 3 are at most `2^64 - 3`. -/
+theorem mulMont_spec_of_rhs_lt (lhs rhs modulus : Limbs) (inv : Nat) (hlhs : lhs.Bounded)
+    (hrhs : rhs.Bounded) (hm : modulus.Bounded) (hshape : modulus.l2 = 0 ∧ modulus.l3 = 2^62)
+    (hinv_lt : inv < 2^64) (hinv : (inv * modulus.l0 + 1) % 2^64 = 0)
+    (hlt : rhs.toNat < modulus.toNat)
+    (hlimbs : rhs.l1 + 3 ≤ 2^64 ∧ rhs.l2 + 3 ≤ 2^64 ∧ rhs.l3 + 3 ≤ 2^64) :
+    ∀ r, r = mulMont lhs rhs modulus inv →
+      r.Bounded ∧ r.toNat < modulus.toNat ∧
+        2^256 * r.toNat ≡ lhs.toNat * rhs.toNat [MOD modulus.toNat] := by
+  have hP := Limbs.toNat_lt_of_shape modulus hm hshape
+  have hL := Limbs.toNat_lt lhs hlhs
+  -- `lhs * (rhs_i + 1) ≤ (2^256 - 1) * (2^64 - 2)`, and `lhs * rhs < 2^256 * p`.
+  have c1 : rhs.l1 + 1 ≤ 2^64 - 2 := by omega
+  have c2 : rhs.l2 + 1 ≤ 2^64 - 2 := by omega
+  have c3 : rhs.l3 + 1 ≤ 2^64 - 2 := by omega
+  have s1 : lhs.toNat * (rhs.l1 + 1) ≤ (2^256 - 1) * (2^64 - 2) :=
+    Nat.mul_le_mul (Nat.le_sub_one_of_lt hL) c1
+  have s2 : lhs.toNat * (rhs.l2 + 1) ≤ (2^256 - 1) * (2^64 - 2) :=
+    Nat.mul_le_mul (Nat.le_sub_one_of_lt hL) c2
+  have s3 : lhs.toNat * (rhs.l3 + 1) ≤ (2^256 - 1) * (2^64 - 2) :=
+    Nat.mul_le_mul (Nat.le_sub_one_of_lt hL) c3
+  norm_num at s1 s2 s3
+  have f : (lhs.toNat + 1) * (rhs.toNat + 1) ≤ 2^256 * modulus.toNat := Nat.mul_le_mul hL hlt
+  rw [Nat.add_one_mul, Nat.mul_add_one] at f
+  exact mulMont_spec lhs rhs modulus inv hlhs hrhs hm hshape hinv_lt hinv
+    ⟨by omega, by omega, by omega⟩ (by omega)
+-- END mulMont_spec corollaries
+
 end CompElliptic.Asm.AArch64
