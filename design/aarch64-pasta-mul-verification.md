@@ -7,10 +7,10 @@ A machine-checked proof that the three routines zcash/pasta_curves#100 vendors f
 Semolina v0.1.4 (`mul_mont_pasta`, `sqr_mont_pasta`, `from_mont_pasta`, plus their
 shared `mul_by_1` helper) compute Montgomery multiplication, squaring, and conversion
 on the Pasta fields, under the operand contracts they actually have. The proof is
-about the instruction stream of `src/asm/pasta_mul-armv8.S` (329 instructions after
-comment stripping, blob `4321cf159d9814a14afbdc5cf42265384150822f`, sha256
-`0bcd5fa67d4aef5043eb536fdefd41ce16e6f7fbac3e5e6ac4f7619b35fd5e85`), not about a re-derivation
-of the algorithm.
+about the instruction stream of `src/asm/pasta_mul-armv8.S` (310 instructions, blob
+`4321cf159d9814a14afbdc5cf42265384150822f`, sha256
+`0bcd5fa67d4aef5043eb536fdefd41ce16e6f7fbac3e5e6ac4f7619b35fd5e85`), not about a
+re-derivation of the algorithm.
 
 ## Trust story
 
@@ -23,27 +23,27 @@ What is trusted, beyond Lean's kernel and standard axioms:
    file, never hand-typed; CI regenerates and diffs (same pattern as the field-file
    generators). The generator is the same parser as the Python simulator that found
    the accumulator wrap, so it has already been exercised against the hardware.
-3. The reference vectors: outputs of the real assembly on an Apple M-series machine at
-   pasta_curves commit `8ad85e9fab7929f6236960e472f432a4bd9ccd74`, embedded as
-   kernel-checked examples (`decide +kernel`). These are
-   concrete closed facts in the sense of the README's trust discipline, and any
-   independent run of the binary reproduces them.
+3. The reference vectors: outputs of the real assembly on an Apple M-series machine
+   at pasta_curves commit `8ad85e9fab7929f6236960e472f432a4bd9ccd74`, embedded as
+   kernel-checked examples (`decide +kernel`). These are concrete closed facts in
+   the sense of the README's trust discipline, and any independent run of the binary
+   reproduces them.
 
-Not in the trusted base: the calling convention, stack frame, and memory-safety of
-the FFI boundary. The model treats loads and stores as limb inputs and outputs. Those
-aspects were reviewed by hand and are recorded as such in the module doc.
+Not modelled formally: the calling convention, stack frame, and memory-safety of
+the FFI boundary. The model treats loads and stores as limb inputs and outputs.
+Those aspects were reviewed by hand and are recorded as such in the module doc.
 
 ## Layout
 
 ```
-CompElliptic/Asm/AArch64/Semantics.lean      registers, carry, instruction functions
-CompElliptic/Asm/AArch64/PastaMul.lean       GENERATED: the four routines as Lean defs
-CompElliptic/Asm/AArch64/PastaMulVectors.lean GENERATED: reference vectors, kernel-checked
-CompElliptic/Asm/AArch64/PastaMulSpec.lean   the theorems
-CompElliptic/Asm/AArch64/Pasta.lean          instantiation at the two Pasta primes
+CompElliptic/Asm/AArch64/Semantics.lean            registers, carry, instruction functions
+CompElliptic/Asm/AArch64/PastaMul.lean             GENERATED: the four routines as Lean defs
+CompElliptic/Asm/AArch64/PastaMulVectors.lean      GENERATED: reference vectors, kernel-checked
+CompElliptic/Asm/AArch64/PastaMulSpec.lean         the theorems
+CompElliptic/Asm/AArch64/Pasta.lean                instantiation at the two Pasta primes
 CompElliptic/Asm/AArch64/vendor/pasta_mul-armv8.S  vendored, Apache-2.0, hash pinned
-scripts/gen_aarch64_pasta_mul.py             parser + Lean emitter (+ simulator)
-scripts/check_aarch64_pasta_mul.sh           regenerate and diff, hash check (CI)
+scripts/gen_aarch64_pasta_mul.py                   parser + Lean emitter (+ simulator)
+scripts/check_aarch64_pasta_mul.sh                 regenerate and diff, hash check (CI)
 ```
 
 Namespace `CompElliptic.Asm.AArch64`, mirroring the path.
@@ -62,26 +62,46 @@ plumbing, the products `a * b` being the only atoms it does not see through; the
 recompositions that relate those atoms are `ring` facts. No native execution speed is
 needed, and the modules stay outside the precompiled lane.
 
-## Program shape
+## Program shape and proof method
 
 The generator emits each routine as a chain of `let`s in a single function from the
-input limbs (and modulus limbs and `inv`) to the output limbs. The proofs are to be
-stated about round functions cut from the same instruction stream at indices given in
-the generator's configuration, each cut checked against the instruction text at its
-boundary so that an edit to the `.S` that moves a boundary fails loudly rather than
-silently shifting a round; the whole-routine definitions are then their composition by
-`rfl`. That cut belongs to the proof units and is not emitted yet.
+input limbs (and modulus limbs and `inv`) to the output limbs. The proofs in
+`PastaMulSpec.lean` follow that chain instruction by instruction, and their mechanical
+part is generated too (`gen_aarch64_pasta_mul.py --skeleton <routine>`). The skeleton
+unfolds the routine and extracts its `let`s under unique names. Then, for every
+instruction, it records the defining equation of the result (by `rfl`, in `%`/`/` form),
+derives from it the facts that later steps need (the carry-chain equation
+`x + 2^64 * c = a + b + cin`, the range facts, the product decomposition
+`lo + 2^64 * hi = a * b`), clears the `%`/`/` equation, and makes the local opaque with
+`clear_value`. The hand-written parts are the theorem statements and the
+`-- BEGIN ... -- END` annotation blocks between instructions. A block states the
+Montgomery round invariant that holds at that point and derives it from the facts it
+names. `gen_aarch64_pasta_mul.py --check-spec` strips the blocks and requires the rest
+of the proof to be the current skeleton, so an edit to the `.S` regenerates the skeleton
+and the check fails loudly until the annotations are moved.
 
-## Theorems (statements the first proof unit targets)
+Two measurements fixed this shape. `omega` given a whole reduction round at once, or
+given the cancellation fact with its `%` terms still in it, runs for minutes without
+finishing; given one carry step at a time, or linear equations only, it answers in
+milliseconds. So each round block first rewrites the cancellation fact
+`(t0 + p0 * q % 2^64) % 2^64 = 0` to the linear `t0 + lo = 2^64 * c`, using the ghost
+low limb and the carry of `subs xzr, t0, #1`; it then shows that neither `adc` wraps;
+and the invariant is a linear combination of the instruction equations, proved by
+`omega` in a context cleared down to exactly those equations.
+
+## Theorems
 
 With `p = p0 + 2^64 p1 + 2^192 · 2^62` (the modulus limbs are `[p0, p1, 0, 2^62]`, as
 the code assumes) and `inv · p0 ≡ −1 (mod 2^64)`:
 
+* `mulBy1_spec` (proved): for every four-limb `t`, the shared reduction helper returns
+  limbs `r` below `2^64` with `2^256 · r = t + Q · p` for some `Q < 2^256`. So `r` is
+  congruent to `t · 2^−256` modulo `p`, and `r ≤ p`.
 * `mul_spec`: if `lhs < p` and `rhs < 2^256`, or `lhs < 2^256`, `rhs < p`, and every
   `rhs` limb in positions 1 to 3 is at most `2^64 − 4`, then the output is below `p`
-  and `output · 2^256 ≡ lhs · rhs (mod p)`. The exact wrap boundary (whether
-  `2^64 − 2` and `2^64 − 3` can wrap) is settled as a by-product of the round lemma
-  and stated as its own lemma.
+  and `output · 2^256 ≡ lhs · rhs (mod p)`. The exact wrap boundary (whether `2^64 − 2`
+  and `2^64 − 3` can wrap) is settled as a by-product of the round lemma and stated as
+  its own lemma.
 * `sqr_spec`: if `a < p`, the output is below `p` and `output · 2^256 ≡ a² (mod p)`.
 * `from_mont_spec`: if `a < p`, the output is below `p` and `output · 2^256 ≡ a (mod p)`.
 
@@ -89,20 +109,21 @@ the code assumes) and `inv · p0 ≡ −1 (mod 2^64)`:
 the crate's `MODULUS`, `INV`, `R2`, `R3` limbs pinned by `decide`, and states the
 corollary the crate relies on: `mul lhs R2` and `mul lhs R3` are correct for every
 256-bit `lhs`, because no limb 1 to 3 of `R2`/`R3` is above `2^64 − 4`. It also states
-the negative: the witness pair is inside `lhs · rhs < 2^256 · p` and the model's
-output is not the Montgomery product (by evaluation), documenting why #108's contract
-is wrong.
+the negative: the witness pair is inside `lhs · rhs < 2^256 · p` and the model's output
+is not the Montgomery product (by evaluation), documenting why #108's contract is
+wrong.
 
 ## Status
 
 1. Semantics, generator, generated program, vendored `.S` with hash, vectors, CI
    check: present.
-2. `from_mont` and the helper (four reduction rounds): the smallest proof.
+2. The helper (four reduction rounds): proved. `from_mont` (the helper and a
+   conditional subtraction): the smallest remaining proof.
 3. `mul`: round invariant, the accumulator no-wrap lemma under each contract, the
    final comparison.
 4. `sqr`: the cross-term schoolbook, doubling, and the "can't overflow" claims.
 5. Pasta instantiation and census entries in `TrustBoundary.lean`.
 
 Out of scope for now: Zakura's inline-`asm!` transcription (provable later by
-instruction-by-instruction correspondence), `sqr_n_mul` (zakura-core/common#65), and the carry-limb
-drop (zakura-core/common#132).
+instruction-by-instruction correspondence), `sqr_n_mul` (zakura-core/common#65), and
+the carry-limb drop (zakura-core/common#132).
