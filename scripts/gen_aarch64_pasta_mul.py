@@ -478,11 +478,17 @@ def wrap_tactic(head, words, tail, indent="  "):
 
 def skeleton(routine):
     """The generated part of the correctness proof of `routine`: unfold, extract the lets under
-    SSA names, then per instruction the defining equation (by `rfl`, in `%`/`/` form), the linear
-    facts derived from it, and `clear_value`. Each derived fact is an instance of one lemma
-    (`Nat.mod_add_div`, `Nat.mod_lt`, `Nat.div_lt_of_lt_mul`, or a carry lemma from the spec
-    file's preamble), so a step costs nothing wherever it sits and names the facts it rests on;
-    `omega` is left to the hand-written annotations between the groups."""
+    SSA names, record every instruction's defining equation (by `rfl`, in `%`/`/` form), make
+    all the locals opaque, then per instruction derive the linear facts from its equation and
+    clear the equation. Each derived fact is an instance of one lemma (`Nat.mod_add_div`,
+    `Nat.mod_lt`, `Nat.div_lt_of_lt_mul`, or a carry lemma from the spec file's preamble), so a
+    step costs nothing wherever it sits and names the facts it rests on; `omega` is left to the
+    hand-written annotations, which go after the facts of the group whose marker
+    (`-- <register>: <instruction>`) names the register they need.
+
+    The values are cleared in one `clear_value`, last local first: clearing a local reverts
+    every later local whose value mentions it, so one call per local is quadratic in the length
+    of the chain, and the multiplication routine's chain of 380 locals took over a minute."""
     e = routine.emitter
     live = e.liveness(routine.result_names)
     entries = [en for en, keep in zip(e.entries, live) if keep]
@@ -495,6 +501,8 @@ def skeleton(routine):
     out += wrap_tactic("extract_lets", names, " at hr")
     out.append("  subst hr")
     products, shifts = {}, {}
+    eqs = []      # the `have e_… := rfl` lines, emitted before the single `clear_value`
+    facts = []    # the derived-fact lines, per group, emitted after it
 
     def r(op):  # operand as written in the entry, renamed to its SSA name at that point
         return ren.get(op, op)
@@ -509,41 +517,46 @@ def skeleton(routine):
     def le1(op):  # a proof that the carry operand is at most 1
         return "(by decide)" if re.fullmatch(r"[0-9]+", op) else bnd[op]
 
+    def eq(nm, rhs):
+        eqs.append(f"  have e_{nm} : {nm} = {rhs} := rfl")
+
     i = 0
     while i < len(entries):
         en, nm = entries[i], names[i]
         kind, *ops = en["fact"]
         ops = [r(o) if isinstance(o, str) else o for o in ops]
-        group = [nm]
-        lines = []
+        # The group's marker: the register it writes, then the instruction. Annotation blocks
+        # are placed after the group they name.
+        label = names[i + 1] if kind in ("adds", "subs") else nm
+        lines = [f"  -- {label}: {en['comment']}"]
         # Every step records only facts `omega` handles cheaply later: linear equations, bounds,
         # and at most a disjunction. The `%`/`/` equations are derived by `rfl`, used to prove
         # those facts, and cleared.
         if kind == "load":
             arg, idx = ops
             hyp = BOUND_HYPS[arg]
-            lines.append(f"  have e_{nm} : {nm} = {arg}.l{idx} := rfl")
+            eq(nm, f"{arg}.l{idx}")
             lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact {hyp}.{PROJ[idx]}")
             bnd[nm] = f"b_{nm}"
         elif kind == "inv":
-            lines.append(f"  have e_{nm} : {nm} = inv := rfl")
+            eq(nm, "inv")
             lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact {INV_BOUND_HYP}")
             bnd[nm] = f"b_{nm}"
         elif kind == "mov":
             (a,) = ops
-            lines.append(f"  have e_{nm} : {nm} = {a} := rfl")
+            eq(nm, a)
             lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact {lt64(a)}")
             bnd[nm] = f"b_{nm}"
         elif kind == "mul":
             a, b = ops
-            lines.append(f"  have e_{nm} : {nm} = {a} * {b} % 2^64 := rfl")
+            eq(nm, f"{a} * {b} % 2^64")
             lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact Nat.mod_lt _ (Nat.two_pow_pos _)")
             bnd[nm] = f"b_{nm}"
             products[(a, b)] = nm  # its `%` equation is cleared at the matching `umulh`
         elif kind == "umulh":
             a, b = ops
+            eq(nm, f"{a} * {b} / 2^64")
             lines.append(f"  have p_{nm} : {a} * {b} < 2^64 * 2^64 := Nat.mul_lt_mul'' {lt64(a)} {lt64(b)}")
-            lines.append(f"  have e_{nm} : {nm} = {a} * {b} / 2^64 := rfl")
             lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact Nat.div_lt_of_lt_mul p_{nm}")
             bnd[nm] = f"b_{nm}"
             if (a, b) in products:
@@ -561,13 +574,13 @@ def skeleton(routine):
                 lines.append(f"  clear e_{nm}")
         elif kind == "lsl":
             a, k = ops
-            lines.append(f"  have e_{nm} : {nm} = {a} * 2^{k} % 2^64 := rfl")
+            eq(nm, f"{a} * 2^{k} % 2^64")
             lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact Nat.mod_lt _ (Nat.two_pow_pos _)")
             bnd[nm] = f"b_{nm}"
             shifts[(a, k)] = nm
         elif kind == "lsr":
             a, k = ops
-            lines.append(f"  have e_{nm} : {nm} = {a} / 2^{k} := rfl")
+            eq(nm, f"{a} / 2^{k}")
             lines.append(f"  have b_{nm} : {nm} < 2^{64 - k} := by")
             lines.append(f"    rw [e_{nm}]; exact Nat.div_lt_of_lt_mul (lt_of_lt_of_eq {lt64(a)} (by norm_num))")
             bnd[nm] = f"b_{nm}"
@@ -582,7 +595,6 @@ def skeleton(routine):
         elif kind in ("adds", "subs"):
             a, b, cin = ops
             xn, cn = names[i + 1], names[i + 2]
-            group += [xn, cn]
             if kind == "adds":
                 val = f"({a} + {b} + {cin})"
                 lin = f"{xn} + 2^64 * {cn} = {a} + {b} + {cin}"
@@ -593,8 +605,8 @@ def skeleton(routine):
                 lin = f"{xn} + 2^64 * {cn} + {b} + 1 = {a} + 2^64 + {cin}"
                 lin_proof = f"subc_lin _ _ _ {lt64(b)} {le1(cin)}"
                 carry_proof = f"subc_carry_le_one _ _ _ {lt64(a)}"
-            lines.append(f"  have e_{xn} : {xn} = {val} % 2^64 := rfl")
-            lines.append(f"  have e_{cn} : {cn} = {val} / 2^64 := rfl")
+            eq(xn, f"{val} % 2^64")
+            eq(cn, f"{val} / 2^64")
             lines.append(f"  have l_{xn} : {lin} := by")
             lines.append(f"    rw [e_{xn}, e_{cn}]; exact {lin_proof}")
             lines.append(f"  have b_{xn} : {xn} < 2^64 := by rw [e_{xn}]; exact Nat.mod_lt _ (Nat.two_pow_pos _)")
@@ -607,7 +619,7 @@ def skeleton(routine):
             i += 2
         elif kind == "adc":
             a, b, cin = ops
-            lines.append(f"  have e_{nm} : {nm} = ({a} + {b} + {cin}) % 2^64 := rfl")
+            eq(nm, f"({a} + {b} + {cin}) % 2^64")
             lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact Nat.mod_lt _ (Nat.two_pow_pos _)")
             lines.append(f"  obtain ⟨k_{nm}, b_k_{nm}, l_{nm}⟩ :")
             lines.append(f"      ∃ k, k ≤ 1 ∧ {nm} + 2^64 * k = {a} + {b} + {cin} :=")
@@ -617,7 +629,7 @@ def skeleton(routine):
             bnd[nm] = f"b_{nm}"
         elif kind == "subs_carry":
             a, b, cin = ops
-            lines.append(f"  have e_{nm} : {nm} = ({a} + 2^64 - {b} - (1 - {cin})) / 2^64 := rfl")
+            eq(nm, f"({a} + 2^64 - {b} - (1 - {cin})) / 2^64")
             lines.append(f"  have b_{nm} : {nm} ≤ 1 := by rw [e_{nm}]; exact subc_carry_le_one _ _ _ {lt64(a)}")
             lines.append(f"  have l_{nm} : ({nm} = 1 ∧ {b} + 1 ≤ {a} + {cin}) ∨ ({nm} = 0 ∧ {a} + {cin} < {b} + 1) :=")
             lines.append(f"    subc_carry_cases _ _ _ _ e_{nm} {lt64(a)} {lt64(b)} {le1(cin)}")
@@ -625,26 +637,28 @@ def skeleton(routine):
             bnd[nm] = f"b_{nm}"
         elif kind == "csel":
             c, a, b = ops
-            lines.append(f"  have e_{nm} : {nm} = (if {c} = 0 then {a} else {b}) := rfl")
+            eq(nm, f"(if {c} = 0 then {a} else {b})")
             lines.append(f"  have b_{nm} : {nm} < 2^64 := by")
             lines.append(f"    rw [e_{nm}]; split <;> first | exact {lt64(a)} | exact {lt64(b)}")
             bnd[nm] = f"b_{nm}"
         elif kind == "call":
             *targs, inv = ops
-            lines.append(f"  have e_{nm} : {nm} = mulBy1 ⟨{', '.join(targs)}⟩ modulus {inv} := rfl")
+            eq(nm, f"mulBy1 ⟨{', '.join(targs)}⟩ modulus {inv}")
         elif kind == "callout":
             (idx,) = ops
-            lines.append(f"  have e_{nm} : {nm} = {r('r')}.l{idx} := rfl")
+            eq(nm, f"{r('r')}.l{idx}")
             bnd[nm] = f"b_{nm}"  # supplied by the annotation that applies the callee's theorem
         elif kind == "out":
             (x,) = ops
-            lines.append(f"  have e_{nm} : {nm} = {x} := rfl")
+            eq(nm, x)
         else:
             raise ValueError(kind)
         ren[en["name"]] = nm
-        out += lines
-        out.append(f"  clear_value {' '.join(group)}")
+        facts += lines
         i += 1
+    out += eqs
+    out += wrap_tactic("clear_value", list(reversed(names)), "")
+    out += facts
     return out
 
 def check_spec(path, routines):
