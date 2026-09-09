@@ -30,7 +30,13 @@ Run from the repository root:
     python3 scripts/gen_aarch64_pasta_mul.py
 
 `scripts/check_aarch64_pasta_mul.sh` regenerates and fails if the output differs from
-the committed files. Python 3.9+; stdlib only.
+the committed files.
+
+The script also generates the mechanical part of each routine's correctness proof in
+`CompElliptic/Asm/AArch64/PastaMulSpec.lean`: `--skeleton NAME` prints it (see
+`skeleton`), and `--check-spec FILE` checks that FILE contains every routine's skeleton
+verbatim once its `-- BEGIN ... -- END` annotation blocks are removed; the check script
+runs that too. Python 3.9+; stdlib only.
 """
 import re
 import sys
@@ -128,14 +134,16 @@ class Emitter:
         self.cur_reads.add(tok)
         return tok
 
-    def bind(self, name, expr, comment, reads=None, load=False):
+    def bind(self, name, expr, comment, reads=None, load=False, fact=None):
+        """Record a binding. `fact` is the skeleton's description of it: a tuple whose head
+        names the kind of instruction and whose remaining items are the operand names."""
         if name == "xzr":
             return
         self.ptrs.pop(name, None)
         self.known.add(name)
         self.entries.append(dict(name=name, expr=expr, comment=comment,
                                  reads=set(self.cur_reads) if reads is None else set(reads),
-                                 load=load))
+                                 load=load, fact=fact))
 
     def mem(self, tok):
         """(base register, byte offset) of a memory operand, or None for the frame."""
@@ -169,7 +177,8 @@ class Emitter:
                 return
             base, off = m
             for i, r in enumerate(t[:-1]):
-                self.bind(r, self.limb(base, off + 8 * i), text, reads=(), load=True)
+                self.bind(r, self.limb(base, off + 8 * i), text, reads=(), load=True,
+                          fact=("load", self.ptrs[base], (off + 8 * i) // 8))
         elif op in ("stp", "str"):
             m = self.mem(t[-1])
             if m is None:  # spill to the frame
@@ -180,55 +189,66 @@ class Emitter:
             for i, r in enumerate(t[:-1]):
                 idx = off // 8 + i
                 self.cur_reads = set()
-                self.bind(f"out{idx}", self.read(r), text)
+                self.bind(f"out{idx}", self.read(r), text, fact=("out", r))
                 self.outputs[idx] = f"out{idx}"
         elif op == "add":
             if t[1] == "sp":  # frame pointer setup
                 return
             raise ValueError(f"unexpected add: {text}")
         elif op == "mov":
-            self.bind(t[0], self.read(t[1]), text)
+            a = self.read(t[1])
+            self.bind(t[0], a, text, fact=("mov", a))
         elif op == "mul":
-            self.bind(t[0], f"mulLo {self.read(t[1])} {self.read(t[2])}", text)
+            a, b = self.read(t[1]), self.read(t[2])
+            self.bind(t[0], f"mulLo {a} {b}", text, fact=("mul", a, b))
         elif op == "umulh":
-            self.bind(t[0], f"umulh {self.read(t[1])} {self.read(t[2])}", text)
+            a, b = self.read(t[1]), self.read(t[2])
+            self.bind(t[0], f"umulh {a} {b}", text, fact=("umulh", a, b))
         elif op == "lsl":
-            self.bind(t[0], f"lsl {self.read(t[1])} {imm(t[2])}", text)
+            a, k = self.read(t[1]), imm(t[2])
+            self.bind(t[0], f"lsl {a} {k}", text, fact=("lsl", a, k))
         elif op == "lsr":
-            self.bind(t[0], f"lsr {self.read(t[1])} {imm(t[2])}", text)
+            a, k = self.read(t[1]), imm(t[2])
+            self.bind(t[0], f"lsr {a} {k}", text, fact=("lsr", a, k))
         elif op in ("adds", "adcs", "adc"):
             cin = "0" if op == "adds" else self.read("c")
-            expr = f"addc {self.read(t[1])} {self.read(t[2])} {cin}"
+            a, b = self.read(t[1]), self.read(t[2])
+            expr = f"addc {a} {b} {cin}"
             if op == "adc":
-                self.bind(t[0], f"({expr}).1", text)
+                self.bind(t[0], f"({expr}).1", text, fact=("adc", a, b, cin))
             else:
-                self.bind("s", expr, text)
-                self.bind(t[0], "s.1", text, reads=("s",))
-                self.bind("c", "s.2", text, reads=("s",))
+                self.bind("s", expr, text, fact=("adds", a, b, cin))
+                self.bind(t[0], "s.1", text, reads=("s",), fact=("fst",))
+                self.bind("c", "s.2", text, reads=("s",), fact=("snd",))
         elif op in ("subs", "sbcs"):
             cin = "1" if op == "subs" else self.read("c")
-            expr = f"subc {self.read(t[1])} {self.read(t[2])} {cin}"
+            a, b = self.read(t[1]), self.read(t[2])
+            expr = f"subc {a} {b} {cin}"
             if t[0] == "xzr":
-                self.bind("c", f"({expr}).2", text)
+                self.bind("c", f"({expr}).2", text, fact=("subs_carry", a, b, cin))
             else:
-                self.bind("s", expr, text)
-                self.bind(t[0], "s.1", text, reads=("s",))
-                self.bind("c", "s.2", text, reads=("s",))
+                self.bind("s", expr, text, fact=("subs", a, b, cin))
+                self.bind(t[0], "s.1", text, reads=("s",), fact=("fst",))
+                self.bind("c", "s.2", text, reads=("s",), fact=("snd",))
         elif op == "csel":
             if t[3] != "lo":
                 raise ValueError(f"unexpected condition: {text}")
-            self.bind(t[0], f"cselLo {self.read('c')} {self.read(t[1])} {self.read(t[2])}", text)
+            c, a, b = self.read("c"), self.read(t[1]), self.read(t[2])
+            self.bind(t[0], f"cselLo {c} {a} {b}", text, fact=("csel", c, a, b))
         elif op == "bl":
             if t[0] != HELPER_LABEL:
                 raise ValueError(f"unexpected call: {text}")
             if self.ptrs.get("x2") != "modulus":
                 raise ValueError("helper called without the modulus pointer in x2")
-            args = ", ".join(self.read(r) for r in ("x10", "x11", "x12", "x13"))
-            self.bind("r", f"{self.helper_name} ⟨{args}⟩ modulus {self.read('x4')}", text)
+            targs = [self.read(r) for r in ("x10", "x11", "x12", "x13")]
+            inv = self.read("x4")
+            self.bind("r", f"{self.helper_name} ⟨{', '.join(targs)}⟩ modulus {inv}", text,
+                      fact=("call", *targs, inv))
             for i, r in enumerate(("x10", "x11", "x12", "x13")):
-                self.bind(r, f"r.l{i}", "helper output", reads=("r",))
+                self.bind(r, f"r.l{i}", "helper output", reads=("r",), fact=("callout", i))
             for i, r in enumerate(("x5", "x6", "x7", "x8")):
-                self.bind(r, f"modulus.l{i}", "loaded by the helper", reads=(), load=True)
+                self.bind(r, f"modulus.l{i}", "loaded by the helper", reads=(), load=True,
+                          fact=("load", "modulus", i))
             for r in HELPER_CLOBBERS:
                 self.known.discard(r)
                 self.ptrs.pop(r, None)
@@ -247,8 +267,8 @@ class Emitter:
 
     # -- output ------------------------------------------------------------------------
 
-    def render(self, result_names):
-        """The `let` lines, with bindings that nothing reads dropped (see the module doc)."""
+    def liveness(self, result_names):
+        """Which entries something later reads, by a backward pass from the result names."""
         needed = set(result_names)
         live = [False] * len(self.entries)
         for i in range(len(self.entries) - 1, -1, -1):
@@ -257,6 +277,11 @@ class Emitter:
                 live[i] = True
                 needed.discard(e["name"])
                 needed |= e["reads"]
+        return live
+
+    def render(self, result_names):
+        """The `let` lines, with bindings that nothing reads dropped (see the module doc)."""
+        live = self.liveness(result_names)
         lines = []  # (code, comment): a `let` with its instruction, or (None, whole-line comment)
         for e, keep in zip(self.entries, live):
             if keep:
@@ -272,8 +297,8 @@ def emit_helper(ins, labels):
     e = Emitter(ins, labels, "mulBy1")
     e.ptrs["x2"] = "modulus"
     for i, r in enumerate(("x10", "x11", "x12", "x13")):
-        e.bind(r, f"t.l{i}", "argument", reads=())
-    e.bind("x4", "inv", "argument", reads=())
+        e.bind(r, f"t.l{i}", "argument", reads=(), fact=("load", "t", i))
+    e.bind("x4", "inv", "argument", reads=(), fact=("inv",))
     e.run(labels[HELPER_LABEL])
     e.cur_reads = set()
     result = [e.read(r) for r in ("x10", "x11", "x12", "x13")]
@@ -282,7 +307,7 @@ def emit_helper(ins, labels):
            "without a final conditional subtraction. `x10`-`x13` hold `t` and `x4` holds `inv` on "
            "entry; the modulus limbs are loaded through `x2`.")
     return Routine(doc, "def mulBy1 (t modulus : Limbs) (inv : Nat) : Limbs :=", e.render(result),
-                   f"  ⟨{', '.join(result)}⟩")
+                   f"  ⟨{', '.join(result)}⟩", "mulBy1", e, result)
 
 
 def emit_routine(ins, labels, label, name, doc, ptr_args, inv_reg):
@@ -290,21 +315,23 @@ def emit_routine(ins, labels, label, name, doc, ptr_args, inv_reg):
     e.ptrs["x0"] = "out"
     for reg, arg in ptr_args:
         e.ptrs[reg] = arg
-    e.bind(inv_reg, "inv", "argument", reads=())
+    e.bind(inv_reg, "inv", "argument", reads=(), fact=("inv",))
     e.run(labels[label])
     if sorted(e.outputs) != [0, 1, 2, 3]:
         raise ValueError(f"{name}: outputs stored: {sorted(e.outputs)}")
     result = [e.outputs[i] for i in range(4)]
     params = " ".join(arg for _, arg in ptr_args)
     return Routine(doc, f"def {name} ({params} : Limbs) (inv : Nat) : Limbs :=", e.render(result),
-                   f"  ⟨{', '.join(result)}⟩")
+                   f"  ⟨{', '.join(result)}⟩", name, e, result)
 
 
 class Routine:
-    """A transcribed routine: docstring, signature line, body lines, and result line."""
+    """A transcribed routine: docstring, signature line, body lines, and result line, plus the
+    emitter and result names for the proof skeleton."""
 
-    def __init__(self, doc, signature, lines, result):
+    def __init__(self, doc, signature, lines, result, name, emitter, result_names):
         self.doc, self.signature, self.lines, self.result = doc, signature, lines, result
+        self.name, self.emitter, self.result_names = name, emitter, result_names
 
     def text(self, column):
         """The definition, with the instruction comments aligned at `column`; a line whose code
@@ -349,9 +376,7 @@ generator's docstring for what it checks.
 namespace CompElliptic.Asm.AArch64
 
 """]
-    routines = [emit_helper(ins, labels)]
-    for label, name, doc, ptr_args, inv_reg in ROUTINES:
-        routines.append(emit_routine(ins, labels, label, name, doc, ptr_args, inv_reg))
+    routines = all_routines(ins, labels)
     # One comment column for the whole file: two spaces past the widest ordinary `let`. Lines
     # longer than COMMENT_COLUMN_MAX are outliers (the helper call) and do not set the column.
     column = 2 + max(len(code) for r in routines for code, _ in r.lines
@@ -418,8 +443,225 @@ namespace CompElliptic.Asm.AArch64
     return "".join(out)
 
 
+# --- proof skeletons --------------------------------------------------------------------
+
+# Bounds hypotheses the annotated spec theorems must provide, by argument name.
+BOUND_HYPS = {"t": "ht", "modulus": "hm", "lhs": "hlhs", "rhs": "hrhs", "value": "hv"}
+INV_BOUND_HYP = "hinv_lt"
+PROJ = ["1", "2.1", "2.2.1", "2.2.2"]
+SKELETON_WIDTH = 100
+
+
+def ssa_names(entries):
+    """Unique names for the live bindings: the first binding of a register keeps its name,
+    later ones get `_1`, `_2`, ..."""
+    counts, names = {}, []
+    for e in entries:
+        n = counts.get(e["name"], 0)
+        counts[e["name"]] = n + 1
+        names.append(e["name"] if n == 0 else f"{e['name']}_{n}")
+    return names
+
+
+def wrap_tactic(head, words, tail, indent="  "):
+    """`head w1 w2 ... tail`, broken over lines at SKELETON_WIDTH with a 4-space continuation."""
+    lines, cur = [], indent + head
+    for w in words:
+        if len(cur) + 1 + len(w) > SKELETON_WIDTH:
+            lines.append(cur)
+            cur = indent + "    " + w
+        else:
+            cur += " " + w
+    lines.append(cur + tail)
+    return lines
+
+
+def skeleton(routine):
+    """The generated part of the correctness proof of `routine`: unfold, extract the lets under
+    SSA names, then per instruction the defining equation (by `rfl`, in `%`/`/` form), the range
+    fact (by `omega`), and `clear_value`. Hand-written annotations go between the groups."""
+    e = routine.emitter
+    live = e.liveness(routine.result_names)
+    entries = [en for en, keep in zip(e.entries, live) if keep]
+    names = ssa_names(entries)
+    ren = {}  # current SSA name of each register at each point: resolved while walking
+    out = [f"  -- generated skeleton for `{routine.name}`: do not edit between the annotations",
+           f"  unfold {routine.name} at hr", "  lift_lets at hr"]
+    out += wrap_tactic("extract_lets", names, " at hr")
+    out.append("  subst hr")
+    products, shifts = {}, {}
+
+    def r(op):  # operand as written in the entry, renamed to its SSA name at that point
+        return ren.get(op, op)
+
+    def bound(op):
+        return None if re.fullmatch(r"[0-9]+", op) else f"b_{op}"
+
+    i = 0
+    while i < len(entries):
+        en, nm = entries[i], names[i]
+        kind, *ops = en["fact"]
+        ops = [r(o) if isinstance(o, str) else o for o in ops]
+        group = [nm]
+        lines = []
+        # Every step records only facts `omega` handles cheaply later: linear equations, bounds,
+        # and at most a disjunction. The `%`/`/` equations are derived by `rfl`, used to prove
+        # those facts, and cleared.
+        if kind == "load":
+            arg, idx = ops
+            hyp = BOUND_HYPS[arg]
+            lines.append(f"  have e_{nm} : {nm} = {arg}.l{idx} := rfl")
+            lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact {hyp}.{PROJ[idx]}")
+        elif kind == "inv":
+            lines.append(f"  have e_{nm} : {nm} = inv := rfl")
+            lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact {INV_BOUND_HYP}")
+        elif kind == "mov":
+            (a,) = ops
+            lines.append(f"  have e_{nm} : {nm} = {a} := rfl")
+            lines.append(f"  have b_{nm} : {nm} < 2^64 := by omega")
+        elif kind == "mul":
+            a, b = ops
+            lines.append(f"  have e_{nm} : {nm} = {a} * {b} % 2^64 := rfl")
+            lines.append(f"  have b_{nm} : {nm} < 2^64 := by omega")
+            products[(a, b)] = nm  # its `%` equation is cleared at the matching `umulh`
+        elif kind == "umulh":
+            a, b = ops
+            lines.append(f"  have p_{nm} : {a} * {b} < 2^128 :=")
+            lines.append(f"    lt_of_lt_of_eq (Nat.mul_lt_mul'' {bound(a)} {bound(b)}) (by norm_num)")
+            lines.append(f"  have e_{nm} : {nm} = {a} * {b} / 2^64 := rfl")
+            lines.append(f"  have b_{nm} : {nm} < 2^64 := by omega")
+            if (a, b) in products:
+                lo = products.pop((a, b))
+                lines.append(f"  have d_{nm} : {lo} + 2^64 * {nm} = {a} * {b} := by omega")
+                lines.append(f"  clear e_{lo} e_{nm}")
+            else:
+                # The low half is never computed (its cancellation is arranged by `subs`); name
+                # it as a ghost so that later steps need no `%`.
+                lines.append(f"  obtain ⟨lo_{nm}, b_lo_{nm}, d_{nm}⟩ :")
+                lines.append(f"      ∃ lo, lo < 2^64 ∧ lo + 2^64 * {nm} = {a} * {b} :=")
+                lines.append(f"    ⟨{a} * {b} % 2^64, by omega, by omega⟩")
+                lines.append(f"  clear e_{nm}")
+        elif kind == "lsl":
+            a, k = ops
+            lines.append(f"  have e_{nm} : {nm} = {a} * 2^{k} % 2^64 := rfl")
+            lines.append(f"  have b_{nm} : {nm} < 2^64 := by omega")
+            shifts[(a, k)] = nm
+        elif kind == "lsr":
+            a, k = ops
+            lines.append(f"  have e_{nm} : {nm} = {a} / 2^{k} := rfl")
+            lines.append(f"  have b_{nm} : {nm} < 2^{64 - k} := by omega")
+            if (a, 64 - k) in shifts:
+                lo = shifts.pop((a, 64 - k))
+                lines.append(f"  have sh_{nm} : {lo} + 2^64 * {nm} = {a} * 2^{64 - k} := by omega")
+                lines.append(f"  clear e_{lo} e_{nm}")
+        elif kind in ("adds", "subs"):
+            a, b, cin = ops
+            xn, cn = names[i + 1], names[i + 2]
+            group += [xn, cn]
+            if kind == "adds":
+                val = f"({a} + {b} + {cin})"
+                lin = f"{xn} + 2^64 * {cn} = {a} + {b} + {cin}"
+            else:
+                val = f"({a} + 2^64 - {b} - (1 - {cin}))"
+                lin = f"{xn} + 2^64 * {cn} + {b} + 1 = {a} + 2^64 + {cin}"
+            lines.append(f"  have e_{xn} : {xn} = {val} % 2^64 := rfl")
+            lines.append(f"  have e_{cn} : {cn} = {val} / 2^64 := rfl")
+            lines.append(f"  have l_{xn} : {lin} := by omega")
+            lines.append(f"  have b_{xn} : {xn} < 2^64 := by omega")
+            lines.append(f"  have b_{cn} : {cn} ≤ 1 := by omega")
+            lines.append(f"  clear e_{xn} e_{cn}")
+            ren[entries[i + 1]["name"]] = xn
+            ren[entries[i + 2]["name"]] = cn
+            i += 2
+        elif kind == "adc":
+            a, b, cin = ops
+            lines.append(f"  have e_{nm} : {nm} = ({a} + {b} + {cin}) % 2^64 := rfl")
+            lines.append(f"  have b_{nm} : {nm} < 2^64 := by omega")
+            lines.append(f"  obtain ⟨k_{nm}, b_k_{nm}, l_{nm}⟩ :")
+            lines.append(f"      ∃ k, k ≤ 1 ∧ {nm} + 2^64 * k = {a} + {b} + {cin} :=")
+            lines.append(f"    ⟨({a} + {b} + {cin}) / 2^64, by omega, by omega⟩")
+            lines.append(f"  clear e_{nm}")
+        elif kind == "subs_carry":
+            a, b, cin = ops
+            lines.append(f"  have e_{nm} : {nm} = ({a} + 2^64 - {b} - (1 - {cin})) / 2^64 := rfl")
+            lines.append(f"  have l_{nm} : ({nm} = 1 ∧ {b} + 1 ≤ {a} + {cin})"
+                         f" ∨ ({nm} = 0 ∧ {a} + {cin} < {b} + 1) := by")
+            lines.append(f"    omega")
+            lines.append(f"  clear e_{nm}")
+        elif kind == "csel":
+            c, a, b = ops
+            lines.append(f"  have e_{nm} : {nm} = (if {c} = 0 then {a} else {b}) := rfl")
+            lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; split <;> omega")
+        elif kind == "call":
+            *targs, inv = ops
+            lines.append(f"  have e_{nm} : {nm} = mulBy1 ⟨{', '.join(targs)}⟩ modulus {inv} := rfl")
+        elif kind == "callout":
+            (idx,) = ops
+            lines.append(f"  have e_{nm} : {nm} = {r('r')}.l{idx} := rfl")
+        elif kind == "out":
+            (x,) = ops
+            lines.append(f"  have e_{nm} : {nm} = {x} := rfl")
+        else:
+            raise ValueError(kind)
+        ren[en["name"]] = nm
+        out += lines
+        out.append(f"  clear_value {' '.join(group)}")
+        i += 1
+    return out
+
+
+def check_spec(path, routines):
+    """Verify that each routine's skeleton appears verbatim and contiguously in `path` once its
+    `-- BEGIN ... -- END` annotation blocks are removed and blank lines dropped. Text outside the
+    skeletons (theorem statements, lemmas, the closing steps) is free; text between two
+    skeleton lines must be inside an annotation block."""
+    text = Path(path).read_text()
+    stripped = re.sub(r"(?ms)^\s*-- BEGIN[^\n]*\n.*?^\s*-- END[^\n]*\n", "", text)
+    remaining = [l for l in stripped.splitlines() if l.strip()]
+    ok = True
+    for rt in routines:
+        sk = [l for l in skeleton(rt) if l.strip()]
+        n = len(sk)
+        if sk[1] not in remaining:  # `unfold <routine> at hr`: the theorem is not in this file
+            continue
+        for start in range(len(remaining) - n + 1):
+            if remaining[start:start + n] == sk:
+                del remaining[start:start + n]
+                break
+        else:
+            i = remaining.index(sk[1])
+            for j, l in enumerate(sk):
+                if i + j >= len(remaining) or remaining[i + j] != l:
+                    print(f"{path}: skeleton of {rt.name} diverges at skeleton line {j}:",
+                          file=sys.stderr)
+                    print(f"  expected: {l}", file=sys.stderr)
+                    print(f"  found:    {remaining[i + j] if i + j < len(remaining) else '<eof>'}",
+                          file=sys.stderr)
+                    break
+            ok = False
+    return ok
+
+
+def all_routines(ins, labels):
+    routines = [emit_helper(ins, labels)]
+    for label, name, doc, ptr_args, inv_reg in ROUTINES:
+        routines.append(emit_routine(ins, labels, label, name, doc, ptr_args, inv_reg))
+    return routines
+
+
 def main():
     ins, labels = parse(ASM)
+    if len(sys.argv) >= 3 and sys.argv[1] == "--skeleton":
+        for rt in all_routines(ins, labels):
+            if rt.name == sys.argv[2]:
+                print("\n".join(skeleton(rt)))
+                return 0
+        print(f"no routine {sys.argv[2]}", file=sys.stderr)
+        return 1
+    if len(sys.argv) >= 3 and sys.argv[1] == "--check-spec":
+        ok = check_spec(sys.argv[2], all_routines(ins, labels))
+        print(f"{sys.argv[2]}: skeletons {'current' if ok else 'STALE'}")
+        return 0 if ok else 1
     OUT_PROGRAM.write_text(gen_program(ins, labels))
     OUT_VECTORS.write_text(gen_vectors(VECTORS.read_text().splitlines()))
     print(f"wrote {OUT_PROGRAM} ({len(ins)} instructions parsed) and {OUT_VECTORS}")
