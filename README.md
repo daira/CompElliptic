@@ -143,9 +143,10 @@ Early work in progress. Present so far:
   or otherwise changed incompatibly;
 - a transcription of the AArch64 Pasta Montgomery routines that pasta_curves vendors from
   Semolina, generated from the assembly over a small instruction-semantics module, with
-  reference vectors from the real routines checked by the kernel, and an instruction-by-instruction
-  correctness proof of their shared reduction helper (`CompElliptic/Asm/AArch64/`;
-  `design/aarch64-pasta-mul-verification.md` states the remaining correctness theorems).
+  reference vectors from the real routines checked by the kernel, and instruction-by-instruction
+  correctness proofs of their shared reduction helper and of the conversion out of Montgomery
+  form (`CompElliptic/Asm/AArch64/`; `design/aarch64-pasta-mul-verification.md` states the
+  remaining correctness theorems).
 
 The library's general theorems depend only on the standard `propext` / `Classical.choice` /
 `Quot.sound` axioms. Facts specific to concrete fields and curves additionally depend on

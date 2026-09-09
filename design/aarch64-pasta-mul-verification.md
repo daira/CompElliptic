@@ -103,7 +103,9 @@ the code assumes) and `inv · p0 ≡ −1 (mod 2^64)`:
   and `2^64 − 3` can wrap) is settled as a by-product of the round lemma and stated as
   its own lemma.
 * `sqr_spec`: if `a < p`, the output is below `p` and `output · 2^256 ≡ a² (mod p)`.
-* `from_mont_spec`: if `a < p`, the output is below `p` and `output · 2^256 ≡ a (mod p)`.
+* `fromMont_spec` (proved): for every four-limb `a`, the output is below `p` and
+  `output · 2^256 ≡ a (mod p)`. No bound on `a` below `p` is needed: the helper's result is
+  at most `p`, and the conditional subtraction removes the one excess case.
 
 `Pasta.lean` instantiates these at `PALLAS_BASE_CARD` and `PALLAS_SCALAR_CARD` with
 the crate's `MODULUS`, `INV`, `R2`, `R3` limbs pinned by `decide`, and states the
@@ -117,8 +119,8 @@ wrong.
 
 1. Semantics, generator, generated program, vendored `.S` with hash, vectors, CI
    check: present.
-2. The helper (four reduction rounds): proved. `from_mont` (the helper and a
-   conditional subtraction): the smallest remaining proof.
+2. The helper (four reduction rounds) and `from_mont` (the helper and a conditional
+   subtraction): proved.
 3. `mul`: round invariant, the accumulator no-wrap lemma under each contract, the
    final comparison.
 4. `sqr`: the cross-term schoolbook, doubling, and the "can't overflow" claims.
