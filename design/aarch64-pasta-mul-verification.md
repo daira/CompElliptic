@@ -97,12 +97,12 @@ the code assumes) and `inv · p0 ≡ −1 (mod 2^64)`:
 * `mulBy1_spec` (proved): for every four-limb `t`, the shared reduction helper returns
   limbs `r` below `2^64` with `2^256 · r = t + Q · p` for some `Q < 2^256`. So `r` is
   congruent to `t · 2^−256` modulo `p`, and `r ≤ p`.
-* `mul_spec`: if `lhs < p` and `rhs < 2^256`, or `lhs < 2^256`, `rhs < p`, and every
+* `mul_spec` (to prove): if `lhs < p` and `rhs < 2^256`, or `lhs < 2^256`, `rhs < p`, and every
   `rhs` limb in positions 1 to 3 is at most `2^64 − 4`, then the output is below `p`
   and `output · 2^256 ≡ lhs · rhs (mod p)`. The exact wrap boundary (whether `2^64 − 2`
   and `2^64 − 3` can wrap) is settled as a by-product of the round lemma and stated as
   its own lemma.
-* `sqr_spec`: if `a < p`, the output is below `p` and `output · 2^256 ≡ a² (mod p)`.
+* `sqr_spec` (to prove): if `a < p`, the output is below `p` and `output · 2^256 ≡ a² (mod p)`.
 * `fromMont_spec` (proved): for every four-limb `a`, the output is below `p` and
   `output · 2^256 ≡ a (mod p)`. No bound on `a` below `p` is needed: the helper's result is
   at most `p`, and the conditional subtraction removes the one excess case.
@@ -117,14 +117,16 @@ wrong.
 
 ## Status
 
-1. Semantics, generator, generated program, vendored `.S` with hash, vectors, CI
-   check: present.
-2. The helper (four reduction rounds) and `from_mont` (the helper and a conditional
-   subtraction): proved.
-3. `mul`: round invariant, the accumulator no-wrap lemma under each contract, the
+Present: the semantics, the generator, the generated program, the vendored `.S` with its
+hash, the vectors, and the CI check; the proofs of the helper (four reduction rounds) and
+of `from_mont` (the helper and a conditional subtraction).
+
+Remaining, in order:
+
+1. `mul`: the round invariant, the accumulator no-wrap lemma under each contract, and the
    final comparison.
-4. `sqr`: the cross-term schoolbook, doubling, and the "can't overflow" claims.
-5. Pasta instantiation and census entries in `TrustBoundary.lean`.
+2. `sqr`: the cross-term schoolbook, the doubling, and the "can't overflow" claims.
+3. The Pasta instantiation and the census entries in `TrustBoundary.lean`.
 
 Out of scope for now: Zakura's inline-`asm!` transcription (provable later by
 instruction-by-instruction correspondence), `sqr_n_mul` (zakura-core/common#65), and
