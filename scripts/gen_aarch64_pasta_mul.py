@@ -478,13 +478,18 @@ def wrap_tactic(head, words, tail, indent="  "):
 
 def skeleton(routine):
     """The generated part of the correctness proof of `routine`: unfold, extract the lets under
-    SSA names, then per instruction the defining equation (by `rfl`, in `%`/`/` form), the range
-    fact (by `omega`), and `clear_value`. Hand-written annotations go between the groups."""
+    SSA names, then per instruction the defining equation (by `rfl`, in `%`/`/` form), the linear
+    facts derived from it, and `clear_value`. Each derived fact is an instance of one lemma
+    (`Nat.mod_add_div`, `Nat.mod_lt`, `Nat.div_lt_of_lt_mul`, or a carry lemma from the spec
+    file's preamble), so a step costs nothing wherever it sits and names the facts it rests on;
+    `omega` is left to the hand-written annotations between the groups."""
     e = routine.emitter
     live = e.liveness(routine.result_names)
     entries = [en for en, keep in zip(e.entries, live) if keep]
     names = ssa_names(entries)
     ren = {}  # current SSA name of each register at each point: resolved while walking
+    bnd = {}  # SSA name -> the fact bounding it below 2^64 (registers) or by 1 (carries)
+    narrow = set()  # `lsr` results, whose bound is below 2^64 and needs weakening
     out = [f"  -- generated skeleton for `{routine.name}`: do not edit between the annotations",
            f"  unfold {routine.name} at hr", "  lift_lets at hr"]
     out += wrap_tactic("extract_lets", names, " at hr")
@@ -494,8 +499,15 @@ def skeleton(routine):
     def r(op):  # operand as written in the entry, renamed to its SSA name at that point
         return ren.get(op, op)
 
-    def bound(op):
-        return None if re.fullmatch(r"[0-9]+", op) else f"b_{op}"
+    def lt64(op):  # a proof that the operand is below 2^64
+        if re.fullmatch(r"[0-9]+", op):
+            return "(by decide)"
+        if op in narrow:
+            return f"(lt_of_lt_of_le {bnd[op]} (by norm_num))"
+        return bnd[op]
+
+    def le1(op):  # a proof that the carry operand is at most 1
+        return "(by decide)" if re.fullmatch(r"[0-9]+", op) else bnd[op]
 
     i = 0
     while i < len(entries):
@@ -512,47 +524,60 @@ def skeleton(routine):
             hyp = BOUND_HYPS[arg]
             lines.append(f"  have e_{nm} : {nm} = {arg}.l{idx} := rfl")
             lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact {hyp}.{PROJ[idx]}")
+            bnd[nm] = f"b_{nm}"
         elif kind == "inv":
             lines.append(f"  have e_{nm} : {nm} = inv := rfl")
             lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact {INV_BOUND_HYP}")
+            bnd[nm] = f"b_{nm}"
         elif kind == "mov":
             (a,) = ops
             lines.append(f"  have e_{nm} : {nm} = {a} := rfl")
-            lines.append(f"  have b_{nm} : {nm} < 2^64 := by omega")
+            lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact {lt64(a)}")
+            bnd[nm] = f"b_{nm}"
         elif kind == "mul":
             a, b = ops
             lines.append(f"  have e_{nm} : {nm} = {a} * {b} % 2^64 := rfl")
-            lines.append(f"  have b_{nm} : {nm} < 2^64 := by omega")
+            lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact Nat.mod_lt _ (Nat.two_pow_pos _)")
+            bnd[nm] = f"b_{nm}"
             products[(a, b)] = nm  # its `%` equation is cleared at the matching `umulh`
         elif kind == "umulh":
             a, b = ops
-            lines.append(f"  have p_{nm} : {a} * {b} < 2^128 :=")
-            lines.append(f"    lt_of_lt_of_eq (Nat.mul_lt_mul'' {bound(a)} {bound(b)}) (by norm_num)")
+            lines.append(f"  have p_{nm} : {a} * {b} < 2^64 * 2^64 := Nat.mul_lt_mul'' {lt64(a)} {lt64(b)}")
             lines.append(f"  have e_{nm} : {nm} = {a} * {b} / 2^64 := rfl")
-            lines.append(f"  have b_{nm} : {nm} < 2^64 := by omega")
+            lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact Nat.div_lt_of_lt_mul p_{nm}")
+            bnd[nm] = f"b_{nm}"
             if (a, b) in products:
                 lo = products.pop((a, b))
-                lines.append(f"  have d_{nm} : {lo} + 2^64 * {nm} = {a} * {b} := by omega")
+                lines.append(f"  have d_{nm} : {lo} + 2^64 * {nm} = {a} * {b} := by")
+                lines.append(f"    rw [e_{lo}, e_{nm}]; exact Nat.mod_add_div _ _")
                 lines.append(f"  clear e_{lo} e_{nm}")
             else:
                 # The low half is never computed (its cancellation is arranged by `subs`); name
                 # it as a ghost so that later steps need no `%`.
                 lines.append(f"  obtain ⟨lo_{nm}, b_lo_{nm}, d_{nm}⟩ :")
                 lines.append(f"      ∃ lo, lo < 2^64 ∧ lo + 2^64 * {nm} = {a} * {b} :=")
-                lines.append(f"    ⟨{a} * {b} % 2^64, by omega, by omega⟩")
+                lines.append(f"    ⟨{a} * {b} % 2^64, Nat.mod_lt _ (Nat.two_pow_pos _),")
+                lines.append(f"      by rw [e_{nm}]; exact Nat.mod_add_div _ _⟩")
                 lines.append(f"  clear e_{nm}")
         elif kind == "lsl":
             a, k = ops
             lines.append(f"  have e_{nm} : {nm} = {a} * 2^{k} % 2^64 := rfl")
-            lines.append(f"  have b_{nm} : {nm} < 2^64 := by omega")
+            lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact Nat.mod_lt _ (Nat.two_pow_pos _)")
+            bnd[nm] = f"b_{nm}"
             shifts[(a, k)] = nm
         elif kind == "lsr":
             a, k = ops
             lines.append(f"  have e_{nm} : {nm} = {a} / 2^{k} := rfl")
-            lines.append(f"  have b_{nm} : {nm} < 2^{64 - k} := by omega")
+            lines.append(f"  have b_{nm} : {nm} < 2^{64 - k} := by")
+            lines.append(f"    rw [e_{nm}]; exact Nat.div_lt_of_lt_mul (lt_of_lt_of_eq {lt64(a)} (by norm_num))")
+            bnd[nm] = f"b_{nm}"
+            narrow.add(nm)
             if (a, 64 - k) in shifts:
                 lo = shifts.pop((a, 64 - k))
-                lines.append(f"  have sh_{nm} : {lo} + 2^64 * {nm} = {a} * 2^{64 - k} := by omega")
+                if k != 2:
+                    raise ValueError(f"lsl/lsr split by {64 - k}/{k}: add a lemma to the spec preamble")
+                lines.append(f"  have sh_{nm} : {lo} + 2^64 * {nm} = {a} * 2^{64 - k} := by")
+                lines.append(f"    rw [e_{lo}, e_{nm}]; exact lsl62_lsr2_split _")
                 lines.append(f"  clear e_{lo} e_{nm}")
         elif kind in ("adds", "subs"):
             a, b, cin = ops
@@ -561,43 +586,56 @@ def skeleton(routine):
             if kind == "adds":
                 val = f"({a} + {b} + {cin})"
                 lin = f"{xn} + 2^64 * {cn} = {a} + {b} + {cin}"
+                lin_proof = "Nat.mod_add_div _ _"
+                carry_proof = f"addc_carry_le_one _ _ _ {lt64(a)} {lt64(b)} {le1(cin)}"
             else:
                 val = f"({a} + 2^64 - {b} - (1 - {cin}))"
                 lin = f"{xn} + 2^64 * {cn} + {b} + 1 = {a} + 2^64 + {cin}"
+                lin_proof = f"subc_lin _ _ _ {lt64(b)} {le1(cin)}"
+                carry_proof = f"subc_carry_le_one _ _ _ {lt64(a)}"
             lines.append(f"  have e_{xn} : {xn} = {val} % 2^64 := rfl")
             lines.append(f"  have e_{cn} : {cn} = {val} / 2^64 := rfl")
-            lines.append(f"  have l_{xn} : {lin} := by omega")
-            lines.append(f"  have b_{xn} : {xn} < 2^64 := by omega")
-            lines.append(f"  have b_{cn} : {cn} ≤ 1 := by omega")
+            lines.append(f"  have l_{xn} : {lin} := by")
+            lines.append(f"    rw [e_{xn}, e_{cn}]; exact {lin_proof}")
+            lines.append(f"  have b_{xn} : {xn} < 2^64 := by rw [e_{xn}]; exact Nat.mod_lt _ (Nat.two_pow_pos _)")
+            lines.append(f"  have b_{cn} : {cn} ≤ 1 := by")
+            lines.append(f"    rw [e_{cn}]; exact {carry_proof}")
             lines.append(f"  clear e_{xn} e_{cn}")
             ren[entries[i + 1]["name"]] = xn
             ren[entries[i + 2]["name"]] = cn
+            bnd[xn], bnd[cn] = f"b_{xn}", f"b_{cn}"
             i += 2
         elif kind == "adc":
             a, b, cin = ops
             lines.append(f"  have e_{nm} : {nm} = ({a} + {b} + {cin}) % 2^64 := rfl")
-            lines.append(f"  have b_{nm} : {nm} < 2^64 := by omega")
+            lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; exact Nat.mod_lt _ (Nat.two_pow_pos _)")
             lines.append(f"  obtain ⟨k_{nm}, b_k_{nm}, l_{nm}⟩ :")
             lines.append(f"      ∃ k, k ≤ 1 ∧ {nm} + 2^64 * k = {a} + {b} + {cin} :=")
-            lines.append(f"    ⟨({a} + {b} + {cin}) / 2^64, by omega, by omega⟩")
+            lines.append(f"    ⟨({a} + {b} + {cin}) / 2^64, addc_carry_le_one _ _ _ {lt64(a)} {lt64(b)} {le1(cin)},")
+            lines.append(f"      by rw [e_{nm}]; exact Nat.mod_add_div _ _⟩")
             lines.append(f"  clear e_{nm}")
+            bnd[nm] = f"b_{nm}"
         elif kind == "subs_carry":
             a, b, cin = ops
             lines.append(f"  have e_{nm} : {nm} = ({a} + 2^64 - {b} - (1 - {cin})) / 2^64 := rfl")
-            lines.append(f"  have l_{nm} : ({nm} = 1 ∧ {b} + 1 ≤ {a} + {cin})"
-                         f" ∨ ({nm} = 0 ∧ {a} + {cin} < {b} + 1) := by")
-            lines.append(f"    omega")
+            lines.append(f"  have b_{nm} : {nm} ≤ 1 := by rw [e_{nm}]; exact subc_carry_le_one _ _ _ {lt64(a)}")
+            lines.append(f"  have l_{nm} : ({nm} = 1 ∧ {b} + 1 ≤ {a} + {cin}) ∨ ({nm} = 0 ∧ {a} + {cin} < {b} + 1) :=")
+            lines.append(f"    subc_carry_cases _ _ _ _ e_{nm} {lt64(a)} {lt64(b)} {le1(cin)}")
             lines.append(f"  clear e_{nm}")
+            bnd[nm] = f"b_{nm}"
         elif kind == "csel":
             c, a, b = ops
             lines.append(f"  have e_{nm} : {nm} = (if {c} = 0 then {a} else {b}) := rfl")
-            lines.append(f"  have b_{nm} : {nm} < 2^64 := by rw [e_{nm}]; split <;> omega")
+            lines.append(f"  have b_{nm} : {nm} < 2^64 := by")
+            lines.append(f"    rw [e_{nm}]; split <;> first | exact {lt64(a)} | exact {lt64(b)}")
+            bnd[nm] = f"b_{nm}"
         elif kind == "call":
             *targs, inv = ops
             lines.append(f"  have e_{nm} : {nm} = mulBy1 ⟨{', '.join(targs)}⟩ modulus {inv} := rfl")
         elif kind == "callout":
             (idx,) = ops
             lines.append(f"  have e_{nm} : {nm} = {r('r')}.l{idx} := rfl")
+            bnd[nm] = f"b_{nm}"  # supplied by the annotation that applies the callee's theorem
         elif kind == "out":
             (x,) = ops
             lines.append(f"  have e_{nm} : {nm} = {x} := rfl")
@@ -608,7 +646,6 @@ def skeleton(routine):
         out.append(f"  clear_value {' '.join(group)}")
         i += 1
     return out
-
 
 def check_spec(path, routines):
     """Verify that each routine's skeleton appears verbatim and contiguously in `path` once its
