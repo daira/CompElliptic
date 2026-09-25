@@ -134,6 +134,15 @@ Early work in progress. Present so far:
 - a computable Tonelli–Shanks square root for prime fields, soundness and completeness proved, with
   `pallasBase` / `vestaBase` instances (`CompElliptic/Fields/Sqrt.lean`);
 - the compressed Pasta point encoding (`toBytes`) for Pallas and Vesta (`CompElliptic/Encodings/`);
+- divstep (safegcd) modular inversion: the Bernstein-Yang recurrence with its transition
+  matrices, proved invertible over `ℤ`, and an inversion driver proved to return the canonical
+  `y` with `x · y ≡ seed (mod m)` for an arbitrary seed (so seeding with `R²` yields the
+  Montgomery representative of the inverse directly, with no Montgomery reduction). Instantiated
+  at both Pasta base fields, with the whole of
+  [zcash/pasta_curves#119](https://github.com/zcash/pasta_curves/pull/119) ported alongside it:
+  its radix-`2^62` constants re-derived, its batched 62-divstep kernel and its signed-62 limb
+  arithmetic checked against the proved recurrence and driver, and every declaration carrying a
+  line-anchored link into the Rust it came from (`CompElliptic/Fields/SafeGCD/`);
 - fast Vesta group arithmetic for computing with points rather than only reasoning about them —
   complete Renes–Costello–Batina projective addition, a windowed Pippenger multi-scalar
   multiplication and a scalar ladder, each proven to compute the affine group operation it replaces,

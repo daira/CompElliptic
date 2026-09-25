@@ -12,6 +12,7 @@ import CompElliptic.Curves.Pasta.Fast.Projective
 import CompElliptic.Curves.Pasta.Fast.Msm
 import CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv
 import CompElliptic.Fields.Sqrt
+import CompElliptic.Fields.SafeGCD.Pasta
 import CompElliptic.Meta.AxiomCheck
 
 /-!
@@ -57,6 +58,34 @@ assert_axioms CompElliptic.Fields.TonelliShanks.sqrt?_isSome_of_isSquare
 
 assert_axioms CompElliptic.Fields.Pasta.PALLAS_BASE_is_prime
 assert_axioms CompElliptic.Fields.Pasta.PALLAS_SCALAR_is_prime
+
+/-! ## Divstep (safegcd) modular inversion: standard axioms only
+
+The general theory (the divstep recurrence, its invertibility over `ℤ`, and the correctness of
+the inversion driver) is quantified over every parameter set and input, so it must not reach
+beyond the standard axioms. The concrete Pasta facts beneath it (the parameter sets'
+well-formedness, the re-derivation of the Rust port's radix-`2 ^ 62` constants, and the two
+magic modular inverses its cancellation steps use) are closed numeric claims the kernel evaluates
+directly, so they add nothing either. -/
+
+assert_axioms CompElliptic.Fields.SafeGCD.run_spec
+assert_axioms CompElliptic.Fields.SafeGCD.run_dvd_of_dvd
+assert_axioms CompElliptic.Fields.SafeGCD.run_eq_one_or_neg_one
+assert_axioms CompElliptic.Fields.SafeGCD.step_good
+assert_axioms CompElliptic.Fields.SafeGCD.invertCounted_spec
+assert_axioms CompElliptic.Fields.SafeGCD.invert_spec
+assert_axioms CompElliptic.Fields.SafeGCD.pallasInv_wf
+assert_axioms CompElliptic.Fields.SafeGCD.vestaInv_wf
+assert_axioms CompElliptic.Fields.SafeGCD.fp_modulus_limbs_eq
+assert_axioms CompElliptic.Fields.SafeGCD.fq_modulus_limbs_eq
+assert_axioms CompElliptic.Fields.SafeGCD.fp_r2_limbs_eq
+assert_axioms CompElliptic.Fields.SafeGCD.fq_r2_limbs_eq
+assert_axioms CompElliptic.Fields.SafeGCD.fp_mu_spec
+assert_axioms CompElliptic.Fields.SafeGCD.fq_mu_spec
+assert_axioms CompElliptic.Fields.SafeGCD.magic_inverse_mod_16
+assert_axioms CompElliptic.Fields.SafeGCD.magic_inverse_mod_64
+assert_axioms CompElliptic.Fields.SafeGCD.cancellation_mod_64
+assert_axioms CompElliptic.Fields.SafeGCD.low62_add_shr62
 
 /-! ## The isogeny layer's headline general theorems — standard axioms only -/
 
