@@ -3,17 +3,12 @@
 
 nanoda's strict mode (`unpermitted_axiom_hard_error: true`) rejects any axiom *declared*
 outside the permitted list, but must permit axioms Lean core declares whether or not
-anything uses them (`sorryAx` and the legacy compiler-trust axioms). Permitting a
-declaration says nothing about use, so this script closes that gap from the export
-itself:
+anything uses them (`sorryAx`). Permitting a declaration says nothing about use, so
+this script closes that gap from the export itself:
 
   * the axioms declared in the export are exactly the config's `permitted_axioms`;
-  * `sorryAx`, `Lean.ofReduceBool`, and `Lean.ofReduceNat` are cited by no expression
-    at all — in particular, a `sorry` anywhere in the library fails here;
-  * `Lean.trustCompiler` is cited only by `Lean.reduceBool` and `Lean.reduceNat` —
-    the opaque evaluation functions of the deprecated compiler-trust route, distinct
-    from their propositional bridge axioms `Lean.ofReduceBool`/`Lean.ofReduceNat`
-    above — and nothing in this repository consumes them.
+  * `sorryAx` is cited by no expression at all — in particular, a `sorry` anywhere in
+    the library fails here.
 
 Failures come in two kinds, mirroring `check_native_optin.py`:
 
@@ -52,11 +47,8 @@ FORMAT_VERSION = "3.1.0"
 MAX_REPORTED_VIOLATIONS = 100
 
 # Axioms that must be cited by no expression in the export.
-UNREFERENCED = {"sorryAx", "Lean.ofReduceBool", "Lean.ofReduceNat"}
-# Axioms that only the named declarations may cite.
-RESTRICTED = {"Lean.trustCompiler": {"Lean.reduceBool", "Lean.reduceNat"}}
-TARGETS = UNREFERENCED | set(RESTRICTED)
-TARGET_COMPONENTS = {t.rsplit(".", 1)[-1] for t in TARGETS}
+UNREFERENCED = {"sorryAx"}
+TARGET_COMPONENTS = {t.rsplit(".", 1)[-1] for t in UNREFERENCED}
 
 EXPR_KINDS = {"app", "bvar", "const", "forallE", "lam", "letE", "natVal", "proj",
               "sort", "strVal"}
@@ -123,7 +115,7 @@ def main():
     target_name_ids = {}  # name id -> target full name
     taint = {}  # expr id -> frozenset of target full names
     citers = {}  # target full name -> set of citing declaration names
-    const_cited = {t: False for t in TARGETS}
+    const_cited = {t: False for t in UNREFERENCED}
     declared_axioms = set()
     max_in = max_il = 0  # id 0: the reserved anonymous name / zero level
     max_ie = -1
@@ -150,7 +142,7 @@ def main():
                 names[i] = (pre, comp)
                 if comp in TARGET_COMPONENTS:
                     full = resolve(i)
-                    if full in TARGETS:
+                    if full in UNREFERENCED:
                         target_name_ids[i] = full
             elif "ie" in o:
                 i = o["ie"]
@@ -240,17 +232,12 @@ def main():
     for t in sorted(UNREFERENCED):
         if const_cited[t] or citers.get(t):
             violation(f"'{t}' is cited by: {sorted(citers.get(t, {'<expression>'}))}")
-    for t, allowed in RESTRICTED.items():
-        extra = citers.get(t, set()) - allowed
-        if extra:
-            violation(f"'{t}' is cited outside its allowance {sorted(allowed)}: "
-                      f"{sorted(extra)}")
 
     # Print the full census whether or not anything was flagged: this is the actionable
     # state when a check above has flagged a stale or widened axiom list.
     print(f"export axiom census: {len(declared_axioms)} axiom(s) declared:")
     for a in sorted(declared_axioms):
-        cited = ([] if a not in TARGETS else
+        cited = ([] if a not in UNREFERENCED else
                  sorted(citers.get(a, set())) or ["nothing"])
         note = f"  (cited by: {', '.join(cited)})" if cited else ""
         print(f"  {a}{note}")
