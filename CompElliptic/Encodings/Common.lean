@@ -52,7 +52,7 @@ bits (`Fact (n ≤ 2^k)`). This is the field-size precondition that lets such an
 `Fin (2^(k+1))`, e.g. for `I2LEOSP (k+1)`. -/
 theorem encodedInt_lt {k n : ℕ} [Fact (Nat.Prime n)] [Fact (n ≤ 2^k)] (x y : ZMod n) :
     x.val + (y.val % 2) * 2^k < 2^(k + 1) := by
-  haveI : NeZero n := ⟨(Fact.out : Nat.Prime n).pos.ne'⟩
+  have : NeZero n := ⟨(Fact.out : Nat.Prime n).pos.ne'⟩
   have hx : x.val < 2^k := lt_of_lt_of_le (ZMod.val_lt x) Fact.out
   have hkk : (2 : ℕ)^(k + 1) = 2^k + 2^k := by rw [pow_succ]; ring
   have hpar : y.val % 2 ≤ 1 := by omega

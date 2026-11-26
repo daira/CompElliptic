@@ -63,8 +63,8 @@ theorem fpow_spec {F : Type*} [Monoid F] (a : F) (n : ℕ) : fpow a n = a^n := b
   | case2 a n ih =>
     rw [fpow, ih, ← pow_two, ← pow_mul]
     rcases Nat.mod_two_eq_zero_or_one (n+1) with h | h
-    · rw [if_neg (by omega), one_mul]; congr 1; omega
-    · rw [if_pos h, ← pow_succ']; congr 1; omega
+    · rw [ite_eq_right (by omega), one_mul]; congr 1; omega
+    · rw [ite_eq_left h, ← pow_succ']; congr 1; omega
 
 /-- `iterSq c k = c^(2^k)`, by squaring `k` times. -/
 def iterSq {F : Type*} [Monoid F] (c : F) : ℕ → F
@@ -112,7 +112,7 @@ theorem leastPow2Order.go_spec {F : Type*} [Monoid F] [DecidableEq F] :
         · exact ⟨j, by omega, by rw [hconv]; exact hbj⟩
       obtain ⟨j'', hj'', hgo, hbj'', hmin⟩ := ih (k+1) (b2k * b2k) hex'
       refine ⟨j'' + 1, by omega, ?_, ?_, ?_⟩
-      · rw [leastPow2Order.go, if_neg hb1, hgo]; omega
+      · rw [leastPow2Order.go, ite_eq_right hb1, hgo]; omega
       · rw [← hconv]; exact hbj''
       · intro i hi
         obtain _ | i := i
@@ -161,7 +161,7 @@ structure IsValidTonelliShanks {F : Type*} [Field F] [Fintype F]
   primitivity certificate (`rootOfUnity^(2^(S-1)) ≠ 1 = rootOfUnity^(2^S)`); the exponentiation has
   a field-sized base, so this leg uses `native_decide`. -/
   rootOfUnity_order : orderOf rootOfUnity = 2^twoAdicity := by
-    haveI : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+    have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
     refine orderOf_eq_prime_pow (p := 2) ?_ ?_ <;> native_decide
 
 /-- The data Tonelli–Shanks needs for a field `F`: the 2-adic factorization
@@ -214,7 +214,7 @@ theorem loop_sound {F : Type*} [Field F] [DecidableEq F] (a : F) :
   | succ fuel ih =>
     intro x b c y hyf hx hb hc
     by_cases hb1 : b = 1
-    · simp only [loop, if_pos hb1]; rw [hx, hb1, mul_one]
+    · simp only [loop, ite_eq_left hb1]; rw [hx, hb1, mul_one]
     · obtain ⟨hk1, hky, hbk, hbk1⟩ := leastPow2Order_spec b y hb1 hb
       have hy2 : 2 ≤ y := by omega
       set k := leastPow2Order b y with hkdef
@@ -252,7 +252,7 @@ theorem loop_sound {F : Type*} [Field F] [DecidableEq F] (a : F) :
             Nat.gcd_eq_right (pow_dvd_pow 2 (by omega : y - k ≤ y)),
             Nat.pow_div (by omega : y - k ≤ y) (by norm_num), show y - (y - k) = k from by omega]
       have hkf : k ≤ fuel := by omega
-      simp only [loop, if_neg hb1]
+      simp only [loop, ite_eq_right hb1]
       exact ih (x*w) (b * (w*w)) (w*w) k hkf hnewx hnewb hnewc
 
 /-- Tonelli–Shanks square root. Returns `some r` with `r*r = a` when `a` is a square in `F`, and

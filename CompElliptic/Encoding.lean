@@ -4,7 +4,7 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import Mathlib.Logic.Denumerable
+import Mathlib.Basic.Denumerable
 
 /-!
 # Encodings
@@ -228,7 +228,7 @@ def encodingEquiv (e : E) : G ≃ Canonical e where
 /-- Check whether a raw depiction is decodable. -/
 def checkDecodable {e : E} (r : Raw e) : Option (Decodable e) :=
   match h : EncodingClass.decode e r.depiction with
-  | some _ => some ⟨⟨r.depiction, by simp only [decodableSet, Set.mem_setOf_eq, h, Option.isSome_some]⟩⟩
+  | some _ => some ⟨⟨r.depiction, by simp only [decodableSet, Set.mem_ofPred_eq, h, Option.isSome_some]⟩⟩
   | none => none
 
 /-- Check whether a raw depiction is canonical (decodes *and* re-encodes to itself). -/

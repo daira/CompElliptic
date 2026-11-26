@@ -52,6 +52,7 @@ def isoCurve : SWCurve PallasBaseField where
   B_nonzero := by decide
 
 /-- The degree-3 isogeny iso-Pallas → Pallas, as its Vélu derivation. -/
+@[implicit_reducible]
 def iso : ThreeIsogeny PallasBaseField where
   domain := isoCurve
   codomain := curve
@@ -166,6 +167,7 @@ def isoCurve : SWCurve VestaBaseField where
   B_nonzero := by decide
 
 /-- The degree-3 isogeny iso-Vesta → Vesta, as its Vélu derivation. -/
+@[implicit_reducible]
 def iso : ThreeIsogeny VestaBaseField where
   domain := isoCurve
   codomain := curve

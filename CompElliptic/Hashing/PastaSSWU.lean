@@ -233,7 +233,7 @@ theorem weilBounded_zeroRepaired_mapToCurve
     funext u
     rcases eq_or_ne u 0 with rfl | hu
     · exact ((congrArg (AddMonoidHom.mk' iso.map iso_map_add)
-        (if_pos rfl)).trans (map_zero _)).trans (if_pos rfl).symm
+        (ite_eq_left rfl)).trans (map_zero _)).trans (ite_eq_left rfl).symm
     · simp [zeroRepaired, hu, mapToCurve]
   rw [← hfun]
   exact hcomp
@@ -473,7 +473,7 @@ theorem weilBounded_zeroRepaired_mapToCurve
     funext u
     rcases eq_or_ne u 0 with rfl | hu
     · exact ((congrArg (AddMonoidHom.mk' iso.map iso_map_add)
-        (if_pos rfl)).trans (map_zero _)).trans (if_pos rfl).symm
+        (ite_eq_left rfl)).trans (map_zero _)).trans (ite_eq_left rfl).symm
     · simp [zeroRepaired, hu, mapToCurve]
   rw [← hfun]
   exact hcomp

@@ -474,9 +474,9 @@ private theorem RA_scatterStep {a : Array PM} {b : Array PVes} (h : RA a b) {t :
     RA (PM.scatterStep a t) (MsmProj.pscatterStep b (t.1, toPVesM t.2)) := by
   simp only [PM.scatterStep, MsmProj.pscatterStep]
   by_cases h0 : t.1 = 0
-  · rw [if_pos h0, if_pos h0]
+  · rw [ite_eq_left h0, ite_eq_left h0]
     exact h
-  · rw [if_neg h0, if_neg h0]
+  · rw [ite_eq_right h0, ite_eq_right h0]
     exact h.modify _ (fun _ _ hpn => RM_padd hpn (RM_self ht))
 
 private theorem RA_bucketScatter (base : ℕ) (dp : List (ℕ × PM)) (h : ∀ t ∈ dp, WFP t.2) :

@@ -168,13 +168,13 @@ end AliasedOwner
 namespace ComputableSafety
 
 /-! The `assert_computable` declaration checks. `unsafe` lifts the termination check, so the
-reduction below inhabits `False` by bare self-reference while computing nothing — and it is a
+reduction below inhabits `Empty` by bare self-reference while computing nothing — and it is a
 `.defnInfo` that is not `noncomputable`, so the kind and computability checks both pass it. Only
 the definition-safety check rejects it. The kernel independently refuses to let a safe declaration
 depend on an unsafe one, so what the check has to catch is a reduction no safe proof consumes:
 precisely a deliverable endpoint, which the census pins directly for that same reason. -/
 
-unsafe def unsafeReduction : False := unsafeReduction
+unsafe def unsafeReduction : Empty := unsafeReduction
 
 /-- error: MetaCheck.AxiomCheck.ComputableSafety.unsafeReduction is marked unsafe -/
 #guard_msgs (whitespace := lax) in

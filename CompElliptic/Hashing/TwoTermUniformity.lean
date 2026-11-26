@@ -121,9 +121,9 @@ theorem sum_addChar_apply (a : G) :
   rw [Finset.sum_congr rfl fun ψ _ => (AddChar.doubleDualEmb_apply a ψ).symm,
     AddChar.sum_eq_ite]
   by_cases ha : a = 0
-  · rw [if_pos (by rw [ha]; exact map_zero _), if_pos ha, AddChar.card_eq]
-  · rw [if_neg (fun h0 => ha (AddChar.doubleDualEmb_injective
-      (h0.trans (map_zero _).symm))), if_neg ha]
+  · rw [ite_eq_left (by rw [ha]; exact map_zero _), ite_eq_left ha, AddChar.card_eq]
+  · rw [ite_eq_right (fun h0 => ha (AddChar.doubleDualEmb_injective
+      (h0.trans (map_zero _).symm))), ite_eq_right ha]
 
 /-- **The Fourier expansion of the pair count.** The distribution of a sum of two
 independent variables is a convolution, and convolution in the signal domain is
@@ -218,7 +218,7 @@ theorem card_mul_sum_sq_pairCount (f : F → G) :
           refine Finset.sum_congr rfl fun ψ _ => ?_
           simp_rw [mul_ite, mul_zero]
           rw [Finset.sum_ite_eq' univ ψ]
-          simp only [mem_univ, if_true]
+          simp only [mem_univ, ite_true]
           ring
   -- Take the identity down to `ℝ`.
   have cast_lhs : (Fintype.card G : ℂ)^2 * ∑ Q, (pairCount f Q : ℂ)^2
