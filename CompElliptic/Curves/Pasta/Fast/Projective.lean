@@ -4,7 +4,9 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Gregor Mitscha-Baude
 -/
-import CompElliptic.Curves.Pasta
+module
+
+public import CompElliptic.Curves.Pasta
 
 /-!
 # Projective (Renes–Costello–Batina) point arithmetic for Vesta
@@ -25,6 +27,8 @@ Specialized to `a = 0`, `b = 5`, `b3 = 15`, the closed forms are
 The `Fast` interfaces are provisional: they are not guaranteed to remain public, and
 may be folded into the existing API or otherwise changed incompatibly.
 -/
+
+@[expose] public section
 
 open CompElliptic
 open CompElliptic.CurveForms.ShortWeierstrass
@@ -554,20 +558,20 @@ fused mul-mod, and `padd_eq_paddFast` is the proven equality — the proven coun
 
 /-- The Vesta base-field order, the modulus of the raw-`ℕ` fast path (reducible so `ZMod qv`
 unifies with `Fq`). -/
-private abbrev qv : ℕ := CompElliptic.Fields.Pasta.PALLAS_SCALAR_CARD
+abbrev qv : ℕ := CompElliptic.Fields.Pasta.PALLAS_SCALAR_CARD
 
 private theorem qv_pos : 0 < qv := by decide
 
 private instance : NeZero qv := ⟨qv_pos.ne'⟩
 
 /-- Fused modular addition on canonical representatives. -/
-@[inline] private def fadd (a b : ℕ) : ℕ := (a + b) % qv
+@[inline] def fadd (a b : ℕ) : ℕ := (a + b) % qv
 
 /-- Fused modular multiplication: one GMP multiply, one GMP mod. -/
-@[inline] private def fmul (a b : ℕ) : ℕ := (a * b) % qv
+@[inline] def fmul (a b : ℕ) : ℕ := (a * b) % qv
 
 /-- Modular subtraction without hypotheses: `a + (q − b mod q) ≡ a − b`. -/
-@[inline] private def fsub (a b : ℕ) : ℕ := (a + (qv - b % qv)) % qv
+@[inline] def fsub (a b : ℕ) : ℕ := (a + (qv - b % qv)) % qv
 
 private theorem cast_fadd (a b : ℕ) : ((fadd a b : ℕ) : Fq) = (a : Fq) + (b : Fq) := by
   rw [fadd, ZMod.natCast_mod, Nat.cast_add]

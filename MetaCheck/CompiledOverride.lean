@@ -4,7 +4,9 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood, Tal Derei
 -/
-import CompElliptic.Meta.AxiomCheck
+module
+
+public import CompElliptic.Meta.AxiomCheck
 
 /-!
 # Regression tests for the compiled-body-override checks
@@ -25,6 +27,8 @@ is exactly the third case below but would swamp the unrelated entries of the sib
 The order of this file is therefore load-bearing: the clean entries come first, while the module
 still has nothing to report.
 -/
+
+@[expose] public section
 
 namespace MetaCheck.CompiledOverride
 

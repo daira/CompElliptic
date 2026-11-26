@@ -21,9 +21,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # One-or-more whitespace after `import` (not exactly one space), and optional
-# `public`/`meta` modifiers, so spacing variants and module-system prefixes
+# `public`/`meta`/`all` modifiers, so spacing variants and module-system prefixes
 # cannot slip a banned umbrella past the anchor.
-violations=$(git ls-files '*.lean' | xargs grep -nE '^(public[[:space:]]+)?(meta[[:space:]]+)?import[[:space:]]+Mathlib(\.Tactic)?([[:space:]]|$)' || true)
+violations=$(git ls-files '*.lean' | xargs grep -nE '^(public[[:space:]]+)?(meta[[:space:]]+)?import[[:space:]]+(all[[:space:]]+)?Mathlib(\.Tactic)?([[:space:]]|$)' || true)
 
 if [ -n "$violations" ]; then
   echo "::error::bare 'import Mathlib' / 'import Mathlib.Tactic' umbrella imports are not allowed; import the specific Mathlib modules instead (see scripts/check_no_umbrella_imports.sh):"

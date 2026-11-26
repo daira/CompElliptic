@@ -4,9 +4,11 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.CurveOrder
-import CompElliptic.Isogenies.ThreeIsogeny
-import CompElliptic.Isogenies.VeluCertificates
+module
+
+public import CompElliptic.CurveOrder
+public import CompElliptic.Isogenies.ThreeIsogeny
+public import CompElliptic.Isogenies.VeluCertificates
 
 /-!
 # The homomorphism property of the 3-isogeny
@@ -31,6 +33,8 @@ rational 2-torsion needs a point with `y = 0`, which `hc` already excludes
 (`map_add`, through `eq_zero_of_two_nsmul_eq_zero`). Negation-compatibility
 (`map_neg`) carries the sentinel cases.
 -/
+
+@[expose] public section
 
 open CompElliptic.CurveForms.ShortWeierstrass CompElliptic.CurveOrder
 

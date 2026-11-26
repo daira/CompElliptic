@@ -4,9 +4,11 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
-import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
-import CompElliptic.CoordinateSystem
+module
+
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
+public import CompElliptic.CoordinateSystem
 
 /-!
 # Short-Weierstrass elliptic curves
@@ -31,6 +33,8 @@ The field assumption is a generic `[Field F]`: `SWCurve.IsElliptic` excludes cha
 (`sw_Δ = 0` there), so binary fields are gracefully excluded, but without precluding any future
 separate binary-field curve form. See `TODO.md`.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.CurveForms.ShortWeierstrass
 

@@ -4,15 +4,21 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Curves.PastaOrder
-import CompElliptic.Hashing.PastaSSWU
-import CompElliptic.Hashing.TwoTermUniformity
-import CompElliptic.Hashing.WeilSupport
-import CompElliptic.Curves.Pasta.Fast.Projective
-import CompElliptic.Curves.Pasta.Fast.Msm
-import CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv
-import CompElliptic.Fields.Sqrt
-import CompElliptic.Meta.AxiomCheck
+module
+
+public import CompElliptic.Curves.PastaOrder
+public import CompElliptic.Hashing.PastaSSWU
+public import CompElliptic.Hashing.TwoTermUniformity
+public import CompElliptic.Hashing.WeilSupport
+public import CompElliptic.Curves.Pasta.Fast.Projective
+public import CompElliptic.Curves.Pasta.Fast.Msm
+public import CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv
+public import CompElliptic.Fields.Sqrt
+public import CompElliptic.Meta.AxiomCheck
+-- The modules owning `native_decide` certificates: their auxiliary axioms are private, and
+-- `+native` checks where each was emitted, so the census needs their private declaration ranges.
+import all CompElliptic.Fields.Pasta
+import all CompElliptic.Curves.PastaOrder
 
 /-!
 # Trust boundary, build-checked
@@ -42,6 +48,8 @@ census therefore stays green across toolchain bumps while still catching any tie
 it states exactly which native certificates each entry trusts: a new certificate entering a cone,
 or a stale owner list, fails the build with the list to write.
 -/
+
+@[expose] public section
 
 open CompElliptic.Meta
 

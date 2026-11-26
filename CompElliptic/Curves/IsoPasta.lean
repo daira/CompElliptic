@@ -4,8 +4,10 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Curves.Pasta
-import CompElliptic.Isogenies.ThreeIsogeny
+module
+
+public import CompElliptic.Curves.Pasta
+public import CompElliptic.Isogenies.ThreeIsogeny
 
 /-!
 # The iso-Pasta curves and their isogenies to Pallas and Vesta
@@ -35,6 +37,8 @@ Each isogeny is stated twice here, and that is the point of the design:
   on rational points, landing on the target curve, oddness — then apply to the
   deployed constants; `onCurve_iso_map` states the on-curve consequence directly.
 -/
+
+@[expose] public section
 
 open CompElliptic.CurveForms.ShortWeierstrass CompElliptic.Fields.Pasta
 open CompElliptic.Isogenies

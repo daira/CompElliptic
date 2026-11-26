@@ -4,8 +4,10 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Curves.Pasta
-import CompElliptic.Encodings.Common
+module
+
+public import CompElliptic.Curves.Pasta
+public import CompElliptic.Encodings.Common
 
 /-!
 # Encodings of Pasta curve points
@@ -24,6 +26,8 @@ bit/byte primitives (`I2LEBSP` / `LEBS2OSP`) come next.
 Note on naming: the spec's `repr_P` outputs a *bit* sequence (`𝔹^[ℓ]`); our encoding outputs
 *bytes* (`Vector UInt8 32`), a different type, so we deliberately do **not** call it `repr`.
 -/
+
+@[expose] public section
 
 namespace CompElliptic
 

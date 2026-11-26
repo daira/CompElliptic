@@ -4,9 +4,11 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Hashing.WellDistributed
-import Mathlib.Analysis.Fourier.FiniteAbelian.PontryaginDuality
-import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+module
+
+public import CompElliptic.Hashing.WellDistributed
+public import Mathlib.Analysis.Fourier.FiniteAbelian.PontryaginDuality
+public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
 # Two-term hash uniformity from character sums
@@ -77,6 +79,8 @@ type into a finite abelian group; oddness of the mapping and the elliptic curve
 itself play no role in this file (they enter upstream, in `CharacterSum.lean`,
 where the Weil-bound hypothesis is connected to the sign-free geometry).
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Hashing
 
@@ -373,7 +377,6 @@ theorem sq_sum_abs_prob_dev_le [Nonempty F] (f : F → G) {C : ℝ}
         gcongr
     _ = ((Fintype.card G : ℝ) - 1) * C^4
           * ((Fintype.card G : ℝ) * (Fintype.card F : ℝ)^2)^2 := by ring
-
 
 /-! ## Exports for the indifferentiability arc
 

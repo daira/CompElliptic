@@ -3,8 +3,10 @@ Copyright (c) 2026 CompPoly Contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Gregor Mitscha-Baude
 -/
-import CompElliptic.Vendor.CompPoly.Montgomery.Basic
-import CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs
+module
+
+public import CompElliptic.Vendor.CompPoly.Montgomery.Basic
+public import CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs
 
 /-!
 # Eight-limb Montgomery arithmetic: correctness of the raw operations
@@ -12,6 +14,8 @@ import CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs
 Vendored from CompPoly branch `fast_multilimb_fields`; see `README.md` in this directory.
 The runtime definitions live in `CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs`.
 -/
+
+@[expose] public section
 
 namespace Montgomery
 

@@ -4,7 +4,9 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Gregor Mitscha-Baude
 -/
-import CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs
+module
+
+public import CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs
 
 /-!
 # Vesta projective point arithmetic over Montgomery limbs: runtime definitions (core-only)
@@ -18,6 +20,8 @@ to compute its `𝔽_q`-valued counterpart in `CompElliptic.Curves.Pasta.Fast.Pr
 The `Fast` interfaces are provisional: they are not guaranteed to remain public, and
 may be folded into the existing API or otherwise changed incompatibly.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Curves.Pasta.Fast.ProjectiveMont
 

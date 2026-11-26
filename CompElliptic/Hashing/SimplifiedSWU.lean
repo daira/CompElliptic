@@ -4,9 +4,11 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Hashing.SignedLift
-import CompElliptic.Fields.Sqrt
-import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
+module
+
+public import CompElliptic.Hashing.SignedLift
+public import CompElliptic.Fields.Sqrt
+public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 
 /-!
 # The simplified SWU mapping
@@ -80,6 +82,8 @@ original parameters of the literature —the simplified SWU of Brier et al.
 are strictly narrower than what is mathematically necessary, and no proof in
 this development depends on them.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Hashing
 

@@ -4,9 +4,11 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import Mathlib.Algebra.Group.Defs
-import Mathlib.Algebra.Group.Basic
-import CompElliptic.ScalarMul
+module
+
+public import Mathlib.Algebra.Group.Defs
+public import Mathlib.Algebra.Group.Basic
+public import CompElliptic.ScalarMul
 
 /-!
 # Coordinate systems
@@ -28,6 +30,8 @@ a "represented group" in the sense of the
 that names a group with a bit-sequence `repr` / `abst` encoding, a separate abstraction. See
 `../README.md` and `design/naming-survey.md`.
 -/
+
+@[expose] public section
 
 namespace CompElliptic
 

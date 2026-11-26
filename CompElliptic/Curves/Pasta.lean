@@ -4,10 +4,14 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.CurveForms.ShortWeierstrass
-import CompElliptic.Fields.Pasta
-import CompElliptic.Fields.Residue
-import Mathlib.NumberTheory.LegendreSymbol.Basic
+module
+
+public import CompElliptic.CurveForms.ShortWeierstrass
+public import CompElliptic.Fields.Pasta
+public import CompElliptic.Fields.Residue
+public import Mathlib.NumberTheory.LegendreSymbol.Basic
+public meta import CompElliptic.Fields.Pasta
+public meta import CompElliptic.CurveForms.ShortWeierstrass
 
 /-!
 # The Pasta curves as short-Weierstrass elliptic curves
@@ -20,6 +24,8 @@ exercising the raw computable kernel.
 Sanity checks use `native_decide` (compiler-trusted): they exercise the *definitions*
 computationally and are independent of the soundness theorems to come.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Curves.Pasta
 

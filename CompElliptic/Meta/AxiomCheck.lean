@@ -4,13 +4,16 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood, Tal Derei
 -/
-import Lean.Util.CollectAxioms
-import Lean.Elab.Command
-import Lean.DeclarationRange
-import Lean.Compiler.ImplementedByAttr
-import Lean.Compiler.ExternAttr
-import Lean.Compiler.CSimpAttr
-import Mathlib.Util.AssertNoSorry
+module
+
+public meta import Lean.Util.CollectAxioms
+public meta import Lean.Elab.Command
+public meta import Lean.DeclarationRange
+public meta import Lean.Compiler.ImplementedByAttr
+public meta import Lean.Compiler.ExternAttr
+public meta import Lean.Compiler.CSimpAttr
+public meta import Lean.Compiler.NoncomputableAttr
+public import Mathlib.Util.AssertNoSorry
 
 /-!
 # `assert_axioms` and `assert_computable` — concise, build-checked trust assertions
@@ -45,6 +48,8 @@ at all — the assertion then reads as covering one theorem while checking anoth
 These commands are also used in ironwood (`Zcash/Meta/AxiomCheck.lean`); changes here should be
 reflected there and vice versa.
 -/
+
+public meta section
 
 open Lean Elab Command
 
@@ -168,7 +173,8 @@ def checkCompiledBodyDisclosure (n : Ident) : CommandElabM Unit := do
 /-- The declaration an alleged `native_decide` axiom names as its owner. The compiler-generated
 name has an `_native.native_decide` marker after the owning declaration; only the tail after that
 marker is toolchain-dependent. Taking the last marker also handles an owner whose own name contains
-those components. -/
+those components. In a module the auxiliary is private, so the name is read without its private
+prefix. -/
 def nativeAxiomOwner? (ax : Name) : Option Name :=
   let rec go (prefixRev rest : List Name) (ownerRev? : Option (List Name)) : Option Name :=
     match rest with
@@ -177,7 +183,7 @@ def nativeAxiomOwner? (ax : Name) : Option Name :=
       go (a :: prefixRev) (b :: tail) ownerRev?
     | _ => ownerRev?.map fun ownerRev =>
       ownerRev.reverse.foldl Name.append Name.anonymous
-  go [] ax.components none
+  go [] (privateToUserName ax).components none
 
 /-- A syntactically plausible `native_decide` auxiliary axiom. `checkNativeAllowance` additionally
 checks its owner, dependency, module, and source range before permitting it. -/

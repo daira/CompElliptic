@@ -4,9 +4,11 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.CurveForms.ShortWeierstrass
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.FieldSimp
+module
+
+public import CompElliptic.CurveForms.ShortWeierstrass
+public import Mathlib.Tactic.LinearCombination
+public import Mathlib.Tactic.FieldSimp
 
 /-!
 # Degree-3 isogenies from Vélu's formulae
@@ -71,6 +73,8 @@ injectivity to a bijection on rational points (`map_bijective`).
   states Vélu's formulae in the Weierstrass form used here (section 25.1.1), and
   section 25.1 notes that an isogeny is automatically a group homomorphism.
 -/
+
+@[expose] public section
 
 open CompElliptic.CurveForms.ShortWeierstrass
 
@@ -209,7 +213,6 @@ theorem no_y_zero_of_codomain
   have himg := I.onCurve_mapXY h
   have hy : (I.mapXY x 0).2 = 0 := by simp [mapXY]
   exact hc (I.mapXY x 0).1 (hy ▸ himg)
-
 
 /- The collision identity behind `abscissa_inj` was derived, and its cofactors computed,
 with this Sage script:

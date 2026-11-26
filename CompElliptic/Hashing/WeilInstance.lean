@@ -4,8 +4,10 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Hashing.BranchCovers
-import CompElliptic.Hashing.WellDistributed
+module
+
+public import CompElliptic.Hashing.BranchCovers
+public import CompElliptic.Hashing.WellDistributed
 
 /-!
 # The Weil input at the branch covers
@@ -56,6 +58,8 @@ that is, `WeilBounded (zeroRepaired G.map) (c + 1/2)`, on any field with
 has no 2-torsion, and the sign function is genuine. The deployed
 instantiations take `c = 10`, so `21/2` and `#F ≥ 44`.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Hashing
 

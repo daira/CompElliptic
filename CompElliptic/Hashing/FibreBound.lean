@@ -4,9 +4,11 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Hashing.SimplifiedSWU
-import Mathlib.Algebra.Polynomial.Roots
-import Mathlib.Tactic.ComputeDegree
+module
+
+public import CompElliptic.Hashing.SimplifiedSWU
+public import Mathlib.Algebra.Polynomial.Roots
+public import Mathlib.Tactic.ComputeDegree
 
 /-!
 # Fibre bounds for the simplified SWU mapping
@@ -42,6 +44,8 @@ quadratic in `t`, and oddness pairs `±u` across `P` and `-P` (which are
 distinct — the target curves have no 2-torsion), so each `t` contributes one
 preimage. Tightening to that constant is a planned follow-up.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Hashing
 

@@ -4,9 +4,11 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Gregor Mitscha-Baude
 -/
-import CompElliptic.Curves.Pasta.Fast.ProjectiveMontDefs
-import CompElliptic.Vendor.CompPoly.Montgomery.Pasta
-import CompElliptic.Curves.Pasta.Fast.MsmProj
+module
+
+public import CompElliptic.Curves.Pasta.Fast.ProjectiveMontDefs
+public import CompElliptic.Vendor.CompPoly.Montgomery.Pasta
+public import CompElliptic.Curves.Pasta.Fast.MsmProj
 
 /-!
 # The Montgomery kernel is the proven projective arithmetic
@@ -35,6 +37,8 @@ The `Fast` interfaces are provisional: they are not guaranteed to remain public,
 may be folded into the existing API or otherwise changed incompatibly.
 -/
 
+@[expose] public section
+
 namespace CompElliptic.Curves.Pasta.Fast.ProjectiveMont
 
 open Montgomery.Native64x8
@@ -59,7 +63,7 @@ def WF (x : Limbs8) : Prop := x.Bounded ∧ x.toNat < PALLAS_SCALAR_CARD
 def montVal (x : Limbs8) : Fq := (x.toNat : Fq) * ((2 ^ 256 : ℕ) : Fq)⁻¹
 
 /-- A well-formed residue, packaged as an element of the proven fast field. -/
-private def toFF (x : Limbs8) (h : WF x) : FastField PALLAS_SCALAR_CARD := ⟨x, h⟩
+def toFF (x : Limbs8) (h : WF x) : FastField PALLAS_SCALAR_CARD := ⟨x, h⟩
 
 theorem montVal_eq_toField {x : Limbs8} (h : WF x) :
     montVal x = FastField.toField (toFF x h) := by

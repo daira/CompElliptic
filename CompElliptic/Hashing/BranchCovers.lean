@@ -4,7 +4,9 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Hashing.FibreBound
+module
+
+public import CompElliptic.Hashing.FibreBound
 
 /-!
 # The branch covers of the simplified SWU mapping
@@ -59,6 +61,8 @@ On the parameter range the derivation targets (`-A·B` a nonsquare, which
 holds at the deployed instantiations) the points at infinity genuinely map
 to `𝒪`. The correspondence theorems carry that hypothesis.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Hashing
 

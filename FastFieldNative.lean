@@ -4,8 +4,10 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Gregor Mitscha-Baude
 -/
-import CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs
-import CompElliptic.Curves.Pasta.Fast.ProjectiveMontDefs
+module
+
+public import CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Defs
+public import CompElliptic.Curves.Pasta.Fast.ProjectiveMontDefs
 
 /-!
 # The precompiled native lane

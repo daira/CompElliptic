@@ -4,7 +4,9 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
+module
+
+public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 
 /-!
 # Character sums of odd mappings
@@ -42,6 +44,8 @@ mapping's covering curve, stated as an explicit hypothesis with full references 
 `CompElliptic.Hashing.WellDistributed`. This file isolates the elementary reduction
 that removes the sign convention from the problem.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Hashing
 

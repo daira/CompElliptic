@@ -4,8 +4,10 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Gregor Mitscha-Baude
 -/
-import CompElliptic.Curves.Pasta.Fast.Msm
-import CompElliptic.Curves.Pasta.Fast.Projective
+module
+
+public import CompElliptic.Curves.Pasta.Fast.Msm
+public import CompElliptic.Curves.Pasta.Fast.Projective
 
 /-!
 # The windowed Pippenger MSM run entirely in projective coordinates
@@ -23,6 +25,8 @@ version and shown to commute with `toAffine`, carrying `Valid` through every int
 The `Fast` interfaces are provisional: they are not guaranteed to remain public, and
 may be folded into the existing API or otherwise changed incompatibly.
 -/
+
+@[expose] public section
 
 open CompElliptic.Curves.Pasta.Fast
 open CompElliptic.Curves.Pasta.Fast.Msm (Fp)

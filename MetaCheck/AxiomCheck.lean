@@ -4,7 +4,9 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood, Tal Derei
 -/
-import CompElliptic.Meta.AxiomCheck
+module
+
+public import CompElliptic.Meta.AxiomCheck
 
 /-!
 # Regression tests for `CompElliptic.Meta.AxiomCheck`
@@ -15,6 +17,8 @@ Two rejection families. The native-axiom provenance cases deliberately impersona
 pin the declaration checks that stand behind "the reduction data is genuinely computed". Both live
 in this test-only library so the production `CompElliptic` library never imports them.
 -/
+
+@[expose] public section
 
 namespace MetaCheck.AxiomCheck
 

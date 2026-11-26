@@ -4,7 +4,9 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import Mathlib.Basic.Denumerable
+module
+
+public import Mathlib.Basic.Denumerable
 
 /-!
 # Encodings
@@ -69,6 +71,8 @@ With `D = ℕ`, `toEncodable` witnesses that a `LenientEncoding` refines `Encoda
 is no `Denumerable` analogue: that needs `G` infinite, whereas cryptographic objects are
 almost always finite.)
 -/
+
+@[expose] public section
 
 namespace CompElliptic
 

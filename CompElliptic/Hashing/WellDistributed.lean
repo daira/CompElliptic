@@ -4,7 +4,9 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Hashing.CharacterSum
+module
+
+public import CompElliptic.Hashing.CharacterSum
 
 /-!
 # Well-distributed mappings and the Weil bound as an external input
@@ -115,6 +117,8 @@ is the elementary, orthogonality-only content of `CharacterSum.lean`.
   `Hashing/WeilSupport.lean`). Separately, `WeilBounded` itself is an
   external input to the formalization.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Hashing
 

@@ -4,7 +4,9 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompPoly.Fields.Secp256k1
+module
+
+public import CompPoly.Fields.Secp256k1
 
 /-!
 # CompElliptic
@@ -16,6 +18,8 @@ This module is currently only a build smoke test: it confirms that the toolchain
 and that CompPoly's computable prime-field machinery — the template we will follow for the
 Pasta base/scalar fields — is usable here.
 -/
+
+@[expose] public section
 
 namespace CompElliptic
 

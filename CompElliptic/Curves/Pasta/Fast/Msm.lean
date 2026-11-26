@@ -4,8 +4,10 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Gregor Mitscha-Baude
 -/
-import Mathlib.Data.List.GetD
-import CompElliptic.Fields.Pasta
+module
+
+public import Mathlib.Data.List.GetD
+public import CompElliptic.Fields.Pasta
 
 /-!
 # Windowed Pippenger multi-scalar multiplication, proven equal to the naive MSM
@@ -28,6 +30,8 @@ weighted bucket sum (`naiveWindow_eq_buckets`, `foldr_accStep`), and `hornerList
 The `Fast` interfaces are provisional: they are not guaranteed to remain public, and
 may be folded into the existing API or otherwise changed incompatibly.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Curves.Pasta.Fast.Msm
 

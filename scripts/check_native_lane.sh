@@ -38,7 +38,8 @@ for f in "${LANE[@]}"; do
     done
     echo "VIOLATION: $f imports $mod, which is outside the core-only lane" >&2
     status=1
-  done < <(grep -E '^import ' "$f" || true)
+  done < <(grep -E '^(public[[:space:]]+)?(meta[[:space:]]+)?import[[:space:]]' "$f" |
+    sed -E 's/^(public[[:space:]]+)?(meta[[:space:]]+)?import[[:space:]]+(all[[:space:]]+)?/import /' || true)
 done
 
 if [[ $status -eq 0 ]]; then

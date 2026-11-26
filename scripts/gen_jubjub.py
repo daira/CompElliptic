@@ -31,7 +31,10 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompPoly.Fields.PrattCertificate
+module
+
+public import CompPoly.Fields.PrattCertificate
+public import Mathlib.Algebra.Field.ZMod
 
 /-!
 # The Jubjub scalar prime field
@@ -43,6 +46,8 @@ certificate, following the pattern of `CompElliptic.Fields.Pasta`; the certifica
 `scripts/gen_jubjub.py` from the factorization of `ℓ - 1` (PARI/GP). The Jubjub curve itself and its
 base field (the BLS12-381 scalar field) are not defined here.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Fields.Jubjub
 """

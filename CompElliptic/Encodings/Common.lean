@@ -4,9 +4,11 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import Mathlib.Data.Vector.Defs
-import Mathlib.Data.Nat.Digits.Defs
-import Mathlib.Data.ZMod.Basic
+module
+
+public import Mathlib.Data.Vector.Defs
+public import Mathlib.Data.Nat.Digits.Defs
+public import Mathlib.Data.ZMod.Basic
 
 /-!
 # Common encoding primitives (integers, bit sequences, and endianness)
@@ -26,6 +28,8 @@ So far: `I2LEOSP` (integer → little-endian octet string). The little-endian bi
 conversions (`I2LEBSP`, `LEBS2IP`) and the bit↔byte bridges (`LEBS2OSP`, `LEOS2BSP`) will join
 it here as the decode direction (`abst`) is built out.
 -/
+
+@[expose] public section
 
 namespace CompElliptic
 

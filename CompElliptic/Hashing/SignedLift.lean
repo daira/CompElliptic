@@ -4,10 +4,12 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Hashing.CharacterSum
-import CompElliptic.CurveForms.ShortWeierstrass
-import Mathlib.Analysis.Normed.Ring.Finite
-import Mathlib.Data.ZMod.Basic
+module
+
+public import CompElliptic.Hashing.CharacterSum
+public import CompElliptic.CurveForms.ShortWeierstrass
+public import Mathlib.Analysis.Normed.Ring.Finite
+public import Mathlib.Data.ZMod.Basic
 
 /-!
 # The signed lift, and why hash-to-curve mappings are odd
@@ -44,6 +46,8 @@ whose signed lift is the mapping itself (`SSWUParams.map_eq_signedLift`).
 `Hashing/PastaSSWU.lean` composes it with the isogenies as the deployed
 `mapToCurve`.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Hashing
 
