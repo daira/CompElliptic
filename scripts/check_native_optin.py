@@ -107,7 +107,7 @@ files = sorted(p for p in Path(".").glob("*.lean") if p.name != "lakefile.lean")
     + sorted(Path("CompElliptic").rglob("*.lean"))
 imports = {}
 for f in files:
-    mods = re.findall(r"^import\s+([A-Za-z0-9_.]+)", f.read_text(), re.M)
+    mods = re.findall(r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?([A-Za-z0-9_.]+)", f.read_text(), re.M)
     imports[module_name(f)] = set(mods)
 
 # Modules whose import closure reaches the lane.

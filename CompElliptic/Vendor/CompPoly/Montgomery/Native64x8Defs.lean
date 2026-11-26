@@ -3,6 +3,7 @@ Copyright (c) 2026 CompPoly Contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Gregor Mitscha-Baude
 -/
+module
 
 /-!
 # Eight-limb Montgomery arithmetic: runtime definitions (core-only)
@@ -19,6 +20,8 @@ All correctness statements about these definitions live in the sibling modules
 `CompElliptic.Vendor.CompPoly.Montgomery.Native64x8` (raw operations) and
 `CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Mul` (CIOS multiplication), which import this one.
 -/
+
+@[expose] public section
 
 namespace Montgomery
 

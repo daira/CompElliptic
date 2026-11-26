@@ -4,8 +4,10 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Gregor Mitscha-Baude
 -/
-import CompElliptic.Curves.Pasta.Fast.Msm
-import CompElliptic.Curves.Pasta.Fast.Projective
+module
+
+public import CompElliptic.Curves.Pasta.Fast.Msm
+public import CompElliptic.Curves.Pasta.Fast.Projective
 
 /-!
 # The windowed Pippenger MSM run entirely in projective coordinates
@@ -23,6 +25,8 @@ version and shown to commute with `toAffine`, carrying `Valid` through every int
 The `Fast` interfaces are provisional: they are not guaranteed to remain public, and
 may be folded into the existing API or otherwise changed incompatibly.
 -/
+
+@[expose] public section
 
 open CompElliptic.Curves.Pasta.Fast
 open CompElliptic.Curves.Pasta.Fast.Msm (Fp)
@@ -72,8 +76,8 @@ theorem pbucketOf_spec (dp : List (ℕ × PVes)) (b : ℕ) (h : ∀ p ∈ dp, Va
     rw [List.mem_filterMap] at hP
     obtain ⟨q, hq, hqeq⟩ := hP
     by_cases hc : q.1 = b
-    · rw [if_pos hc, Option.some.injEq] at hqeq; rw [← hqeq]; exact h q hq
-    · rw [if_neg hc] at hqeq; exact absurd hqeq (by simp)
+    · rw [ite_eq_left hc, Option.some.injEq] at hqeq; rw [← hqeq]; exact h q hq
+    · rw [ite_eq_right hc] at hqeq; exact absurd hqeq (by simp)
   obtain ⟨hv, heq⟩ := psum_spec _ hval
   refine ⟨hv, ?_⟩
   rw [pbucketOf, heq, Msm.bucketOf, List.filterMap_map, List.map_filterMap]
@@ -262,11 +266,11 @@ theorem getElem?_pscatterStep (a : Array PVes) (d : ℕ) (x : PVes) (k : ℕ) :
   unfold pscatterStep
   by_cases h0 : d = 0
   · subst h0
-    rw [if_pos rfl, if_neg (by omega)]
-  · rw [if_neg h0, Array.getElem?_modify]
+    rw [ite_eq_left rfl, ite_eq_right (by omega)]
+  · rw [ite_eq_right h0, Array.getElem?_modify]
     by_cases hdk : d = k + 1
-    · rw [if_pos (by omega), if_pos hdk]
-    · rw [if_neg (by omega), if_neg hdk]
+    · rw [ite_eq_left (by omega), ite_eq_left hdk]
+    · rw [ite_eq_right (by omega), ite_eq_right hdk]
 
 /-- **The scatter fold invariant, transported through `toAffine`.** Starting from a valid slot
 value `v`, slot `k` ends valid and reads — in `G` — as `toAffine v` plus the affine bucket sum
@@ -288,16 +292,16 @@ private theorem foldl_pscatterStep_spec (dp : List (ℕ × PVes)) (hdp : ∀ p �
     rw [List.foldl_cons]
     by_cases hdk : d = k + 1
     · have hv' : (pscatterStep a (d, x))[k]? = some (padd v x) := by
-        rw [getElem?_pscatterStep, if_pos hdk, hv, Option.map_some]
+        rw [getElem?_pscatterStep, ite_eq_left hdk, hv, Option.map_some]
       obtain ⟨w, hw, hwval, hweq⟩ :=
         ih hdp' (pscatterStep a (d, x)) k (padd v x) hv' (valid_padd hval hx)
       refine ⟨w, hw, hwval, ?_⟩
-      rw [hweq, toAffine_padd hval hx, List.map_cons, Msm.bucketOf_cons, if_pos hdk, _root_.add_assoc]
+      rw [hweq, toAffine_padd hval hx, List.map_cons, Msm.bucketOf_cons, ite_eq_left hdk, _root_.add_assoc]
     · have hv' : (pscatterStep a (d, x))[k]? = some v := by
-        rw [getElem?_pscatterStep, if_neg hdk, hv]
+        rw [getElem?_pscatterStep, ite_eq_right hdk, hv]
       obtain ⟨w, hw, hwval, hweq⟩ := ih hdp' (pscatterStep a (d, x)) k v hv' hval
       refine ⟨w, hw, hwval, ?_⟩
-      rw [hweq, List.map_cons, Msm.bucketOf_cons, if_neg hdk, _root_.zero_add]
+      rw [hweq, List.map_cons, Msm.bucketOf_cons, ite_eq_right hdk, _root_.zero_add]
 
 /-- **The scattered buckets are the affine bucket list, slotwise.** Every slot is valid, and
 `toAffine` maps the slot list to exactly the bucket list `Msm.windowValue` folds over. -/
@@ -313,7 +317,7 @@ theorem pbucketScatter_spec (base : ℕ) (dp : List (ℕ × PVes)) (hdp : ∀ p 
         toAffine w = Msm.bucketOf (dp.map fun t => (t.1, toAffine t.2)) (k + 1) := by
     intro k hk
     have hinit : (Array.replicate (base - 1) pid)[k]? = some pid := by
-      rw [Array.getElem?_replicate, if_pos hk]
+      rw [Array.getElem?_replicate, ite_eq_left hk]
     obtain ⟨w, hw, hwval, hweq⟩ :=
       foldl_pscatterStep_spec dp hdp (Array.replicate (base - 1) pid) k pid hinit valid_pid
     exact ⟨w, hw, hwval, by rw [hweq, toAffine_pid, _root_.zero_add]⟩

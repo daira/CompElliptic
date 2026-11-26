@@ -4,8 +4,10 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Gregor Mitscha-Baude
 -/
-import CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Field
-import CompElliptic.Fields.Pasta
+module
+
+public import CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Field
+public import CompElliptic.Fields.Pasta
 
 /-!
 # The Pasta base fields as fast eight-limb Montgomery fields
@@ -20,6 +22,8 @@ bridges directly into the `Fq` of `CompElliptic.Curves.Pasta.Fast.Projective`.
 Note the Pasta naming: `PALLAS_SCALAR_CARD` is the **Vesta base** field size and
 `PALLAS_BASE_CARD` is the **Vesta scalar** field size.
 -/
+
+@[expose] public section
 
 namespace Montgomery
 namespace Native64x8

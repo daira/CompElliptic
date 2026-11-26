@@ -4,9 +4,11 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Gregor Mitscha-Baude
 -/
-import Mathlib.FieldTheory.Finite.Basic
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.LinearCombination
+module
+
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.FieldSimp
+public import Mathlib.Tactic.LinearCombination
 
 /-!
 # Higher-power residues in a finite field
@@ -27,6 +29,8 @@ certificate for a depressed cubic, via Cardano's method. `Hashing/PastaSSWU.lean
 discharge RFC 9380's criterion 3 (irreducibility of `g(X) - Z`) for the deployed hash-to-curve
 parameters.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Fields
 

@@ -102,6 +102,7 @@ cd "$(dirname "$0")/.."
     }
     sub(/^public[ \t]+/, "", line)
     sub(/^meta[ \t]+/, "", line)
+    sub(/^import[ \t]+all[ \t]+/, "import ", line)
     if (line ~ /^import[ \t]+/) {
       split(line, parts, /[ \t]+/)
       adj[curmod] = adj[curmod] " " parts[2]

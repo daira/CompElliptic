@@ -4,15 +4,21 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Curves.PastaOrder
-import CompElliptic.Hashing.PastaSSWU
-import CompElliptic.Hashing.TwoTermUniformity
-import CompElliptic.Hashing.WeilSupport
-import CompElliptic.Curves.Pasta.Fast.Projective
-import CompElliptic.Curves.Pasta.Fast.Msm
-import CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv
-import CompElliptic.Fields.Sqrt
-import CompElliptic.Meta.AxiomCheck
+module
+
+public import CompElliptic.Curves.PastaOrder
+public import CompElliptic.Hashing.PastaSSWU
+public import CompElliptic.Hashing.TwoTermUniformity
+public import CompElliptic.Hashing.WeilSupport
+public import CompElliptic.Curves.Pasta.Fast.Projective
+public import CompElliptic.Curves.Pasta.Fast.Msm
+public import CompElliptic.Curves.Pasta.Fast.ProjectiveMontEquiv
+public import CompElliptic.Fields.Sqrt
+public import CompElliptic.Meta.AxiomCheck
+-- The modules owning `native_decide` certificates: their auxiliary axioms are private, and
+-- `+native` checks where each was emitted, so the census needs their private declaration ranges.
+import all CompElliptic.Fields.Pasta
+import all CompElliptic.Curves.PastaOrder
 
 /-!
 # Trust boundary, build-checked
@@ -42,6 +48,8 @@ census therefore stays green across toolchain bumps while still catching any tie
 it states exactly which native certificates each entry trusts: a new certificate entering a cone,
 or a stale owner list, fails the build with the list to write.
 -/
+
+@[expose] public section
 
 open CompElliptic.Meta
 
@@ -154,15 +162,19 @@ take `assert_axioms` like the theorems and `Prop`-shaped definitions. -/
 /-! ### The abscissae, branch covers, and models (`Hashing/BranchCovers.lean`,
 `Hashing/FibreBound.lean`, `Hashing/SimplifiedSWU.lean`, `Hashing/SignedLift.lean`) -/
 
-assert_computable CompElliptic.Hashing.SSWUParams.x1
-assert_computable CompElliptic.Hashing.SSWUParams.x2
-assert_computable CompElliptic.Hashing.SSWUParams.phiCore
-assert_computable CompElliptic.Hashing.SSWUParams.twist1
-assert_computable CompElliptic.Hashing.SSWUParams.twist2
-assert_computable CompElliptic.Hashing.SSWUParams.model1
-assert_computable CompElliptic.Hashing.SSWUParams.model2
-assert_computable CompElliptic.Hashing.SSWUParams.scale1
-assert_computable CompElliptic.Hashing.SSWUParams.scale2
+/-! `Classical.choice` enters these through the `[Fintype F]` that `SSWUParams` carries:
+`Fintype`'s completeness field states `Finset` membership, whose `SetLike` instance has a
+choice-using injectivity proof. As for the point enumeration, it is an erased `Prop` field. -/
+
+assert_computable CompElliptic.Hashing.SSWUParams.x1 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.x2 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.phiCore +choice
+assert_computable CompElliptic.Hashing.SSWUParams.twist1 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.twist2 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.model1 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.model2 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.scale1 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.scale2 +choice
 assert_computable CompElliptic.Hashing.sgn0
 assert_axioms CompElliptic.Hashing.SSWUParams.map_neg
 assert_axioms CompElliptic.Hashing.SSWUParams.Zuu_add_one_ne_zero

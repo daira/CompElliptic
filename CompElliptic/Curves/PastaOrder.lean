@@ -4,10 +4,14 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood, Gregor Mitscha-Baude
 -/
-import CompElliptic.Curves.Pasta
-import CompElliptic.Curves.IsoPasta
-import CompElliptic.CurveOrder
-import CompElliptic.Isogenies.Homomorphism
+module
+
+public import CompElliptic.Curves.Pasta
+public import CompElliptic.Curves.IsoPasta
+public import CompElliptic.CurveOrder
+public import CompElliptic.Isogenies.Homomorphism
+public meta import CompElliptic.Curves.IsoPasta
+public meta import CompElliptic.Curves.Pasta
 
 /-!
 # Orders of the Pasta and iso-Pasta curve groups
@@ -47,6 +51,8 @@ Per the *Independently re-checkable trust* principle every obligation here is a 
 witnesses (`q_nsmul_Gpt`, `p_nsmul_Gpt`), proved by `native_decide` and appearing in `#print axioms`
 for the two theorems below.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Curves.Pasta
 
@@ -95,7 +101,6 @@ injective with no homomorphism property consumed (`ThreeIsogeny.map_injective`),
 two groups have the same order. -/
 theorem iso_map_bijective : Function.Bijective iso.map :=
   iso.map_bijective (by decide) no_onCurve_y_zero (iso_card_eq.trans card_eq.symm)
-
 
 /-- No point of iso-Pallas has `y = 0`: such a point would map to a `y = 0` point of
 Pallas under the isogeny, and Pallas has none. -/
@@ -164,7 +169,6 @@ injective with no homomorphism property consumed (`ThreeIsogeny.map_injective`),
 two groups have the same order. -/
 theorem iso_map_bijective : Function.Bijective iso.map :=
   iso.map_bijective (by decide) no_onCurve_y_zero (iso_card_eq.trans card_eq.symm)
-
 
 /-- **The deployed Vesta isogeny is a group homomorphism on rational points.** All
 of its hypotheses are discharged by the 2-torsion exclusions. -/

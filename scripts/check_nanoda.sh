@@ -34,7 +34,7 @@ roots = sys.argv[1:]
 files = [Path("CompElliptic.lean"), Path("FastFieldNative.lean")]
 files += sorted(Path("CompElliptic").rglob("*.lean"))
 mod = lambda p: ".".join(p.with_suffix("").parts)
-imports = {mod(f): set(re.findall(r"^import\s+([A-Za-z0-9_.]+)", f.read_text(), re.M))
+imports = {mod(f): set(re.findall(r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?([A-Za-z0-9_.]+)", f.read_text(), re.M))
            for f in files}
 reachable, todo = set(), list(roots)
 while todo:

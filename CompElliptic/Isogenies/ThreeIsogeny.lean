@@ -4,9 +4,11 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.CurveForms.ShortWeierstrass
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.FieldSimp
+module
+
+public import CompElliptic.CurveForms.ShortWeierstrass
+public import Mathlib.Tactic.LinearCombination
+public import Mathlib.Tactic.FieldSimp
 
 /-!
 # Degree-3 isogenies from Vélu's formulae
@@ -71,6 +73,8 @@ injectivity to a bijection on rational points (`map_bijective`).
   states Vélu's formulae in the Weierstrass form used here (section 25.1.1), and
   section 25.1 notes that an isogeny is automatically a group homomorphism.
 -/
+
+@[expose] public section
 
 open CompElliptic.CurveForms.ShortWeierstrass
 
@@ -210,7 +214,6 @@ theorem no_y_zero_of_codomain
   have hy : (I.mapXY x 0).2 = 0 := by simp [mapXY]
   exact hc (I.mapXY x 0).1 (hy ▸ himg)
 
-
 /- The collision identity behind `abscissa_inj` was derived, and its cofactors computed,
 with this Sage script:
 
@@ -295,7 +298,7 @@ def map (P : SWPoint I.domain) : SWPoint I.codomain :=
 curve, so `map` takes its else branch. -/
 @[simp] theorem map_zero : I.map 0 = 0 := by
   rw [map]
-  exact dif_neg (origin_not_on_curve I.domain)
+  exact dite_eq_right (origin_not_on_curve I.domain)
 
 /-- The isogeny is injective on rational points: image abscissas agree only on equal
 abscissas (`abscissa_inj`). Over one abscissa the two ordinates are negatives, so equal
@@ -308,7 +311,7 @@ theorem map_injective (h2 : (2 : F) ≠ 0)
   intro P Q hPQ
   by_cases hP : OnCurve I.domain.A I.domain.B (P.x, P.y) <;>
     by_cases hQ : OnCurve I.domain.A I.domain.B (Q.x, Q.y)
-  · rw [map, dif_pos hP, map, dif_pos hQ] at hPQ
+  · rw [map, dite_eq_left hP, map, dite_eq_left hQ] at hPQ
     have hx : (I.mapXY P.x P.y).1 = (I.mapXY Q.x Q.y).1 := congrArg SWPoint.x hPQ
     have hy : (I.mapXY P.x P.y).2 = (I.mapXY Q.x Q.y).2 := congrArg SWPoint.y hPQ
     have hxx : P.x = Q.x := I.abscissa_inj h2 hd hP hQ hx
@@ -336,7 +339,7 @@ theorem map_injective (h2 : (2 : F) ≠ 0)
         have himg := I.onCurve_mapXY hQ
         exact hc (I.mapXY Q.x Q.y).1 (hzero ▸ himg)
   · exfalso
-    rw [map, dif_pos hP, map, dif_neg hQ] at hPQ
+    rw [map, dite_eq_left hP, map, dite_eq_right hQ] at hPQ
     have hx0 : (I.mapXY P.x P.y).1 = (0 : F) := congrArg SWPoint.x hPQ
     have hy0 : (I.mapXY P.x P.y).2 = (0 : F) := congrArg SWPoint.y hPQ
     have himg := I.onCurve_mapXY hP
@@ -344,7 +347,7 @@ theorem map_injective (h2 : (2 : F) ≠ 0)
     rw [hpair] at himg
     exact origin_not_on_curve I.codomain himg
   · exfalso
-    rw [map, dif_neg hP, map, dif_pos hQ] at hPQ
+    rw [map, dite_eq_right hP, map, dite_eq_left hQ] at hPQ
     have hx0 : (I.mapXY Q.x Q.y).1 = (0 : F) := (congrArg SWPoint.x hPQ).symm
     have hy0 : (I.mapXY Q.x Q.y).2 = (0 : F) := (congrArg SWPoint.y hPQ).symm
     have himg := I.onCurve_mapXY hQ

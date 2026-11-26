@@ -28,7 +28,7 @@ import paths become `CompElliptic.Vendor.CompPoly.Montgomery.X` →
 | `Native64x8Defs.lean` | `CompPoly/Fields/Montgomery/Native64x8.lean` (definitions) | split out, `ℕ` → `Nat`, plus the Pasta constants and monomorphic entry points |
 | `Native64x8.lean` | `CompPoly/Fields/Montgomery/Native64x8.lean` (theorems) | imports the split-out definitions; two `norm_num` calls dropped (Lean 4.30 vs 4.31 `simp` drift) |
 | `Native64x8Mul.lean` | same name | import path; one `norm_num` dropped |
-| `Native64x8Field.lean` | same name | import path |
+| `Native64x8Field.lean` | same name | import path; `toField_eq` public, for `ProjectiveMontEquiv` |
 | `Pasta.lean` | `CompPoly/Fields/Pasta/{Basic,Fast}.lean` | **rewritten**: reuses `CompElliptic.Fields.Pasta`'s primes and Pratt certificates instead of vendoring a second copy, so the repo keeps exactly one `Field (ZMod PALLAS_SCALAR_CARD)` instance and the Montgomery carrier bridges directly into `CompElliptic.Curves.Pasta.Fast.Projective.Fq` |
 
 `Pasta.lean` is the one file here that imports CompElliptic (`CompElliptic.Fields.Pasta`); it is
@@ -44,5 +44,5 @@ rather than a restructuring.
 
 Namespaces are deliberately **unchanged** from upstream (`Montgomery.Native64x8`) — that is the
 whole point of vendoring these files unmodified, and it is what makes the migration a pure
-import-path rewrite. The pinned CompPoly predates the `Montgomery` directory, so nothing
-clashes.
+import-path rewrite. The pinned CompPoly ships the same declarations under
+`CompPoly.Fields.Montgomery`, so no module may import both copies.

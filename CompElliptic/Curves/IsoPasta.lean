@@ -4,8 +4,10 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Curves.Pasta
-import CompElliptic.Isogenies.ThreeIsogeny
+module
+
+public import CompElliptic.Curves.Pasta
+public import CompElliptic.Isogenies.ThreeIsogeny
 
 /-!
 # The iso-Pasta curves and their isogenies to Pallas and Vesta
@@ -36,6 +38,8 @@ Each isogeny is stated twice here, and that is the point of the design:
   deployed constants; `onCurve_iso_map` states the on-curve consequence directly.
 -/
 
+@[expose] public section
+
 open CompElliptic.CurveForms.ShortWeierstrass CompElliptic.Fields.Pasta
 open CompElliptic.Isogenies
 
@@ -52,6 +56,7 @@ def isoCurve : SWCurve PallasBaseField where
   B_nonzero := by decide
 
 /-- The degree-3 isogeny iso-Pallas → Pallas, as its Vélu derivation. -/
+@[implicit_reducible]
 def iso : ThreeIsogeny PallasBaseField where
   domain := isoCurve
   codomain := curve
@@ -166,6 +171,7 @@ def isoCurve : SWCurve VestaBaseField where
   B_nonzero := by decide
 
 /-- The degree-3 isogeny iso-Vesta → Vesta, as its Vélu derivation. -/
+@[implicit_reducible]
 def iso : ThreeIsogeny VestaBaseField where
   domain := isoCurve
   codomain := curve

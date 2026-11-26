@@ -11,7 +11,7 @@ autoImplicit = false
 [[require]]
 name = "CompPoly"
 git = "https://github.com/Verified-zkEVM/CompPoly.git"
-rev = "d458e5cebd364b15660ff8de20ec964dcd52c120"
+rev = "06686e4c70939af82203af21516f8ab8a21a8051"
 
 # The glob ("CompElliptic.*" = the module and all submodules) covers modules the root
 # `CompElliptic.lean` deliberately does not import: the fast arithmetic and its vendored

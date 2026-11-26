@@ -4,7 +4,9 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood, Tal Derei
 -/
-import CompElliptic.Meta.AxiomCheck
+module
+
+public import CompElliptic.Meta.AxiomCheck
 
 /-!
 # Regression tests for the native-certificate evaluated surface
@@ -21,6 +23,8 @@ These declarations live in the test-only library for the same reason as `MetaChe
 This is a module of its own so the closure-wide compiled-body sweep, which the sibling file
 deliberately trips, does not mask the checks pinned here.
 -/
+
+@[expose] public section
 
 namespace MetaCheck.NativeSurface
 

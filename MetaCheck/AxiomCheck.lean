@@ -4,7 +4,9 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood, Tal Derei
 -/
-import CompElliptic.Meta.AxiomCheck
+module
+
+public import CompElliptic.Meta.AxiomCheck
 
 /-!
 # Regression tests for `CompElliptic.Meta.AxiomCheck`
@@ -15,6 +17,8 @@ Two rejection families. The native-axiom provenance cases deliberately impersona
 pin the declaration checks that stand behind "the reduction data is genuinely computed". Both live
 in this test-only library so the production `CompElliptic` library never imports them.
 -/
+
+@[expose] public section
 
 namespace MetaCheck.AxiomCheck
 
@@ -168,13 +172,13 @@ end AliasedOwner
 namespace ComputableSafety
 
 /-! The `assert_computable` declaration checks. `unsafe` lifts the termination check, so the
-reduction below inhabits `False` by bare self-reference while computing nothing — and it is a
+reduction below inhabits `Empty` by bare self-reference while computing nothing — and it is a
 `.defnInfo` that is not `noncomputable`, so the kind and computability checks both pass it. Only
 the definition-safety check rejects it. The kernel independently refuses to let a safe declaration
 depend on an unsafe one, so what the check has to catch is a reduction no safe proof consumes:
 precisely a deliverable endpoint, which the census pins directly for that same reason. -/
 
-unsafe def unsafeReduction : False := unsafeReduction
+unsafe def unsafeReduction : Empty := unsafeReduction
 
 /-- error: MetaCheck.AxiomCheck.ComputableSafety.unsafeReduction is marked unsafe -/
 #guard_msgs (whitespace := lax) in

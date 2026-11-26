@@ -4,12 +4,14 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Hashing.BranchCovers
-import Mathlib.FieldTheory.RatFunc.Basic
-import Mathlib.FieldTheory.Separable
-import Mathlib.RingTheory.AdjoinRoot
-import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
-import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
+module
+
+public import CompElliptic.Hashing.BranchCovers
+public import Mathlib.FieldTheory.RatFunc.Basic
+public import Mathlib.FieldTheory.Separable
+public import Mathlib.RingTheory.AdjoinRoot
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
+public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
 
 /-!
 # Supporting facts for the Weil-constant derivation
@@ -72,6 +74,8 @@ Everything here is stated over the polynomial rings `F[u]` and `(F[w])[u]`;
 the connection from these inputs to genus 6 and to the no-unramified-subcover
 condition is the cited part.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Hashing
 

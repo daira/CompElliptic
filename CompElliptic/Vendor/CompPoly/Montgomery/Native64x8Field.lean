@@ -3,11 +3,12 @@ Copyright (c) 2026 CompPoly Contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Gregor Mitscha-Baude
 -/
+module
 
-import CompPoly.Fields.Basic
-import CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Mul
-import Mathlib.Algebra.Field.TransferInstance
-import Mathlib.FieldTheory.Finite.Basic
+public import CompPoly.Fields.Basic
+public import CompElliptic.Vendor.CompPoly.Montgomery.Native64x8Mul
+public import Mathlib.Algebra.Field.TransferInstance
+public import Mathlib.FieldTheory.Finite.Basic
 
 /-!
 # Fast eight-limb Montgomery fields
@@ -27,6 +28,8 @@ is transported along `toField`, which is a ring isomorphism onto `ZMod modulus`.
 * `Mont64x8Field` — the per-field constants class
 * `ringEquiv`, `instField` — the ring isomorphism and the transferred `Field` instance
 -/
+
+@[expose] public section
 
 namespace Montgomery
 namespace Native64x8
@@ -99,6 +102,7 @@ end Mont64x8Field
 
 /-- The fast carrier for a prime modulus: eight 32-bit limbs holding a value below `modulus`,
 interpreted as a Montgomery residue.  At runtime this erases to `Limbs8`. -/
+@[implicit_reducible]
 def FastField (modulus : ℕ) [Mont64x8Field modulus] : Type :=
   { x : Limbs8 // x.Bounded ∧ x.toNat < modulus }
 
@@ -221,7 +225,7 @@ def one (modulus : ℕ) [P : Mont64x8Field modulus] : FastField modulus :=
   ofCanonicalNat x.val (ZMod.val_lt x)
 
 /-- Convert an integer into fast Montgomery form. -/
-@[inline] private def ofInt (modulus : ℕ) [P : Mont64x8Field modulus] (n : Int) :
+@[inline] def ofInt (modulus : ℕ) [P : Mont64x8Field modulus] (n : Int) :
     FastField modulus :=
   ofField (n : ZMod modulus)
 
@@ -402,7 +406,7 @@ private theorem mul_assoc' (x y z : FastField modulus) : x * y * z = x * (y * z)
 
 private theorem pow_succ_field (x : FastField modulus) (n : ℕ) : pow x (n + 1) = pow x n * x := by
   unfold pow
-  letI : Semigroup (FastField modulus) := { mul, mul_assoc := mul_assoc' }
+  let : Semigroup (FastField modulus) := { mul, mul_assoc := mul_assoc' }
   exact npowBinRec_succ n x
 
 @[simp]

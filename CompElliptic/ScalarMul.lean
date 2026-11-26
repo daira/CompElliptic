@@ -4,7 +4,9 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import Mathlib.Data.Nat.Init
+module
+
+public import Mathlib.Data.Nat.Init
 
 /-!
 # Scalar multiplication by binary double-and-add
@@ -19,6 +21,8 @@ It is proven equal (`binNsmul_eq_linNsmul`) to the linear fold `linNsmul`, givin
 `nsmul_succ` obligations (`binNsmul_zero`, `binNsmul_succ`) any such instance needs. The only
 algebraic facts required are associativity of `add` and right-identity of `zero`.
 -/
+
+@[expose] public section
 
 namespace CompElliptic
 

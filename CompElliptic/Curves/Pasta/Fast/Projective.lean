@@ -4,7 +4,9 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Gregor Mitscha-Baude
 -/
-import CompElliptic.Curves.Pasta
+module
+
+public import CompElliptic.Curves.Pasta
 
 /-!
 # Projective (Renes–Costello–Batina) point arithmetic for Vesta
@@ -25,6 +27,8 @@ Specialized to `a = 0`, `b = 5`, `b3 = 15`, the closed forms are
 The `Fast` interfaces are provisional: they are not guaranteed to remain public, and
 may be folded into the existing API or otherwise changed incompatibly.
 -/
+
+@[expose] public section
 
 open CompElliptic
 open CompElliptic.CurveForms.ShortWeierstrass
@@ -218,7 +222,7 @@ theorem aff_smul (u : Fq) (hu : u ≠ 0) (P : PVes) : aff (smul u P) = aff P := 
   rcases eq_or_ne P.Z 0 with h | h
   · simp [aff, smul, h]
   · have huz : u * P.Z ≠ 0 := mul_ne_zero hu h
-    simp only [aff, smul, if_neg h, if_neg huz]
+    simp only [aff, smul, h, huz, ↓reduceIte]
     rw [Prod.mk.injEq]
     exact ⟨mul_div_mul_left _ _ hu, mul_div_mul_left _ _ hu⟩
 
@@ -267,7 +271,7 @@ theorem add_dist {x1 y1 x2 y2 : Fq} (h1 : OnCurve 0 5 (x1, y1)) (h2 : OnCurve 0 
   have hd : x2 - x1 ≠ 0 := sub_ne_zero.mpr (Ne.symm hne)
   unfold add
   dsimp only
-  rw [if_neg hp0, if_neg hq0, if_neg hne]
+  rw [ite_eq_right hp0, ite_eq_right hq0, ite_eq_right hne]
   rw [Prod.mk.injEq]
   constructor <;> field_simp <;> ring
 
@@ -283,7 +287,7 @@ theorem add_dbl {x1 y1 : Fq} (h1 : OnCurve 0 5 (x1, y1)) (hy : y1 ≠ 0) :
   have h8 : (8 : Fq) ≠ 0 := by decide
   unfold add
   dsimp only
-  rw [if_neg hp0, if_neg hp0, if_pos rfl, if_neg h2y]
+  rw [ite_eq_right hp0, ite_eq_right hp0, ite_eq_left rfl, ite_eq_right h2y]
   rw [Prod.mk.injEq]
   constructor <;> field_simp <;> ring
 
@@ -307,7 +311,7 @@ theorem padd_spec_z1 {x1 y1 x2 y2 : Fq} (h1 : OnCurve 0 5 (x1, y1)) (h2 : OnCurv
       subst hy2
       refine ⟨?_, hoc, ?_⟩
       · have hz0 : (padd ⟨x1, y1, 1⟩ ⟨x1, -y1, 1⟩).Z = 0 := Z_zero_inv x1 y1
-        rw [aff, if_pos hz0]
+        rw [aff, ite_eq_left hz0]
         have hnp : (x1, -y1) = CompElliptic.CurveForms.ShortWeierstrass.neg (x1, y1) := by
           simp [CompElliptic.CurveForms.ShortWeierstrass.neg]
         rw [hnp, CompElliptic.CurveForms.ShortWeierstrass.add_neg]
@@ -325,7 +329,7 @@ theorem padd_spec_z1 {x1 y1 x2 y2 : Fq} (h1 : OnCurve 0 5 (x1, y1)) (h2 : OnCurv
       have hy2 : (4 : Fq) * y1^2 ≠ 0 := mul_ne_zero (by decide) (pow_ne_zero 2 hy1)
       have hy3 : (8 : Fq) * y1^3 ≠ 0 := mul_ne_zero (by decide) (pow_ne_zero 3 hy1)
       refine ⟨?_, hoc, ?_⟩
-      · rw [aff, if_neg hZne, add_dbl h1 hy1, Prod.mk.injEq]
+      · rw [aff, ite_eq_right hZne, add_dbl h1 hy1, Prod.mk.injEq]
         refine ⟨?_, ?_⟩
         · rw [div_eq_div_iff hZne hy2]; linear_combination keyx_dbl e1
         · rw [div_eq_div_iff hZne hy3]; linear_combination keyy_dbl e1
@@ -336,7 +340,7 @@ theorem padd_spec_z1 {x1 y1 x2 y2 : Fq} (h1 : OnCurve 0 5 (x1, y1)) (h2 : OnCurv
     have hd2 : (x2 - x1)^2 ≠ 0 := pow_ne_zero 2 hd
     have hd3 : (x2 - x1)^3 ≠ 0 := pow_ne_zero 3 hd
     refine ⟨?_, hoc, ?_⟩
-    · rw [aff, if_neg hZne, add_dist h1 h2 hx, Prod.mk.injEq]
+    · rw [aff, ite_eq_right hZne, add_dist h1 h2 hx, Prod.mk.injEq]
       refine ⟨?_, ?_⟩
       · rw [div_eq_div_iff hZne hd2]; linear_combination keyx_dist e1 e2
       · rw [div_eq_div_iff hZne hd3]; linear_combination keyy_dist e1 e2
@@ -391,14 +395,14 @@ theorem padd_spec {P Q : PVes} (hP : Valid P) (hQ : Valid Q) :
   · -- P is an identity-type point
     have hPX := X_zero_of_Z_zero hP.1 hPz
     have hlam : P.Y^2 * Q.Y ≠ 0 := mul_ne_zero (pow_ne_zero 2 hPY) hQY
-    have haffP : aff P = (0, 0) := by rw [aff, if_pos hPz]
+    have haffP : aff P = (0, 0) := by rw [aff, ite_eq_left hPz]
     rw [padd_idL hPX hPz, haffP, CompElliptic.CurveForms.ShortWeierstrass.zero_add]
     refine ⟨aff_smul _ hlam Q, oncurveP_smul _ hQ.1, nezVec_smul _ hlam hQ.2⟩
   · by_cases hQz : Q.Z = 0
     · -- Q is an identity-type point
       have hQX := X_zero_of_Z_zero hQ.1 hQz
       have hlam : P.Y * Q.Y^2 ≠ 0 := mul_ne_zero hPY (pow_ne_zero 2 hQY)
-      have haffQ : aff Q = (0, 0) := by rw [aff, if_pos hQz]
+      have haffQ : aff Q = (0, 0) := by rw [aff, ite_eq_left hQz]
       rw [padd_idR hQX hQz, haffQ, CompElliptic.CurveForms.ShortWeierstrass.add_zero]
       refine ⟨aff_smul _ hlam P, oncurveP_smul _ hP.1, nezVec_smul _ hlam hP.2⟩
     · -- both finite: normalize to `Z = 1` and use the core lemma
@@ -409,8 +413,8 @@ theorem padd_spec {P Q : PVes} (hP : Valid P) (hQ : Valid Q) :
       have hpadd : padd P Q = smul (P.Z^2 * Q.Z^2) (padd ⟨P.X/P.Z, P.Y/P.Z, 1⟩ ⟨Q.X/Q.Z, Q.Y/Q.Z, 1⟩) := by
         conv_lhs => rw [eq_smul_normalize hPz, eq_smul_normalize hQz]
         rw [smul_padd]
-      have haffP : aff P = (P.X / P.Z, P.Y / P.Z) := by rw [aff, if_neg hPz]
-      have haffQ : aff Q = (Q.X / Q.Z, Q.Y / Q.Z) := by rw [aff, if_neg hQz]
+      have haffP : aff P = (P.X / P.Z, P.Y / P.Z) := by rw [aff, ite_eq_right hPz]
+      have haffQ : aff Q = (Q.X / Q.Z, Q.Y / Q.Z) := by rw [aff, ite_eq_right hQz]
       refine ⟨?_, ?_⟩
       · rw [hpadd, aff_smul _ hu, haff, haffP, haffQ]
       · rw [hpadd]
@@ -446,12 +450,12 @@ def toAffine (P : PVes) : G :=
 theorem toAffine_coords {P : PVes} (hP : Valid P) :
     ((toAffine P).x, (toAffine P).y) = aff P := by
   rcases eq_or_ne P.Z 0 with hz | hz
-  · have h0 : toAffine P = 0 := by rw [toAffine, dif_neg]; rintro ⟨_, h⟩; exact h hz
-    rw [h0, aff, if_pos hz]; rfl
-  · rw [toAffine, dif_pos ⟨hP.1, hz⟩, aff, if_neg hz]
+  · have h0 : toAffine P = 0 := by rw [toAffine, dite_eq_right]; rintro ⟨_, h⟩; exact h hz
+    rw [h0, aff, ite_eq_left hz]; rfl
+  · rw [toAffine, dite_eq_left ⟨hP.1, hz⟩, aff, ite_eq_right hz]
 
 @[simp] theorem toAffine_pid : toAffine pid = 0 := by
-  rw [toAffine, dif_neg]; rintro ⟨_, h⟩; exact h rfl
+  rw [toAffine, dite_eq_right]; rintro ⟨_, h⟩; exact h rfl
 
 /-- **The homomorphism.** `toAffine` carries the projective RCB addition to the affine group law. -/
 theorem toAffine_padd {P Q : PVes} (hP : Valid P) (hQ : Valid Q) :
@@ -472,8 +476,8 @@ def ofAffine (p : G) : PVes :=
 theorem valid_ofAffine (p : G) : Valid (ofAffine p) := by
   rw [ofAffine]
   by_cases h : p.x = 0 ∧ p.y = 0
-  · rw [if_pos h]; exact valid_pid
-  · rw [if_neg h]
+  · rw [ite_eq_left h]; exact valid_pid
+  · rw [ite_eq_right h]
     have hoc : OnCurve 0 5 (p.x, p.y) := by
       have hv := p.onCurve
       exact hv.resolve_right (by rw [Prod.mk.injEq]; exact h)
@@ -484,19 +488,19 @@ theorem valid_ofAffine (p : G) : Valid (ofAffine p) := by
 theorem toAffine_ofAffine (p : G) : toAffine (ofAffine p) = p := by
   rw [ofAffine]
   by_cases h : p.x = 0 ∧ p.y = 0
-  · rw [if_pos h, toAffine_pid]
+  · rw [ite_eq_left h, toAffine_pid]
     apply SWPoint.ext_pair
     obtain ⟨hx, hy⟩ := h
     show ((0 : G).x, (0 : G).y) = (p.x, p.y)
     rw [hx, hy]; rfl
-  · rw [if_neg h]
+  · rw [ite_eq_right h]
     have hoc : OnCurve 0 5 (p.x, p.y) := p.onCurve.resolve_right (by rw [Prod.mk.injEq]; exact h)
     have hZ : ((⟨p.x, p.y, 1⟩ : PVes)).Z ≠ 0 := one_ne_zero
     have hocp : OnCurveP (⟨p.x, p.y, 1⟩ : PVes) := by
       have e : p.y^2 = p.x^3 + 5 := by have := hoc; simp only [OnCurve] at this; linear_combination this
       simp only [OnCurveP]; linear_combination e
     apply SWPoint.ext_pair
-    rw [toAffine, dif_pos ⟨hocp, hZ⟩]
+    rw [toAffine, dite_eq_left ⟨hocp, hZ⟩]
     show (p.x / 1, p.y / 1) = (p.x, p.y)
     rw [div_one, div_one]
 
@@ -554,20 +558,20 @@ fused mul-mod, and `padd_eq_paddFast` is the proven equality — the proven coun
 
 /-- The Vesta base-field order, the modulus of the raw-`ℕ` fast path (reducible so `ZMod qv`
 unifies with `Fq`). -/
-private abbrev qv : ℕ := CompElliptic.Fields.Pasta.PALLAS_SCALAR_CARD
+abbrev qv : ℕ := CompElliptic.Fields.Pasta.PALLAS_SCALAR_CARD
 
 private theorem qv_pos : 0 < qv := by decide
 
 private instance : NeZero qv := ⟨qv_pos.ne'⟩
 
 /-- Fused modular addition on canonical representatives. -/
-@[inline] private def fadd (a b : ℕ) : ℕ := (a + b) % qv
+@[inline] def fadd (a b : ℕ) : ℕ := (a + b) % qv
 
 /-- Fused modular multiplication: one GMP multiply, one GMP mod. -/
-@[inline] private def fmul (a b : ℕ) : ℕ := (a * b) % qv
+@[inline] def fmul (a b : ℕ) : ℕ := (a * b) % qv
 
 /-- Modular subtraction without hypotheses: `a + (q − b mod q) ≡ a − b`. -/
-@[inline] private def fsub (a b : ℕ) : ℕ := (a + (qv - b % qv)) % qv
+@[inline] def fsub (a b : ℕ) : ℕ := (a + (qv - b % qv)) % qv
 
 private theorem cast_fadd (a b : ℕ) : ((fadd a b : ℕ) : Fq) = (a : Fq) + (b : Fq) := by
   rw [fadd, ZMod.natCast_mod, Nat.cast_add]

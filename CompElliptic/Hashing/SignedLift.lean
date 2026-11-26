@@ -4,10 +4,12 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Hashing.CharacterSum
-import CompElliptic.CurveForms.ShortWeierstrass
-import Mathlib.Analysis.Normed.Ring.Finite
-import Mathlib.Data.ZMod.Basic
+module
+
+public import CompElliptic.Hashing.CharacterSum
+public import CompElliptic.CurveForms.ShortWeierstrass
+public import Mathlib.Analysis.Normed.Ring.Finite
+public import Mathlib.Data.ZMod.Basic
 
 /-!
 # The signed lift, and why hash-to-curve mappings are odd
@@ -45,6 +47,8 @@ whose signed lift is the mapping itself (`SSWUParams.map_eq_signedLift`).
 `mapToCurve`.
 -/
 
+@[expose] public section
+
 namespace CompElliptic.Hashing
 
 open Finset
@@ -73,7 +77,7 @@ represented by `p - val v`, and subtracting from the odd `p` flips parity. -/
 theorem isSignFunction_sgn0 {p : ℕ} [NeZero p] (hp : Odd p) :
     IsSignFunction (sgn0 (p := p)) := by
   intro v hv
-  haveI : NeZero v := ⟨hv⟩
+  have : NeZero v := ⟨hv⟩
   have hneg : (-v).val = p - v.val := ZMod.val_neg_of_ne_zero v
   have hlt : v.val < p := ZMod.val_lt v
   have hpos : 0 < v.val :=
@@ -126,13 +130,13 @@ theorem signedLift_neg {m : F → SWPoint E} {sgn : F → Bool}
     · have h' : ¬ sgn (m (-u)).y = sgn (-u) := by
         rw [hre]
         exact fun hc => hflip (by rw [← hc, h])
-      simp only [signedLift, if_pos h, if_neg h']
+      simp only [signedLift, ite_eq_left h, ite_eq_right h']
       rw [hre]
     · have h' : sgn (m (-u)).y = sgn (-u) := by
         rw [hre]
         cases hb : sgn u <;> cases hc : sgn (m u).y <;> cases hd : sgn (-u) <;>
           simp_all
-      simp only [signedLift, if_neg h, if_pos h']
+      simp only [signedLift, ite_eq_right h, ite_eq_left h']
       rw [hre, hnn]
   rcases hm u with hr | hr
   · exact even_case hr
@@ -146,12 +150,12 @@ theorem signedLift_neg {m : F → SWPoint E} {sgn : F → Bool}
       · have h' : sgn (m (-u)).y = sgn (-u) := by
           cases hb : sgn u <;> cases hc : sgn (m u).y <;> cases hd : sgn (-u) <;>
             cases he : sgn (m (-u)).y <;> simp_all
-        simp only [signedLift, if_pos h, if_pos h']
+        simp only [signedLift, ite_eq_left h, ite_eq_left h']
         rw [hr]
       · have h' : ¬ sgn (m (-u)).y = sgn (-u) := by
           cases hb : sgn u <;> cases hc : sgn (m u).y <;> cases hd : sgn (-u) <;>
             cases he : sgn (m (-u)).y <;> simp_all
-        simp only [signedLift, if_neg h, if_neg h']
+        simp only [signedLift, ite_eq_right h, ite_eq_right h']
         rw [hr]
 
 /-! ## Repairing the zero exception -/
@@ -186,7 +190,7 @@ theorem charSum_sub_zeroRepaired {F : Type*} [Fintype F] [Zero F] [DecidableEq F
     ← Finset.add_sum_erase univ (fun u => ψ (zeroRepaired f u)) (mem_univ 0),
     Finset.sum_congr rfl fun u hu => by
       rw [show f u = zeroRepaired f u by simp [zeroRepaired, (Finset.mem_erase.mp hu).1]],
-    show zeroRepaired f 0 = 0 from if_pos rfl, AddChar.map_zero_eq_one]
+    show zeroRepaired f 0 = 0 from ite_eq_left rfl, AddChar.map_zero_eq_one]
   ring
 
 /-- In norm, the repair's character-sum shift is at most `2` — the `O(1)` term

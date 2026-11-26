@@ -4,14 +4,17 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Curves.IsoPasta
-import CompElliptic.Isogenies.Homomorphism
-import CompElliptic.Curves.PastaOrder
-import CompElliptic.Hashing.SimplifiedSWU
-import CompElliptic.Hashing.SignedLift
-import CompElliptic.Hashing.FibreBound
-import CompElliptic.Hashing.WeilInstance
-import Mathlib.Tactic.ReduceModChar
+module
+
+public import CompElliptic.Curves.IsoPasta
+public import CompElliptic.Isogenies.Homomorphism
+public import CompElliptic.Curves.PastaOrder
+public import CompElliptic.Hashing.SimplifiedSWU
+public import CompElliptic.Hashing.SignedLift
+public import CompElliptic.Hashing.FibreBound
+public import CompElliptic.Hashing.WeilInstance
+public import Mathlib.Tactic.ReduceModChar
+public meta import CompElliptic.Hashing.SimplifiedSWU
 
 /-!
 # The deployed simplified-SWU parameters for the Pasta curves
@@ -58,6 +61,8 @@ fixed-generator derivation for Vesta. The missing Vesta vectors in
 comparison against the `pasta_curves` Rust implementation by
 <https://github.com/daira/CompElliptic/issues/24>.
 -/
+
+@[expose] public section
 
 open CompElliptic.CurveForms.ShortWeierstrass CompElliptic.Fields.Pasta
 open CompElliptic.Hashing
@@ -233,7 +238,7 @@ theorem weilBounded_zeroRepaired_mapToCurve
     funext u
     rcases eq_or_ne u 0 with rfl | hu
     · exact ((congrArg (AddMonoidHom.mk' iso.map iso_map_add)
-        (if_pos rfl)).trans (map_zero _)).trans (if_pos rfl).symm
+        (ite_eq_left rfl)).trans (map_zero _)).trans (ite_eq_left rfl).symm
     · simp [zeroRepaired, hu, mapToCurve]
   rw [← hfun]
   exact hcomp
@@ -473,7 +478,7 @@ theorem weilBounded_zeroRepaired_mapToCurve
     funext u
     rcases eq_or_ne u 0 with rfl | hu
     · exact ((congrArg (AddMonoidHom.mk' iso.map iso_map_add)
-        (if_pos rfl)).trans (map_zero _)).trans (if_pos rfl).symm
+        (ite_eq_left rfl)).trans (map_zero _)).trans (ite_eq_left rfl).symm
     · simp [zeroRepaired, hu, mapToCurve]
   rw [← hfun]
   exact hcomp

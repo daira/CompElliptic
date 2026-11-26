@@ -4,8 +4,10 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood, Gregor Mitscha-Baude
 -/
-import CompElliptic.CurveForms.ShortWeierstrass
-import Mathlib.GroupTheory.OrderOfElement
+module
+
+public import CompElliptic.CurveForms.ShortWeierstrass
+public import Mathlib.GroupTheory.OrderOfElement
 
 /-!
 # Pinning a prime-order curve group's order without point-counting
@@ -39,6 +41,8 @@ assumed, and all that a caller must discharge are closed numeric facts about #F 
 by any independent tool.
 -/
 
+@[expose] public section
+
 namespace CompElliptic.CurveOrder
 
 open CompElliptic.CurveForms.ShortWeierstrass
@@ -52,7 +56,7 @@ This is the half of the argument that uses the witness, and the only half; every
 just rules out the remaining multiples of `r` using an upper bound on `#G`. -/
 theorem dvd_natCard_of_prime_witness {G : Type*} [AddGroup G] [Finite G] {r : ℕ}
     (hr : r.Prime) {P : G} (hP : P ≠ 0) (hPr : r • P = 0) : r ∣ Nat.card G := by
-  haveI := Fact.mk hr
+  have := Fact.mk hr
   exact addOrderOf_eq_prime hPr hP ▸ addOrderOf_dvd_natCard P
 
 /-- If `r` is prime, the finite additive group `G` has a non-identity element `P` killed by `r`
@@ -90,7 +94,7 @@ theorem card_eq_of_prime_witness_of_lt_three_mul {G : Type*} [AddGroup G] [Finit
   -- `k = 2` would make `#G` even, so Cauchy would give an element of order 2 — excluded by `hOdd`.
   have hkne2 : k ≠ 2 := by
     rintro rfl
-    haveI : Fintype G := Fintype.ofFinite _
+    have : Fintype G := Fintype.ofFinite _
     have hEven : 2 ∣ Fintype.card G := ⟨r, by rw [← Nat.card_eq_fintype_card, hk]; ring⟩
     obtain ⟨Q, hQ⟩ := exists_prime_addOrderOf_dvd_card 2 hEven
     have hQ0 : Q ≠ 0 := fun h => by simp [h, addOrderOf_zero] at hQ

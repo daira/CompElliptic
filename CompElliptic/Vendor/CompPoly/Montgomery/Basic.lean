@@ -3,11 +3,12 @@ Copyright (c) 2026 CompPoly Contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Valerii Huhnin, Georgios Raikos
 -/
+module
 
-import Mathlib.Data.Nat.ModEq
-import Mathlib.Data.ZMod.Basic
-import Mathlib.Algebra.Field.ZMod
-import Mathlib.Tactic.Ring
+public import Mathlib.Data.Nat.ModEq
+public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.Tactic.Ring
 
 /-!
 # Montgomery Reduction
@@ -15,6 +16,8 @@ import Mathlib.Tactic.Ring
 Radix-generic specification and correctness lemmas for single-word Montgomery reduction.
 Word-specific implementations refine these results in sibling modules.
 -/
+
+@[expose] public section
 
 namespace Montgomery
 
@@ -53,9 +56,9 @@ theorem reduceNat_lt (R p negInv x : ℕ)
     reduceNatQuotient R p negInv x else reduceNatQuotient R p negInv x - p) < p
   have hu := reduceNatQuotient_lt_two_mul R p negInv x hR hp hx
   by_cases h : reduceNatQuotient R p negInv x < p
-  · rw [if_pos h]
+  · rw [ite_eq_left h]
     exact h
-  · rw [if_neg h]
+  · rw [ite_eq_right h]
     omega
 
 /-- The Montgomery divisibility identity: if `(negInv * p) % R = R - 1` (i.e.
@@ -96,12 +99,12 @@ theorem reduceNat_cast (R p negInv : ℕ) [Fact (Nat.Prime p)] (hR : 0 < R)
   change ((if u < p then u else u - p : ℕ) : ZMod p) =
     (x : ZMod p) * (R : ZMod p)⁻¹
   by_cases hu : u < p
-  · rw [if_pos hu]
+  · rw [ite_eq_left hu]
     exact hu_cast
   · have hfield : ((u - p : ℕ) : ZMod p) = (u : ZMod p) := by
       rw [Nat.cast_sub (Nat.le_of_not_gt hu)]
       simp
-    rw [if_neg hu]
+    rw [ite_eq_right hu]
     rw [hfield]
     exact hu_cast
 

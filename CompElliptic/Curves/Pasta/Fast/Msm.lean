@@ -4,8 +4,10 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Gregor Mitscha-Baude
 -/
-import Mathlib.Data.List.GetD
-import CompElliptic.Fields.Pasta
+module
+
+public import Mathlib.Data.List.GetD
+public import CompElliptic.Fields.Pasta
 
 /-!
 # Windowed Pippenger multi-scalar multiplication, proven equal to the naive MSM
@@ -28,6 +30,8 @@ weighted bucket sum (`naiveWindow_eq_buckets`, `foldr_accStep`), and `hornerList
 The `Fast` interfaces are provisional: they are not guaranteed to remain public, and
 may be folded into the existing API or otherwise changed incompatibly.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Curves.Pasta.Fast.Msm
 
@@ -355,11 +359,11 @@ theorem getElem?_scatterStep (a : Array M) (d : ℕ) (x : M) (k : ℕ) :
   unfold scatterStep
   by_cases h0 : d = 0
   · simp [h0, Option.map_id']
-  · simp only [if_neg h0]
+  · simp only [ite_eq_right h0]
     rw [Array.getElem?_modify]
     by_cases hdk : d = k + 1
-    · rw [if_pos (by omega), if_pos hdk]
-    · rw [if_neg (by omega), if_neg hdk]
+    · rw [ite_eq_left (by omega), ite_eq_left hdk]
+    · rw [ite_eq_right (by omega), ite_eq_right hdk]
       simp [Option.map_id']
 
 /-- The fold invariant: slot `k` accumulates bucket `k + 1` on top of its initial value. -/
@@ -388,9 +392,9 @@ theorem bucketScatter_toList (base : ℕ) (dp : List (ℕ × M)) :
   rw [Array.getElem?_toList, bucketScatter, getElem?_foldl_scatterStep dp _ k,
     List.getElem?_map, Array.getElem?_replicate]
   by_cases hk : k < base - 1
-  · rw [if_pos hk, List.getElem?_range hk]
+  · rw [ite_eq_left hk, List.getElem?_range hk]
     simp
-  · rw [if_neg hk, List.getElem?_eq_none (by simp; omega)]
+  · rw [ite_eq_right hk, List.getElem?_eq_none (by simp; omega)]
     simp
 
 /-- The window value via the single-pass scatter. -/

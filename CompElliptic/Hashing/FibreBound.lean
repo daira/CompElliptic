@@ -4,9 +4,11 @@ Released under the Apache License, Version 2.0, or the MIT license, at your opti
 as described in the files LICENSE-APACHE and LICENSE-MIT.
 Authors: Daira-Emma Hopwood
 -/
-import CompElliptic.Hashing.SimplifiedSWU
-import Mathlib.Algebra.Polynomial.Roots
-import Mathlib.Tactic.ComputeDegree
+module
+
+public import CompElliptic.Hashing.SimplifiedSWU
+public import Mathlib.Algebra.Polynomial.Roots
+public import Mathlib.Tactic.ComputeDegree
 
 /-!
 # Fibre bounds for the simplified SWU mapping
@@ -42,6 +44,8 @@ quadratic in `t`, and oddness pairs `±u` across `P` and `-P` (which are
 distinct — the target curves have no 2-torsion), so each `t` contributes one
 preimage. Tightening to that constant is a planned follow-up.
 -/
+
+@[expose] public section
 
 namespace CompElliptic.Hashing
 
@@ -135,7 +139,7 @@ theorem eval_fibrePoly_eq_zero (G : SSWUParams F) {x u : F}
   have heval_ta : G.taPoly.eval u = (G.Z * u^2)^2 + G.Z * u^2 := by
     simp [taPoly, tPoly]
   simp only [mapXYUpToSign] at hx
-  rw [if_neg hta] at hx
+  rw [ite_eq_right hta] at hx
   have hxdiv : G.E.A * -((G.Z * u^2)^2 + G.Z * u^2) ≠ 0 :=
     mul_ne_zero G.A_nonzero (neg_ne_zero.mpr hta)
   rw [div_eq_iff hxdiv] at hx
