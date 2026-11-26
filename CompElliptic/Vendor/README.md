@@ -44,5 +44,5 @@ rather than a restructuring.
 
 Namespaces are deliberately **unchanged** from upstream (`Montgomery.Native64x8`) — that is the
 whole point of vendoring these files unmodified, and it is what makes the migration a pure
-import-path rewrite. The pinned CompPoly predates the `Montgomery` directory, so nothing
-clashes.
+import-path rewrite. The pinned CompPoly ships the same declarations under
+`CompPoly.Fields.Montgomery`, so no module may import both copies.

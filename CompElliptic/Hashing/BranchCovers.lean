@@ -332,7 +332,7 @@ square. -/
       · simp at h
   · intro hsq
     refine Or.inr ?_
-    rw [if_pos hsq]
+    rw [ite_eq_left hsq]
     rcases b <;> simp
 
 /-- The infinite members of the second cover's point set: both points at
@@ -350,7 +350,7 @@ square. -/
       · simp at h
   · intro hsq
     refine Or.inr ?_
-    rw [if_pos hsq]
+    rw [ite_eq_left hsq]
     rcases b <;> simp
 
 /-- The covering map of the first cover, in model coordinates. An affine
@@ -500,12 +500,12 @@ theorem map_x (hsq : IsSquare (-1 : F)) {u : F} (hu : u ≠ 0) :
       mul_div_cancel_right₀ _ (pow_ne_zero 3 hden)]
   show (G.mapXYUpToSign u).1 = _
   simp only [mapXYUpToSign]
-  rw [if_neg hta]
+  rw [ite_eq_right hta]
   by_cases hgs : IsSquare ((G.x1 u)^3 + G.E.A * G.x1 u + G.E.B)
-  · rw [if_pos hgs, hbiff.mpr hgs, if_pos rfl]
+  · rw [ite_eq_left hgs, hbiff.mpr hgs, ite_eq_left rfl]
     rfl
-  · rw [if_neg hgs, Bool.eq_false_iff.mpr fun h => hgs (hbiff.mp h),
-      if_neg (by simp)]
+  · rw [ite_eq_right hgs, Bool.eq_false_iff.mpr fun h => hgs (hbiff.mp h),
+      ite_eq_right (by simp)]
     unfold x2 x1
     ring
 
@@ -555,7 +555,7 @@ theorem fibre_sum (hsq : IsSquare (-1 : F))
   have hu3 : G.Z * u^3 ≠ 0 := mul_ne_zero G.Z_nonzero (pow_ne_zero 3 hu)
   by_cases hgs : IsSquare ((G.x1 u)^3 + G.E.A * G.x1 u + G.E.B)
   · -- Branch 1 carries the square; branch 2's fibre is empty.
-    have hx : (G.map u).x = G.x1 u := by rw [G.map_x hsq hu, if_pos hgs]
+    have hx : (G.map u).x = G.x1 u := by rw [G.map_x hsq hu, ite_eq_left hgs]
     have hy2 : ((G.map u).y)^2 = (G.x1 u)^3 + G.E.A * G.x1 u + G.E.B := by
       rw [← hx]; exact G.map_y_sq u
     have hyne : (G.map u).y ≠ 0 := fun h => hg1 (by rw [← hy2, h]; ring)
@@ -596,7 +596,7 @@ theorem fibre_sum (hsq : IsSquare (-1 : F))
     have hgs2 : IsSquare ((G.x2 u)^3 + G.E.A * G.x2 u + G.E.B) := by
       rw [G.g_x2_eq hsq hu]
       exact isSquare_mul_of_not_isSquare hZ3 hgs
-    have hx : (G.map u).x = G.x2 u := by rw [G.map_x hsq hu, if_neg hgs]
+    have hx : (G.map u).x = G.x2 u := by rw [G.map_x hsq hu, ite_eq_right hgs]
     have hy2 : ((G.map u).y)^2 = (G.x2 u)^3 + G.E.A * G.x2 u + G.E.B := by
       rw [← hx]; exact G.map_y_sq u
     have hyne : (G.map u).y ≠ 0 := fun h => hg2 (by rw [← hy2, h]; ring)
@@ -679,7 +679,7 @@ theorem modelPoints_sum (hsq : IsSquare (-1 : F))
       = ∑ u, ∑ W ∈ univ.filter fun W : F => W^2 = G.model1 u,
           φ (G.cover1Map hsq (Sum.inl (u, W))) := by
     unfold modelPoints1
-    rw [if_neg hT1, Finset.union_empty,
+    rw [ite_eq_right hT1, Finset.union_empty,
       Finset.sum_image fun _ _ _ _ h => Sum.inl.inj h,
       sum_filter_prod (fun u W => W^2 = G.model1 u)
         (fun p => φ (G.cover1Map hsq (Sum.inl p)))]
@@ -687,7 +687,7 @@ theorem modelPoints_sum (hsq : IsSquare (-1 : F))
       = (∑ u, ∑ W ∈ univ.filter fun W : F => W^2 = G.model2 u,
           φ (G.cover2Map hsq (Sum.inl (u, W)))) + (φ 0 + φ 0) := by
     unfold modelPoints2
-    rw [if_pos hT2, Finset.sum_union (by simp [Finset.disjoint_left]),
+    rw [ite_eq_left hT2, Finset.sum_union (by simp [Finset.disjoint_left]),
       Finset.sum_image fun _ _ _ _ h => Sum.inl.inj h,
       Finset.sum_insert (by simp), Finset.sum_singleton,
       sum_filter_prod (fun u W => W^2 = G.model2 u)

@@ -154,15 +154,19 @@ take `assert_axioms` like the theorems and `Prop`-shaped definitions. -/
 /-! ### The abscissae, branch covers, and models (`Hashing/BranchCovers.lean`,
 `Hashing/FibreBound.lean`, `Hashing/SimplifiedSWU.lean`, `Hashing/SignedLift.lean`) -/
 
-assert_computable CompElliptic.Hashing.SSWUParams.x1
-assert_computable CompElliptic.Hashing.SSWUParams.x2
-assert_computable CompElliptic.Hashing.SSWUParams.phiCore
-assert_computable CompElliptic.Hashing.SSWUParams.twist1
-assert_computable CompElliptic.Hashing.SSWUParams.twist2
-assert_computable CompElliptic.Hashing.SSWUParams.model1
-assert_computable CompElliptic.Hashing.SSWUParams.model2
-assert_computable CompElliptic.Hashing.SSWUParams.scale1
-assert_computable CompElliptic.Hashing.SSWUParams.scale2
+/-! `Classical.choice` enters these through the `[Fintype F]` that `SSWUParams` carries:
+`Fintype`'s completeness field states `Finset` membership, whose `SetLike` instance has a
+choice-using injectivity proof. As for the point enumeration, it is an erased `Prop` field. -/
+
+assert_computable CompElliptic.Hashing.SSWUParams.x1 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.x2 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.phiCore +choice
+assert_computable CompElliptic.Hashing.SSWUParams.twist1 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.twist2 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.model1 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.model2 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.scale1 +choice
+assert_computable CompElliptic.Hashing.SSWUParams.scale2 +choice
 assert_computable CompElliptic.Hashing.sgn0
 assert_axioms CompElliptic.Hashing.SSWUParams.map_neg
 assert_axioms CompElliptic.Hashing.SSWUParams.Zuu_add_one_ne_zero

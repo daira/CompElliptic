@@ -135,7 +135,7 @@ theorem eval_fibrePoly_eq_zero (G : SSWUParams F) {x u : F}
   have heval_ta : G.taPoly.eval u = (G.Z * u^2)^2 + G.Z * u^2 := by
     simp [taPoly, tPoly]
   simp only [mapXYUpToSign] at hx
-  rw [if_neg hta] at hx
+  rw [ite_eq_right hta] at hx
   have hxdiv : G.E.A * -((G.Z * u^2)^2 + G.Z * u^2) ≠ 0 :=
     mul_ne_zero G.A_nonzero (neg_ne_zero.mpr hta)
   rw [div_eq_iff hxdiv] at hx

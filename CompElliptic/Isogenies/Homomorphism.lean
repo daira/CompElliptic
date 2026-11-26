@@ -331,21 +331,21 @@ theorem map_add_x (h2 : (2 : F) ≠ 0)
       have hsum : P + Q = 0 := SWPoint.ext_pair (by
         show add I.domain.A (P.x, P.y) (Q.x, Q.y) = (0, 0)
         unfold add
-        rw [if_neg hP0, if_neg hQ0, if_pos hxx, if_pos hyy])
+        rw [ite_eq_right hP0, ite_eq_right hQ0, ite_eq_left hxx, ite_eq_left hyy])
       rw [hsum, I.map_zero]
       suffices h : I.map P + I.map Q = 0 by rw [h]
       have hQy : Q.y = -P.y := by linear_combination hyy
       have hQpair : I.mapXY Q.x Q.y = ((I.mapXY P.x P.y).1, -(I.mapXY P.x P.y).2) := by
         rw [← hxx, hQy]
         exact I.mapXY_neg P.x P.y
-      rw [map, dif_pos hP1, map, dif_pos hQ1]
+      rw [map, dite_eq_left hP1, map, dite_eq_left hQ1]
       apply SWPoint.ext_pair
       show add I.codomain.A ((I.mapXY P.x P.y).1, (I.mapXY P.x P.y).2)
           ((I.mapXY Q.x Q.y).1, (I.mapXY Q.x Q.y).2) = (0, 0)
       unfold add
-      rw [if_neg himgP0, if_neg himgQ0,
-        if_pos (show (I.mapXY P.x P.y).1 = (I.mapXY Q.x Q.y).1 by rw [hQpair]),
-        if_pos (show (I.mapXY P.x P.y).2 + (I.mapXY Q.x Q.y).2 = 0 by rw [hQpair]; ring)]
+      rw [ite_eq_right himgP0, ite_eq_right himgQ0,
+        ite_eq_left (show (I.mapXY P.x P.y).1 = (I.mapXY Q.x Q.y).1 by rw [hQpair]),
+        ite_eq_left (show (I.mapXY P.x P.y).2 + (I.mapXY Q.x Q.y).2 = 0 by rw [hQpair]; ring)]
     · -- doubling
       have hyq : Q.y = P.y := by
         have hsq : (P.y - Q.y) * (P.y + Q.y) = 0 := by
@@ -367,7 +367,7 @@ theorem map_add_x (h2 : (2 : F) ≠ 0)
              ((3 * Q.x^2 + I.domain.A) / (2 * Q.y))
                * (Q.x - (((3 * Q.x^2 + I.domain.A) / (2 * Q.y))^2 - Q.x - Q.x)) - Q.y) := by
         unfold add
-        rw [if_neg hQ0, if_neg hQ0, if_pos rfl, if_neg hyy]
+        rw [ite_eq_right hQ0, ite_eq_right hQ0, ite_eq_left rfl, ite_eq_right hyy]
       have hxagree : (Q + Q).x = ((3 * Q.x^2 + I.domain.A) / (2 * Q.y))^2 - Q.x - Q.x := by
         show (add I.domain.A (Q.x, Q.y) (Q.x, Q.y)).1 = _
         rw [hpair]
@@ -390,7 +390,7 @@ theorem map_add_x (h2 : (2 : F) ≠ 0)
       have hY1ne : (I.mapXY Q.x Q.y).2 ≠ 0 := by
         intro h0
         exact hc (I.mapXY Q.x Q.y).1 (by rw [← h0, Prod.mk.eta]; exact himgQ)
-      rw [map, dif_pos h₃, map, dif_pos hQ1]
+      rw [map, dite_eq_left h₃, map, dite_eq_left hQ1]
       show (I.mapXY (Q + Q).x (Q + Q).y).1
         = (add I.codomain.A ((I.mapXY Q.x Q.y).1, (I.mapXY Q.x Q.y).2)
             ((I.mapXY Q.x Q.y).1, (I.mapXY Q.x Q.y).2)).1
@@ -399,8 +399,8 @@ theorem map_add_x (h2 : (2 : F) ≠ 0)
           = ((3 * (I.mapXY Q.x Q.y).1^2 + I.codomain.A) / (2 * (I.mapXY Q.x Q.y).2))^2
             - (I.mapXY Q.x Q.y).1 - (I.mapXY Q.x Q.y).1 := by
         unfold add
-        rw [if_neg himgQ0, if_neg himgQ0, if_pos rfl,
-          if_neg (fun hcon => hY1ne ((mul_eq_zero.mp (by linear_combination hcon)).resolve_left h2))]
+        rw [ite_eq_right himgQ0, ite_eq_right himgQ0, ite_eq_left rfl,
+          ite_eq_right (fun hcon => hY1ne ((mul_eq_zero.mp (by linear_combination hcon)).resolve_left h2))]
       rw [haddimg]
       exact I.tangent_x_compat h2 hc hQ1 h₃ hy1 rfl hxagree (by rw [hyagree, hxagree])
   · -- chord
@@ -412,7 +412,7 @@ theorem map_add_x (h2 : (2 : F) ≠ 0)
            ((Q.y - P.y) / (Q.x - P.x))
              * (P.x - (((Q.y - P.y) / (Q.x - P.x))^2 - P.x - Q.x)) - P.y) := by
       unfold add
-      rw [if_neg hP0, if_neg hQ0, if_neg hxx]
+      rw [ite_eq_right hP0, ite_eq_right hQ0, ite_eq_right hxx]
     have hxagree : (P + Q).x = ((Q.y - P.y) / (Q.x - P.x))^2 - P.x - Q.x := by
       show (add I.domain.A (P.x, P.y) (Q.x, Q.y)).1 = _
       rw [hpair]
@@ -428,7 +428,7 @@ theorem map_add_x (h2 : (2 : F) ≠ 0)
         have := add_eq_zero_iff_neg_eq.mp hPQ
         exact this.symm
       exact hxx (by rw [hQn]; exact (SWPoint.neg_x P).symm)
-    rw [map, dif_pos h₃, map, dif_pos hP1, map, dif_pos hQ1]
+    rw [map, dite_eq_left h₃, map, dite_eq_left hP1, map, dite_eq_left hQ1]
     show (I.mapXY (P + Q).x (P + Q).y).1
       = (add I.codomain.A ((I.mapXY P.x P.y).1, (I.mapXY P.x P.y).2)
           ((I.mapXY Q.x Q.y).1, (I.mapXY Q.x Q.y).2)).1
@@ -438,7 +438,7 @@ theorem map_add_x (h2 : (2 : F) ≠ 0)
             / ((I.mapXY Q.x Q.y).1 - (I.mapXY P.x P.y).1))^2
           - (I.mapXY P.x P.y).1 - (I.mapXY Q.x Q.y).1 := by
       unfold add
-      rw [if_neg himgP0, if_neg himgQ0, if_neg hXne]
+      rw [ite_eq_right himgP0, ite_eq_right himgQ0, ite_eq_right hXne]
     rw [haddimg]
     exact I.chord_x_compat h2 hd hP1 hQ1 h₃ hxx rfl hxagree (by rw [hyagree, hxagree])
 
@@ -450,7 +450,7 @@ theorem map_neg (P : SWPoint I.domain) : I.map (-P) = -I.map P := by
       show (-P.y)^2 = P.x^3 + I.domain.A * P.x + I.domain.B
       linear_combination h
     apply SWPoint.ext_pair
-    rw [map, dif_pos hnP, map, dif_pos hP]
+    rw [map, dite_eq_left hnP, map, dite_eq_left hP]
     show ((I.mapXY P.x (-P.y)).1, (I.mapXY P.x (-P.y)).2)
       = ((I.mapXY P.x P.y).1, -(I.mapXY P.x P.y).2)
     rw [Prod.mk.eta, I.mapXY_neg]
@@ -468,7 +468,7 @@ theorem map_add_pm (h2 : (2 : F) ≠ 0)
         ((I.map P + I.map Q).x, (I.map P + I.map Q).y)
     · have hLon : OnCurve I.codomain.A I.codomain.B
           ((I.map (P + Q)).x, (I.map (P + Q)).y) := by
-        rw [map, dif_pos hs]
+        rw [map, dite_eq_left hs]
         exact I.onCurve_mapXY hs
       have hLne : I.map (P + Q) ≠ 0 := fun h0 => by
         rw [h0] at hLon

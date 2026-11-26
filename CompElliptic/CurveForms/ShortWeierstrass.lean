@@ -123,7 +123,7 @@ theorem add_neg (a : F) (p : F × F) : add a p (neg p) = (0, 0) := by
     have hx : p.1 = (neg p).1 := rfl
     have hy : p.2 + (neg p).2 = 0 := by simp [neg]
     unfold add
-    rw [if_neg h, if_neg hn, if_pos hx, if_pos hy]
+    rw [ite_eq_right h, ite_eq_right hn, ite_eq_left hx, ite_eq_left hy]
 
 /-! ## Transport foundation: identify the short form with a Mathlib `WeierstrassCurve`
 
@@ -181,19 +181,19 @@ lemma add_eq_addXY {a b : F} {x₁ y₁ x₂ y₂ : F}
   have hnegY2 : negY (toW a b) x₂ y₂ = -y₂ := by simp [negY]
   unfold add
   dsimp only
-  rw [if_neg hp0, if_neg hq0]
+  rw [ite_eq_right hp0, ite_eq_right hq0]
   by_cases hx : x₁ = x₂
   · have hy : ¬(y₁ + y₂ = 0) := fun h => hxy ⟨hx, h⟩
     have hyne : y₁ ≠ negY (toW a b) x₂ y₂ := by
       rw [hnegY2]; intro h; exact hy (by rw [h]; ring)
-    rw [if_pos hx, if_neg hy]
+    rw [ite_eq_left hx, ite_eq_right hy]
     rw [slope_of_Y_ne hx hyne, hnegY1]
     simp only [addX, addY, negAddY, negY, toW_a₁, toW_a₂, toW_a₃, toW_a₄, mul_zero, zero_mul, sub_zero]
     rw [Prod.mk.injEq]
     refine ⟨by ring, by ring⟩
   · have hd1 : x₂ - x₁ ≠ 0 := sub_ne_zero.mpr (Ne.symm hx)
     have hd2 : x₁ - x₂ ≠ 0 := sub_ne_zero.mpr hx
-    rw [if_neg hx]
+    rw [ite_eq_right hx]
     rw [slope_of_X_ne hx]
     simp only [addX, addY, negAddY, negY, toW_a₁, toW_a₂, toW_a₃, zero_mul, sub_zero]
     rw [Prod.mk.injEq]
@@ -286,10 +286,10 @@ def ofPt {a b : F} (P : Point (toW a b)) : F × F :=
   | .some x y _ => (x, y)
 
 lemma toPt_some {a b : F} [(toW a b).IsElliptic] {x y : F} (h : OnCurve a b (x, y)) :
-    toPt a b (x, y) = .some x y (nonsingular_toW h) := dif_pos h
+    toPt a b (x, y) = .some x y (nonsingular_toW h) := dite_eq_left h
 
 lemma toPt_zero {a b : F} (hb : b ≠ 0) [(toW a b).IsElliptic] : toPt a b (0, 0) = 0 :=
-  dif_neg (not_onCurve_zero hb)
+  dite_eq_right (not_onCurve_zero hb)
 
 lemma ofPt_toPt {a b : F} (hb : b ≠ 0) [(toW a b).IsElliptic] {p : F × F} (hp : Valid a b p) :
     ofPt (toPt a b p) = p := by
@@ -499,13 +499,13 @@ instance (E : SWCurve F) : AddCommGroup (SWPoint E) where
   nsmul := binNsmul sw_add (SWPoint.zero E)
   nsmul_zero P := binNsmul_zero _ _ P
   nsmul_succ n P := by
-    haveI := instIsElliptic E
+    have := instIsElliptic E
     refine binNsmul_succ ?_ ?_ n P
     · exact fun a b c => SWPoint.ext_pair (add_assoc E.B_nonzero a.onCurve b.onCurve c.onCurve)
     · exact fun a => SWPoint.ext_pair (ShortWeierstrass.add_zero E.A (a.x, a.y))
   zsmul := zsmulRec
   add_assoc P Q R := by
-    haveI := instIsElliptic E
+    have := instIsElliptic E
     exact SWPoint.ext_pair (add_assoc E.B_nonzero P.onCurve Q.onCurve R.onCurve)
   zero_add P := SWPoint.ext_pair (ShortWeierstrass.zero_add E.A (P.x, P.y))
   add_zero P := SWPoint.ext_pair (ShortWeierstrass.add_zero E.A (P.x, P.y))
